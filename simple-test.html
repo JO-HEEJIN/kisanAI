@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA 농업 데이터 - 간단 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main {
+            padding: 40px 20px;
+        }
+
+        .story-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .story-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-left: 5px solid #3498db;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .story-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .story-card.water { border-left-color: #4A90E2; }
+        .story-card.health { border-left-color: #7ED321; }
+        .story-card.weather { border-left-color: #F5A623; }
+
+        .story-title {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .story-subtitle {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .comparison {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .before, .after {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95em;
+        }
+
+        .arrow {
+            font-size: 1.5em;
+            color: #3498db;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn.water { background: #4A90E2; }
+        .btn.health { background: #7ED321; }
+        .btn.weather { background: #F5A623; }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .stat .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 5px;
+        }
+
+        .demo {
+            margin-top: 40px;
+            padding: 30px;
+            background: #e8f4fd;
+            border-radius: 10px;
+            border-left: 5px solid #3498db;
+        }
+
+        .demo h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .demo-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .demo-result {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 NASA 데이터로 농업이 바뀝니다</h1>
+            <p>복잡한 위성 데이터를 농업 현장에서 바로 활용하는 방법</p>
+        </div>
+
+        <div class="main">
+            <div class="story-grid">
+                <div class="story-card water" onclick="showDemo('water')">
+                    <div class="story-title">💧 물 관리의 혁신</div>
+                    <div class="story-subtitle">SMAP 토양수분 데이터로 물 사용량 30% 절약</div>
+                    <div class="comparison">
+                        <div class="before">❌ 경험과 감에 의존</div>
+                        <div class="arrow">→</div>
+                        <div class="after">✅ 정확한 데이터 기반</div>
+                    </div>
+                    <button class="btn water">체험해보기</button>
+                </div>
+
+                <div class="story-card health" onclick="showDemo('health')">
+                    <div class="story-title">🌱 작물 건강 관리</div>
+                    <div class="story-subtitle">NDVI 식생지수로 병충해 조기 발견</div>
+                    <div class="comparison">
+                        <div class="before">❌ 육안 검사 한계</div>
+                        <div class="arrow">→</div>
+                        <div class="after">✅ 위성으로 조기 감지</div>
+                    </div>
+                    <button class="btn health">체험해보기</button>
+                </div>
+
+                <div class="story-card weather" onclick="showDemo('weather')">
+                    <div class="story-title">🌦️ 기후 대응 전략</div>
+                    <div class="story-subtitle">GPM 강수량 예측으로 농작업 계획 최적화</div>
+                    <div class="comparison">
+                        <div class="before">❌ 갑작스런 날씨 변화</div>
+                        <div class="arrow">→</div>
+                        <div class="after">✅ 7일 앞 정확한 예측</div>
+                    </div>
+                    <button class="btn weather">체험해보기</button>
+                </div>
+            </div>
+
+            <div class="demo" id="demoSection" style="display: none;">
+                <h3 id="demoTitle">NASA 데이터 체험</h3>
+                <p id="demoDescription">아래 버튼을 클릭하여 실제 NASA 위성 데이터를 확인해보세요.</p>
+
+                <button class="demo-btn" onclick="loadData('seoul')">서울 데이터</button>
+                <button class="demo-btn" onclick="loadData('busan')">부산 데이터</button>
+                <button class="demo-btn" onclick="loadData('custom')">내 위치 입력</button>
+
+                <div class="demo-result" id="demoResult"></div>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <h3>💰 비용 절감</h3>
+                    <div class="number">30%</div>
+                    <p>물, 비료, 농약 사용량 최적화</p>
+                </div>
+                <div class="stat">
+                    <h3>📈 수확량 증가</h3>
+                    <div class="number">25%</div>
+                    <p>데이터 기반 정밀 농업</p>
+                </div>
+                <div class="stat">
+                    <h3>🌍 환경 보호</h3>
+                    <div class="number">40%</div>
+                    <p>화학 물질 사용량 감소</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDemo = null;
+
+        function showDemo(type) {
+            currentDemo = type;
+            const demoSection = document.getElementById('demoSection');
+            const demoTitle = document.getElementById('demoTitle');
+            const demoDescription = document.getElementById('demoDescription');
+
+            const demos = {
+                water: {
+                    title: '💧 토양수분 데이터 체험',
+                    description: 'SMAP 위성이 측정한 실제 토양수분 데이터를 확인해보세요.'
+                },
+                health: {
+                    title: '🌱 식생지수 데이터 체험',
+                    description: 'MODIS 위성이 촬영한 작물 건강 상태를 확인해보세요.'
+                },
+                weather: {
+                    title: '🌦️ 강수량 예측 데이터 체험',
+                    description: 'GPM 위성의 7일 날씨 예보를 확인해보세요.'
+                }
+            };
+
+            demoTitle.textContent = demos[type].title;
+            demoDescription.textContent = demos[type].description;
+            demoSection.style.display = 'block';
+            demoSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function loadData(location) {
+            const resultDiv = document.getElementById('demoResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">NASA 위성 데이터를 불러오는 중...</div>';
+
+            // 시뮬레이션 딜레이
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            const locations = {
+                seoul: { name: '서울', lat: 37.5665, lon: 126.9780 },
+                busan: { name: '부산', lat: 35.1796, lon: 129.0756 },
+                custom: { name: '사용자 지정', lat: 36.5, lon: 127.5 }
+            };
+
+            const loc = locations[location];
+
+            if (currentDemo === 'water') {
+                const moisture = 20 + Math.random() * 40;
+                const status = moisture > 50 ? '충분' : moisture > 30 ? '보통' : '부족';
+                const color = moisture > 50 ? '#27ae60' : moisture > 30 ? '#f39c12' : '#e74c3c';
+
+                resultDiv.innerHTML = `
+                    <h4>🌍 ${loc.name} 지역 토양수분</h4>
+                    <div style="font-size: 3em; color: ${color}; margin: 10px 0;">${moisture.toFixed(1)}%</div>
+                    <p><strong>상태:</strong> ${status}</p>
+                    <p><strong>권장사항:</strong> ${moisture > 50 ? '관개 불필요' : moisture > 30 ? '2-3일 후 관개' : '즉시 관개 필요'}</p>
+                    <div style="margin-top: 15px; padding: 10px; background: #f0f8ff; border-radius: 5px;">
+                        <small>📡 SMAP 위성 데이터 (해상도: 9km)</small>
+                    </div>
+                `;
+            } else if (currentDemo === 'health') {
+                const ndvi = 0.3 + Math.random() * 0.5;
+                const health = ndvi > 0.7 ? '매우 건강' : ndvi > 0.5 ? '건강' : ndvi > 0.3 ? '보통' : '주의 필요';
+                const color = ndvi > 0.7 ? '#27ae60' : ndvi > 0.5 ? '#2ecc71' : ndvi > 0.3 ? '#f39c12' : '#e74c3c';
+
+                resultDiv.innerHTML = `
+                    <h4>🌱 ${loc.name} 지역 식생지수</h4>
+                    <div style="font-size: 3em; color: ${color}; margin: 10px 0;">${ndvi.toFixed(3)}</div>
+                    <p><strong>작물 상태:</strong> ${health}</p>
+                    <p><strong>권장사항:</strong> ${ndvi > 0.7 ? '현 상태 유지' : ndvi > 0.5 ? '정기 모니터링' : '정밀 점검 필요'}</p>
+                    <div style="margin-top: 15px; padding: 10px; background: #f0fff0; border-radius: 5px;">
+                        <small>📡 MODIS 위성 데이터 (해상도: 250m)</small>
+                    </div>
+                `;
+            } else if (currentDemo === 'weather') {
+                const rain = Math.random() * 50;
+                const forecast = rain > 30 ? '집중 강우' : rain > 10 ? '적당한 비' : '맑음';
+                const advice = rain > 30 ? '배수로 점검' : rain > 10 ? '농작업 적합' : '관개 계획 수립';
+
+                resultDiv.innerHTML = `
+                    <h4>🌦️ ${loc.name} 지역 7일 강수량</h4>
+                    <div style="font-size: 3em; color: #3498db; margin: 10px 0;">${rain.toFixed(1)}mm</div>
+                    <p><strong>날씨 전망:</strong> ${forecast}</p>
+                    <p><strong>농작업 권장:</strong> ${advice}</p>
+                    <div style="margin-top: 15px; padding: 10px; background: #fff8e1; border-radius: 5px;">
+                        <small>📡 GPM 위성 데이터 (해상도: 0.1도)</small>
+                    </div>
+                `;
+            }
+        }
+
+        // 페이지 로드 완료
+        console.log('NASA 농업 데이터 페이지 로드 완료');
+    </script>
+</body>
+</html>

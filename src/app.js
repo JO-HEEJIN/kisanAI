@@ -1,0 +1,5120 @@
+/**
+ * NASA Farm Navigators - Main Application Entry Point
+ * Initializes and coordinates all system components
+ */
+
+import { GameEngine } from './core/GameEngine.js';
+import { IntegrationTestSuite } from './tests/integration.test.js';
+// Farm game modules will be dynamically imported when needed
+ 
+class NASAFarmNavigatorsApp {
+    constructor() {
+        this.gameEngine = null;
+        this.isInitialized = false;
+        this.isOnline = navigator.onLine;
+        this.debugMode = this.getDebugMode();
+
+        // UI elements will be populated on DOM ready
+        this.ui = {
+            loadingScreen: null,
+            mainContainer: null,
+            authButton: null,
+            statusDisplay: null,
+            resolutionControls: null,
+            dataDisplay: null,
+            educationPanel: null
+        };
+
+        // Bind methods
+        this.handleAuthClick = this.handleAuthClick.bind(this);
+        this.handleResolutionChange = this.handleResolutionChange.bind(this);
+        this.handleOnlineStatusChange = this.handleOnlineStatusChange.bind(this);
+    }
+
+    /**
+     * Initialize the application
+     */
+    async initialize() {
+        try {
+            console.log('NASA Farm Navigators Starting...');
+
+            // Show loading screen
+            this.showLoadingScreen();
+
+            // Initialize service worker for offline support
+            await this.initializeServiceWorker();
+
+            // Initialize game engine
+            this.gameEngine = GameEngine.getInstance();
+            await this.gameEngine.initialize({
+                earthdataClientId: 'nasa_farm_navigators',
+                defaultContext: 'tutorial',
+                cacheSize: 100
+            });
+
+            // Set up event listeners
+            this.setupEventListeners();
+
+            // Initialize UI
+            await this.initializeUI();
+
+            // Run tests in debug mode
+            if (this.debugMode) {
+                await this.runTests();
+            }
+
+            // Hide loading screen and show main app
+            this.hideLoadingScreen();
+            this.showMainApp();
+
+            // Initialize authentication status
+            this.updateAuthenticationStatus();
+
+            // Make app globally accessible for tab switching
+            window.app = this;
+
+            this.isInitialized = true;
+            console.log('NASA Farm Navigators Ready!');
+
+        } catch (error) {
+            console.error('Application initialization failed:', error);
+            this.showErrorScreen(error);
+        }
+    }
+
+    /**
+     * Initialize service worker for offline functionality
+     */
+    async initializeServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                console.log('Service Worker registered:', registration.scope);
+
+                // Listen for service worker updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New version available
+                            this.showUpdateNotification();
+                        }
+                    });
+                });
+
+            } catch (error) {
+                console.warn('Service Worker registration failed:', error);
+            }
+        }
+    }
+
+    /**
+     * Set up application event listeners
+     */
+    setupEventListeners() {
+        // Game engine events
+        this.gameEngine.on('authStateChanged', (data) => {
+            this.updateAuthUI(data.isAuthenticated, data.userInfo);
+        });
+
+        this.gameEngine.on('dataFetched', (data) => {
+            this.updateDataDisplay(data);
+        });
+
+        this.gameEngine.on('achievementUnlocked', (data) => {
+            this.showAchievementNotification(data.achievement);
+        });
+
+        this.gameEngine.on('educationProgress', (data) => {
+            this.updateEducationProgress(data);
+        });
+
+        // Network status events
+        window.addEventListener('online', this.handleOnlineStatusChange);
+        window.addEventListener('offline', this.handleOnlineStatusChange);
+
+        // Visibility API for performance optimization
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.gameEngine.pauseNonEssentialProcesses();
+            } else {
+                this.gameEngine.resumeProcesses();
+            }
+        });
+
+        // Tab switching event listeners
+        this.setupTabSwitching();
+
+        // Location input change listeners - connect to Farm Game
+        this.setupLocationInputListeners();
+    }
+
+    /**
+     * Set up location input listeners to connect Real-Time Satellite Data with Farm Game
+     */
+    setupLocationInputListeners() {
+        const latInput = document.getElementById('latInput');
+        const lonInput = document.getElementById('lonInput');
+
+        if (latInput && lonInput) {
+            // Update farm location when latitude changes
+            latInput.addEventListener('change', () => {
+                this.updateFarmLocation();
+            });
+
+            // Update farm location when longitude changes
+            lonInput.addEventListener('change', () => {
+                this.updateFarmLocation();
+            });
+
+            // Also listen for 'input' events for real-time updates
+            latInput.addEventListener('input', this.debounce(() => {
+                this.updateFarmLocation();
+            }, 1000)); // Wait 1 second after user stops typing
+
+            lonInput.addEventListener('input', this.debounce(() => {
+                this.updateFarmLocation();
+            }, 1000));
+
+            console.log('🌍 Location input listeners set up for Farm Game integration');
+        } else {
+            console.warn('⚠️ Location inputs not found - Farm Game location sync disabled');
+        }
+    }
+
+    /**
+     * Update Farm Game location based on Real-Time Satellite Data inputs
+     */
+    async updateFarmLocation() {
+        const latInput = document.getElementById('latInput');
+        const lonInput = document.getElementById('lonInput');
+
+        if (!latInput || !lonInput) return;
+
+        const lat = parseFloat(latInput.value);
+        const lon = parseFloat(lonInput.value);
+
+        // Validate coordinates
+        if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+            console.warn('Invalid coordinates:', { lat, lon });
+            return;
+        }
+
+        // Update farm location in game engine
+        console.log('🔍 Debug: Attempting to get farm game from engine');
+        const farmGame = this.gameEngine.getFarmGame();
+        console.log('🔍 Debug: Farm game instance:', farmGame ? 'Found' : 'Not found');
+
+        if (farmGame && farmGame.farmSimulation) {
+            console.log('🔍 Debug: Farm simulation found, updating location');
+            try {
+                // farmGame is FarmGameUI, farmGame.farmSimulation is FarmSimulationEngine
+                await farmGame.farmSimulation.updateFarmLocation(lat, lon);
+                console.log(`🌍 Farm location updated to: ${lat}, ${lon}`);
+
+                // Show notification to user
+                this.showNotification(
+                    `📍 Farm location updated to ${lat.toFixed(4)}, ${lon.toFixed(4)}`,
+                    'info'
+                );
+            } catch (error) {
+                console.error('❌ Failed to update farm location:', error);
+            }
+        } else {
+            console.warn('⚠️ Farm Game not available for location update');
+            console.log('🔍 Debug: GameEngine:', this.gameEngine ? 'Exists' : 'Missing');
+            console.log('🔍 Debug: getFarmGame method:', typeof this.gameEngine?.getFarmGame);
+            console.log('🔍 Debug: FarmGame instance:', farmGame ? 'Exists' : 'Missing');
+
+            if (farmGame) {
+                console.log('🔍 Debug: FarmGame.farmSimulation:', farmGame.farmSimulation ? 'Exists' : 'Missing');
+            }
+
+            // Try to initialize Farm Game if not available
+            console.log('🔍 Attempting to initialize Farm Game for location update...');
+            await this.initializeFarmGame();
+
+            // Retry after initialization
+            const retryFarmGame = this.gameEngine.getFarmGame();
+            if (retryFarmGame && retryFarmGame.farmSimulation) {
+                console.log('🔍 Retry: Farm Game now available, updating location');
+                try {
+                    await retryFarmGame.farmSimulation.updateFarmLocation(lat, lon);
+                    console.log(`🌍 Farm location updated to: ${lat}, ${lon}`);
+                    this.showNotification(
+                        `📍 Farm location updated to ${lat.toFixed(4)}, ${lon.toFixed(4)}`,
+                        'info'
+                    );
+                } catch (error) {
+                    console.error('❌ Failed to update farm location on retry:', error);
+                }
+            } else {
+                console.error('❌ Farm Game still not available after initialization attempt');
+            }
+        }
+    }
+
+    /**
+     * Debounce helper function
+     */
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    /**
+     * Set up tab switching functionality
+     */
+    setupTabSwitching() {
+        // Add click event listeners to all tab buttons
+        document.querySelectorAll('.tab[data-tab]').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabName = e.target.dataset.tab;
+                this.switchTab(tabName);
+            });
+        });
+    }
+
+    /**
+     * Switch to specified tab
+     */
+    switchTab(tabName) {
+        console.log(`Switching to tab: ${tabName}`);
+
+        // Remove active class from all tabs and tab contents
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+
+        // Add active class to selected tab and content
+        const selectedTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+        const selectedContent = document.querySelector(`.tab-content[data-tab="${tabName}"]`);
+
+        if (selectedTab) {
+            selectedTab.classList.add('active');
+        }
+        if (selectedContent) {
+            selectedContent.classList.add('active');
+        }
+
+        // Handle special tab initialization
+        switch (tabName) {
+            case 'farm-game':
+                this.initializeFarmGame();
+                break;
+            case 'data':
+                // Data tab is already initialized
+                break;
+            case 'education':
+                // Education panel is already initialized
+                break;
+            case 'achievements':
+                this.displayPixelHuntAchievements();
+                break;
+            // Add other tab cases as needed
+        }
+    }
+
+    /**
+     * Initialize user interface
+     */
+    async initializeUI() {
+        console.log('Initializing UI...');
+
+
+        // Get UI elements
+        this.ui.loadingScreen = document.getElementById('loadingScreen');
+        this.ui.mainContainer = document.getElementById('mainContainer');
+        this.ui.authButton = document.getElementById('authButton');
+        this.ui.statusDisplay = document.getElementById('statusDisplay');
+        this.ui.resolutionControls = document.getElementById('resolutionControls');
+        this.ui.dataDisplay = document.getElementById('dataDisplay');
+        this.ui.educationPanel = document.getElementById('educationPanel');
+
+        // Log which elements were found
+        console.log('UI Elements found:', {
+            loadingScreen: !!this.ui.loadingScreen,
+            mainContainer: !!this.ui.mainContainer,
+            authButton: !!this.ui.authButton,
+            statusDisplay: !!this.ui.statusDisplay,
+            resolutionControls: !!this.ui.resolutionControls,
+            dataDisplay: !!this.ui.dataDisplay,
+            educationPanel: !!this.ui.educationPanel
+        });
+
+        // Set up UI event listeners
+        if (this.ui.authButton) {
+            this.ui.authButton.addEventListener('click', this.handleAuthClick);
+        }
+
+        if (this.ui.resolutionControls) {
+            this.ui.resolutionControls.addEventListener('change', this.handleResolutionChange);
+        }
+
+        try {
+            // Set up navigation to advanced components
+            this.setupAdvancedNavigation();
+        } catch (error) {
+            console.warn('Failed to setup advanced navigation:', error);
+        }
+
+        try {
+            // Initialize education panel
+            await this.initializeEducationPanel();
+        } catch (error) {
+            console.warn('❌ Failed to initialize education panel:', error);
+        }
+
+        try {
+            // Initialize data visualization
+            await this.initializeDataVisualization();
+        } catch (error) {
+            console.warn('❌ Failed to initialize data visualization:', error);
+        }
+
+        try {
+            // Set initial UI state
+            this.updateConnectionStatus();
+
+            // Check if authentication methods exist before calling
+            if (this.gameEngine && typeof this.gameEngine.isAuthenticated === 'function') {
+                const isAuth = this.gameEngine.isAuthenticated();
+                const user = this.gameEngine.getCurrentUser ? this.gameEngine.getCurrentUser() : null;
+                this.updateAuthUI(isAuth, user);
+            }
+        } catch (error) {
+            console.warn('Failed to update UI state:', error);
+        }
+    }
+
+    /**
+     * Initialize education panel
+     */
+    async initializeEducationPanel() {
+        if (!this.ui.educationPanel) {
+            console.warn('Education panel element not found');
+            return;
+        }
+
+        const educationEngine = this.gameEngine.getManagers().education;
+        const learningState = educationEngine?.getLearningState ? educationEngine.getLearningState() : { progress: {} };
+
+        // Create education panel HTML
+        this.ui.educationPanel.innerHTML = `
+            <div class="panel-header">
+                <h3>Understanding Satellite Pixels</h3>
+                <button class="close-panel-btn" aria-label="Close panel">×</button>
+            </div>
+
+            <div class="panel-content">
+                <div class="pixel-definition">
+                    <h4>What is a Pixel?</h4>
+                    <p>A pixel is the smallest unit of a satellite image. Think of it as a colored square that represents an area on Earth. Each pixel contains information about the surface conditions within that area.</p>
+                </div>
+
+                <div class="learning-objectives">
+                    <h4>Learning Objectives:</h4>
+                    <ul>
+                        <li>Define what a satellite pixel represents</li>
+                        <li>Understand the relationship between pixel size and detail</li>
+                        <li>Recognize how resolution affects agricultural monitoring</li>
+                        <li>Compare different satellite sensor resolutions</li>
+                    </ul>
+                </div>
+
+                <div class="pixel-examples-container">
+                    <h4>Pixel Size Examples:</h4>
+
+                    <div class="pixel-examples">
+                        <div class="example-item">
+                            <h4>Landsat 8</h4>
+                            <div class="pixel-size">30m × 30m</div>
+                            <div class="example-description">High detail - individual fields</div>
+                        </div>
+
+                        <div class="example-item">
+                            <h4>MODIS</h4>
+                            <div class="pixel-size">250m × 250m</div>
+                            <div class="example-description">Medium detail - farm regions</div>
+                        </div>
+
+                        <div class="example-item">
+                            <h4>SMAP</h4>
+                            <div class="pixel-size">9km × 9km</div>
+                            <div class="example-description">Low detail - large areas</div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <button class="start-lesson-btn" data-module="pixel_awareness">Start Interactive Lesson</button>
+            </div>
+        `;
+
+        // Add module event listeners
+        this.ui.educationPanel.querySelectorAll('.start-lesson-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                console.log('Starting Interactive Lesson');
+
+                // Start the pixel_awareness module
+                const educationEngine = this.gameEngine.getManagers().education;
+                if (educationEngine && typeof educationEngine.startModule === 'function') {
+                    try {
+                        const result = await educationEngine.startModule('pixel_awareness');
+                        if (result.status === 'started') {
+                            this.showResolutionComparisonLesson(result.firstLesson);
+                        } else if (result.status === 'prerequisites_required') {
+                            console.log('Prerequisites required:', result.missing);
+                            // For now, just show the lesson anyway for demo purposes
+                            this.showResolutionComparisonLesson({ title: 'Understanding Satellite Pixels' });
+                        }
+                    } catch (error) {
+                        console.error('Failed to start education module:', error);
+                        // Fallback: Show the lesson anyway for demo purposes
+                        this.showResolutionComparisonLesson({ title: 'Understanding Satellite Pixels' });
+                    }
+                } else {
+                    console.warn('Education engine not available, showing lesson directly');
+                    // Fallback: Show the lesson directly
+                    this.showResolutionComparisonLesson({ title: 'Understanding Satellite Pixels' });
+                }
+            });
+        });
+
+        // Add close panel event listener
+        const closePanelBtn = this.ui.educationPanel.querySelector('.close-panel-btn');
+        if (closePanelBtn) {
+            closePanelBtn.addEventListener('click', () => {
+                // Switch to data visualization tab
+                const dataTab = document.querySelector('.tab[data-tab="data"]');
+                if (dataTab) {
+                    dataTab.click();
+                }
+            });
+        }
+
+        // Update achievements display
+        this.updateAchievements();
+    }
+
+    /**
+     * Show resolution comparison lesson
+     */
+    showResolutionComparisonLesson(lessonData) {
+        if (!this.ui.educationPanel) {
+            console.warn('Education panel not found');
+            return;
+        }
+
+        // Store original content for going back
+        if (!this.originalEducationContent) {
+            this.originalEducationContent = this.ui.educationPanel.innerHTML;
+        }
+
+        // Show the resolution comparison lesson
+        this.ui.educationPanel.innerHTML = `
+            <div class="panel-header">
+                <h3>Interactive Pixel Lesson</h3>
+                <button class="close-panel-btn" aria-label="Close lesson">×</button>
+            </div>
+
+            <div class="panel-content">
+                <div class="lesson-intro">
+                    <h4>${lessonData?.title || 'Understanding Satellite Pixels'}</h4>
+                    <p>Great! Now let's explore how different satellite resolutions affect what we can see from space.</p>
+                </div>
+
+                <div class="resolution-comparison">
+                    <h4>Compare Resolutions:</h4>
+                    <p>Click on each resolution example to see how satellite pixel size affects what we can observe:</p>
+
+                    <div class="comparison-grid">
+                        <div class="comparison-item" data-resolution="high">
+                            <div class="pixel-demo high-res"></div>
+                            <h5>High Resolution (10-30m)</h5>
+                            <p>Perfect for monitoring individual fields and crop health</p>
+                            <button class="explore-btn" data-resolution="landsat">Explore Landsat</button>
+                        </div>
+                        <div class="comparison-item" data-resolution="medium">
+                            <div class="pixel-demo medium-res"></div>
+                            <h5>Medium Resolution (250m-1km)</h5>
+                            <p>Good for regional agricultural monitoring</p>
+                            <button class="explore-btn" data-resolution="modis">Explore MODIS</button>
+                        </div>
+                        <div class="comparison-item" data-resolution="low">
+                            <div class="pixel-demo low-res"></div>
+                            <h5>Low Resolution (1km+)</h5>
+                            <p>Useful for large-scale climate and weather patterns</p>
+                            <button class="explore-btn" data-resolution="smap">Explore SMAP</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lesson-navigation">
+                    <button class="back-btn">Back to Overview</button>
+                    <div class="lesson-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 33%"></div>
+                        </div>
+                        <span>Lesson 1 of 3</span>
+                    </div>
+                    <button class="next-btn">Next: Pixel Hunt</button>
+                </div>
+            </div>
+        `;
+
+        // Add event listeners for the new content
+        this.attachLessonEventListeners();
+    }
+
+    /**
+     * Attach event listeners for lesson content
+     */
+    attachLessonEventListeners() {
+        // Close button
+        const closePanelBtn = this.ui.educationPanel.querySelector('.close-panel-btn');
+        if (closePanelBtn) {
+            closePanelBtn.addEventListener('click', () => {
+                this.goBackToPixelOverview();
+            });
+        }
+
+        // Back button
+        const backBtn = this.ui.educationPanel.querySelector('.back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                this.goBackToPixelOverview();
+            });
+        }
+
+        // Explore buttons
+        this.ui.educationPanel.querySelectorAll('.explore-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const resolution = e.target.dataset.resolution;
+                this.exploreResolution(resolution);
+            });
+        });
+
+        // Next button
+        const nextBtn = this.ui.educationPanel.querySelector('.next-btn');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                this.showNextLesson();
+            });
+        }
+    }
+
+    /**
+     * Go back to pixel overview
+     */
+    goBackToPixelOverview() {
+        if (this.originalEducationContent && this.ui.educationPanel) {
+            this.ui.educationPanel.innerHTML = this.originalEducationContent;
+            // Re-attach the original event listeners
+            this.attachEducationEventListeners();
+        }
+    }
+
+    /**
+     * Attach original education panel event listeners
+     */
+    attachEducationEventListeners() {
+        // Re-attach start lesson button listeners
+        this.ui.educationPanel.querySelectorAll('.start-lesson-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                console.log('Starting Interactive Lesson');
+
+                // Start the pixel_awareness module
+                const educationEngine = this.gameEngine.getManagers().education;
+                if (educationEngine && typeof educationEngine.startModule === 'function') {
+                    try {
+                        const result = await educationEngine.startModule('pixel_awareness');
+                        if (result.status === 'started') {
+                            this.showResolutionComparisonLesson(result.firstLesson);
+                        } else if (result.status === 'prerequisites_required') {
+                            console.log('Prerequisites required:', result.missing);
+                            // For now, just show the lesson anyway for demo purposes
+                            this.showResolutionComparisonLesson({ title: 'Understanding Satellite Pixels' });
+                        }
+                    } catch (error) {
+                        console.error('Failed to start education module:', error);
+                        // Fallback: Show the lesson anyway for demo purposes
+                        this.showResolutionComparisonLesson({ title: 'Understanding Satellite Pixels' });
+                    }
+                } else {
+                    console.warn('Education engine not available, showing lesson directly');
+                    // Fallback: Show the lesson directly
+                    this.showResolutionComparisonLesson({ title: 'Understanding Satellite Pixels' });
+                }
+            });
+        });
+
+        // Re-attach close panel listener
+        const closePanelBtn = this.ui.educationPanel.querySelector('.close-panel-btn');
+        if (closePanelBtn) {
+            closePanelBtn.addEventListener('click', () => {
+                // Switch to data visualization tab
+                const dataTab = document.querySelector('.tab[data-tab="data"]');
+                if (dataTab) {
+                    dataTab.click();
+                }
+            });
+        }
+    }
+
+    /**
+     * Explore specific resolution
+     */
+    exploreResolution(resolution) {
+        console.log(`Exploring ${resolution} resolution`);
+
+        // Create detailed exploration content based on the satellite
+        const satelliteData = {
+            landsat: {
+                name: 'Landsat 8/9',
+                resolution: '30m × 30m',
+                coverage: '185km × 185km',
+                revisit: '16 days',
+                description: 'Perfect for monitoring individual farm fields and crop health',
+                applications: ['Field boundary mapping', 'Crop type classification', 'Irrigation monitoring', 'Yield prediction'],
+                advantages: ['High spatial detail', 'Long data record since 1972', 'Free and open data'],
+                limitations: ['16-day revisit time', 'Cloud cover issues', 'Limited spectral bands compared to hyperspectral']
+            },
+            modis: {
+                name: 'MODIS Terra/Aqua',
+                resolution: '250m × 250m',
+                coverage: '2330km × 2330km',
+                revisit: '1-2 days',
+                description: 'Ideal for regional agricultural monitoring and vegetation trends',
+                applications: ['Regional crop monitoring', 'Drought assessment', 'Vegetation phenology', 'Fire detection'],
+                advantages: ['Daily global coverage', 'Multiple spectral bands', 'Long-term consistent data'],
+                limitations: ['Coarser spatial resolution', 'Mixed pixels in heterogeneous areas', 'Atmospheric interference']
+            },
+            smap: {
+                name: 'SMAP (Soil Moisture)',
+                resolution: '9km × 9km',
+                coverage: 'Global',
+                revisit: '2-3 days',
+                description: 'Essential for large-scale soil moisture and agricultural water management',
+                applications: ['Soil moisture mapping', 'Drought monitoring', 'Irrigation planning', 'Flood prediction'],
+                advantages: ['Penetrates through vegetation', 'All-weather capability', 'Root zone estimates'],
+                limitations: ['Very coarse resolution', 'Limited to soil moisture', 'Shorter data record (2015+)']
+            }
+        };
+
+        const data = satelliteData[resolution];
+        if (data) {
+            this.showSatelliteDetailModal(data);
+        }
+    }
+
+    /**
+     * Show detailed satellite information modal
+     */
+    showSatelliteDetailModal(satelliteData) {
+        // Create modal overlay
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'satellite-detail-modal';
+        modalOverlay.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>${satelliteData.name}</h3>
+                    <button class="modal-close">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="satellite-specs">
+                        <h4>Technical Specifications</h4>
+                        <div class="spec-grid">
+                            <div class="spec-item">
+                                <span class="spec-label">Resolution:</span>
+                                <span class="spec-value">${satelliteData.resolution}</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Coverage:</span>
+                                <span class="spec-value">${satelliteData.coverage}</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Revisit Time:</span>
+                                <span class="spec-value">${satelliteData.revisit}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="satellite-description">
+                        <h4>Agricultural Applications</h4>
+                        <p>${satelliteData.description}</p>
+                        <ul class="applications-list">
+                            ${satelliteData.applications.map(app => `<li>${app}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="pros-cons">
+                        <div class="advantages">
+                            <h4>Advantages</h4>
+                            <ul>
+                                ${satelliteData.advantages.map(adv => `<li>${adv}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="limitations">
+                            <h4>Limitations</h4>
+                            <ul>
+                                ${satelliteData.limitations.map(lim => `<li>${lim}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="real-time-data">
+                        <h4>Real-Time Status</h4>
+                        <div class="satellite-status">
+                            <div class="status-item">
+                                <span class="status-label">Current Status:</span>
+                                <span class="status-value operational">Operational</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Last Data Update:</span>
+                                <span class="status-value">${this.getRecentDataTime()}</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Next Pass Over Area:</span>
+                                <span class="status-value">${this.getNextPassTime(satelliteData.name)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="educational-insights">
+                        <h4>Educational Insights</h4>
+                        <div class="insight-cards">
+                            ${this.generateEducationalInsights(satelliteData.name)}
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="try-demo-btn">Try Interactive Demo</button>
+                        <button class="learn-more-btn">Learn More</button>
+                        <button class="track-satellite-btn">Track Live Position</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to document
+        document.body.appendChild(modalOverlay);
+
+        // Add event listeners
+        const closeModal = () => {
+            document.body.removeChild(modalOverlay);
+        };
+
+        modalOverlay.querySelector('.modal-close').addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+
+        modalOverlay.querySelector('.try-demo-btn').addEventListener('click', () => {
+            this.startInteractiveDemo(satelliteData.name);
+            closeModal();
+        });
+
+        modalOverlay.querySelector('.learn-more-btn').addEventListener('click', () => {
+            this.showNASAResources(satelliteData.name);
+            closeModal();
+        });
+
+        modalOverlay.querySelector('.track-satellite-btn').addEventListener('click', () => {
+            this.showSatelliteTracker(satelliteData.name);
+            closeModal();
+        });
+    }
+
+    /**
+     * Start interactive demo for specific satellite
+     */
+    startInteractiveDemo(satelliteName) {
+        console.log(`Starting interactive demo for ${satelliteName}`);
+        // This could integrate with the ResolutionManager for pixel hunt challenges
+        alert(`Interactive Demo: ${satelliteName}\n\nIn a full implementation, this would start:\n• Pixel identification challenges\n• Resolution comparison exercises\n• Real data exploration tools`);
+    }
+
+    /**
+     * Show NASA learning resources
+     */
+    showNASAResources(satelliteName) {
+        console.log(`Showing NASA resources for ${satelliteName}`);
+        // This could link to actual NASA educational materials
+        alert(`NASA Learning Resources: ${satelliteName}\n\nIn a full implementation, this would link to:\n• NASA mission pages\n• Educational datasets\n• Technical documentation\n• Interactive tutorials`);
+    }
+
+    /**
+     * Get recent data time (simulated)
+     */
+    getRecentDataTime() {
+        const now = new Date();
+        const recentTime = new Date(now.getTime() - Math.random() * 6 * 60 * 60 * 1000); // Within last 6 hours
+        return recentTime.toLocaleString();
+    }
+
+    /**
+     * Get next satellite pass time (simulated)
+     */
+    getNextPassTime(satelliteName) {
+        const now = new Date();
+        const nextPass = new Date(now.getTime() + Math.random() * 24 * 60 * 60 * 1000); // Within next 24 hours
+
+        const passData = {
+            'Landsat 8/9': {
+                duration: '8-12 minutes',
+                elevation: '70-85°'
+            },
+            'MODIS Terra/Aqua': {
+                duration: '5-8 minutes',
+                elevation: '60-90°'
+            },
+            'SMAP (Soil Moisture)': {
+                duration: '6-10 minutes',
+                elevation: '45-75°'
+            }
+        };
+
+        const data = passData[satelliteName] || passData['Landsat 8/9'];
+        return `${nextPass.toLocaleString()} (${data.duration}, ${data.elevation} elevation)`;
+    }
+
+    /**
+     * Generate educational insights for satellite
+     */
+    generateEducationalInsights(satelliteName) {
+        const insights = {
+            'Landsat 8/9': [
+                {
+                    icon: '',
+                    title: 'Perfect for Field-Level Analysis',
+                    text: 'At 30m resolution, you can see individual crop fields and monitor their health over time.'
+                },
+                {
+                    icon: '',
+                    title: 'Historical Trends',
+                    text: 'Landsat provides the longest continuous Earth observation record, dating back to 1972.'
+                },
+                {
+                    icon: '',
+                    title: 'Precision Agriculture',
+                    text: 'Ideal for variable rate application mapping and yield prediction at field scale.'
+                }
+            ],
+            'MODIS Terra/Aqua': [
+                {
+                    icon: '',
+                    title: 'Regional Monitoring',
+                    text: 'Best for tracking large-scale agricultural patterns and regional crop conditions.'
+                },
+                {
+                    icon: '',
+                    title: 'Daily Updates',
+                    text: 'Provides near real-time monitoring with daily global coverage for rapid change detection.'
+                },
+                {
+                    icon: '',
+                    title: 'Environmental Alerts',
+                    text: 'Excellent for detecting fires, floods, and other environmental hazards affecting crops.'
+                }
+            ],
+            'SMAP (Soil Moisture)': [
+                {
+                    icon: '',
+                    title: 'Soil Water Content',
+                    text: 'Measures soil moisture from surface (0-5cm) to root zone (0-100cm) depths.'
+                },
+                {
+                    icon: '',
+                    title: 'Weather Independence',
+                    text: 'Works through clouds and vegetation using microwave technology.'
+                },
+                {
+                    icon: '',
+                    title: 'Irrigation Planning',
+                    text: 'Essential for optimizing irrigation timing and water resource management.'
+                }
+            ]
+        };
+
+        const satelliteInsights = insights[satelliteName] || insights['Landsat 8/9'];
+        return satelliteInsights.map(insight => `
+            <div class="insight-card">
+                <div class="insight-icon">${insight.icon}</div>
+                <div class="insight-content">
+                    <h5>${insight.title}</h5>
+                    <p>${insight.text}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    /**
+     * Show satellite tracker interface
+     */
+    showSatelliteTracker(satelliteName) {
+        console.log(`Showing satellite tracker for ${satelliteName}`);
+
+        // Create satellite tracker interface
+        const trackerInfo = {
+            features: [
+                '• Real-time orbital position tracking',
+                '• 3D Earth visualization with satellite paths',
+                '• Pass prediction calculator for your location',
+                '• Coverage area visualization',
+                '• Ground track mapping',
+                '• Data acquisition schedules'
+            ],
+            apiIntegration: [
+                '• NASA HORIZONS API for precise orbital data',
+                '• Cesium.js for 3D Earth visualization',
+                '• Real-time TLE (Two-Line Element) updates',
+                '• Ground station visibility calculations'
+            ],
+            educationalValue: [
+                '• Understanding orbital mechanics',
+                '• Learning about satellite coverage patterns',
+                '• Connecting orbit to data collection',
+                '• Visualizing the "satellite constellation" concept'
+            ]
+        };
+
+        alert(`Live Satellite Tracker: ${satelliteName}\n\nFeatures:\n${trackerInfo.features.join('\n')}\n\nTechnical Integration:\n${trackerInfo.apiIntegration.join('\n')}\n\nEducational Value:\n${trackerInfo.educationalValue.join('\n')}\n\nTrack satellites as they orbit Earth in real-time!`);
+    }
+
+    /**
+     * Show next lesson
+     */
+    showNextLesson() {
+        console.log('Advancing to next lesson');
+
+        // Show pixel hunt introduction
+        this.ui.educationPanel.innerHTML = `
+            <div class="panel-header">
+                <h3>Pixel Hunt Training</h3>
+                <button class="close-panel-btn" aria-label="Close lesson">×</button>
+            </div>
+
+            <div class="panel-content">
+                <div class="lesson-intro">
+                    <h4>Ready for the Pixel Hunt Training?</h4>
+                    <p>Now that you understand satellite resolutions, let's test your skills! In this challenge, you'll identify features in satellite images at different resolutions.</p>
+                </div>
+
+                <div class="challenge-overview">
+                    <h4>Training Overview</h4>
+                    <div class="challenge-grid">
+                        <div class="challenge-level">
+                            <div class="level-badge beginner">Step 1</div>
+                            <h5>Landsat (30m)</h5>
+                            <p>🌾 Identify individual crop fields using high-resolution Landsat imagery</p>
+                            <div class="challenge-stats">
+                                <span>Resolution: 30m per pixel</span>
+                                <span>🎯 Focus: Field boundaries</span>
+                            </div>
+                        </div>
+
+                        <div class="challenge-level">
+                            <div class="level-badge intermediate">Step 2</div>
+                            <h5>MODIS (250m)</h5>
+                            <p>🗺️ Identify agricultural regions using medium-resolution MODIS data</p>
+                            <div class="challenge-stats">
+                                <span>Resolution: 250m per pixel</span>
+                                <span>🎯 Focus: Regional patterns</span>
+                            </div>
+                        </div>
+
+                        <div class="challenge-level">
+                            <div class="level-badge advanced">Step 3</div>
+                            <h5>SMAP (9km)</h5>
+                            <p>🏜️ Identify dry/desert regions using low-resolution soil moisture data</p>
+                            <div class="challenge-stats">
+                                <span>Resolution: 9km per pixel</span>
+                                <span>🎯 Focus: Moisture patterns</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="achievements-preview">
+                    <h4>Achievements to Unlock</h4>
+                    <div class="achievement-list">
+                        <div class="achievement-item">
+                            <span class="achievement-icon">🌾</span>
+                            <div class="achievement-text">
+                                <strong>Field Expert</strong>
+                                <p>Successfully identify crop fields in Landsat imagery</p>
+                            </div>
+                        </div>
+                        <div class="achievement-item">
+                            <span class="achievement-icon">🗺️</span>
+                            <div class="achievement-text">
+                                <strong>Regional Analyst</strong>
+                                <p>Correctly identify agricultural regions in MODIS data</p>
+                            </div>
+                        </div>
+                        <div class="achievement-item">
+                            <span class="achievement-icon">🏜️</span>
+                            <div class="achievement-text">
+                                <strong>Moisture Detective</strong>
+                                <p>Identify dry regions using SMAP soil moisture data</p>
+                            </div>
+                        </div>
+                        <div class="achievement-item">
+                            <span class="achievement-icon">🎯</span>
+                            <div class="achievement-text">
+                                <strong>Resolution Master</strong>
+                                <p>Complete all three resolution training steps</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lesson-navigation">
+                    <button class="back-btn">Back to Comparison</button>
+                    <div class="lesson-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 66%"></div>
+                        </div>
+                        <span>Lesson 2 of 3</span>
+                    </div>
+                    <button class="start-challenge-btn">Start Challenge!</button>
+                </div>
+            </div>
+        `;
+
+        // Attach event listeners for the challenge interface
+        this.attachChallengeEventListeners();
+    }
+
+    /**
+     * Attach event listeners for challenge interface
+     */
+    attachChallengeEventListeners() {
+        // Close button
+        const closePanelBtn = this.ui.educationPanel.querySelector('.close-panel-btn');
+        if (closePanelBtn) {
+            closePanelBtn.addEventListener('click', () => {
+                this.goBackToPixelOverview();
+            });
+        }
+
+        // Back button
+        const backBtn = this.ui.educationPanel.querySelector('.back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                // Go back to resolution comparison lesson
+                this.showResolutionComparisonLesson({ title: 'Understanding Satellite Pixels' });
+            });
+        }
+
+        // Start challenge button
+        const startChallengeBtn = this.ui.educationPanel.querySelector('.start-challenge-btn');
+        if (startChallengeBtn) {
+            startChallengeBtn.addEventListener('click', () => {
+                this.startPixelHuntChallenge();
+            });
+        }
+    }
+
+    /**
+     * Start the pixel hunt challenge
+     */
+    startPixelHuntChallenge() {
+        console.log('Starting pixel hunt challenge');
+
+        // This would integrate with the ResolutionManager
+        const challengeInfo = {
+            title: 'Pixel Hunt Training',
+            description: 'Test your satellite image interpretation skills!',
+            features: [
+                '• Interactive satellite image viewer',
+                '• Multiple difficulty levels',
+                '• Real-time scoring system',
+                '• Educational feedback',
+                '• Achievement tracking',
+                '• Performance analytics'
+            ],
+            integration: [
+                '• ResolutionManager for pixel hunt games',
+                '• Real satellite imagery from NASA APIs',
+                '• Adaptive difficulty based on performance',
+                '• Educational explanations for each answer'
+            ]
+        };
+
+        // Create interactive pixel hunt demo
+        this.showPixelHuntDemo();
+    }
+
+    /**
+     * Show interactive pixel hunt demo
+     */
+    showPixelHuntDemo() {
+        // Create full-screen pixel hunt interface
+        this.ui.educationPanel.innerHTML = `
+            <div class="panel-header">
+                <h3>Pixel Hunt Training - Live Demo</h3>
+                <button class="close-panel-btn" aria-label="Close demo">×</button>
+            </div>
+
+            <div class="panel-content">
+                <div class="demo-interface">
+                    <div class="challenge-instructions">
+                        <h4>Interactive Training: Find the Farm Fields!</h4>
+                        <p>Look at the satellite images below and identify the farm fields. Each resolution shows different levels of detail.</p>
+                        <div class="score-display">
+                            <span class="score-label">Score:</span>
+                            <span class="score-value" id="hunt-score">0</span>
+                            <span class="score-total">/ 100</span>
+                        </div>
+                    </div>
+
+                    <div class="pixel-hunt-grid">
+                        <div class="hunt-scenario" data-resolution="landsat" data-answer="field">
+                            <div class="scenario-header">
+                                <h5>Landsat (30m) - High Resolution</h5>
+                                <p>Can you spot the individual crop fields?</p>
+                            </div>
+                            <div class="hunt-image">
+                                <canvas class="real-satellite-preview" width="300" height="300" data-resolution="landsat" data-lat="33.4484" data-lon="-112.0740"></canvas>
+                                <div class="preview-overlay">
+                                    <div class="preview-instruction">This is the same Arizona farm region you'll analyze in the Pixel Hunt Challenge!</div>
+                                    <div class="preview-tips">
+                                        <strong>Landsat Tips:</strong>
+                                        <ul>
+                                            <li>Look for rectangular field patterns</li>
+                                            <li>Green areas indicate healthy crops</li>
+                                            <li>Brown areas may be fallow fields</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hunt-actions">
+                                <button class="hunt-marker-btn" data-correct="true" data-type="field">
+                                    🌾 Identify Crop Field
+                                </button>
+                                <button class="hunt-marker-btn" data-correct="false" data-type="wrong">
+                                    🏠 Identify Buildings
+                                </button>
+                            </div>
+                            <div class="hunt-feedback" id="landsat-feedback"></div>
+                        </div>
+
+                        <div class="hunt-scenario" data-resolution="modis" data-answer="region">
+                            <div class="scenario-header">
+                                <h5>MODIS (250m) - Medium Resolution</h5>
+                                <p>Identify the agricultural regions</p>
+                            </div>
+                            <div class="hunt-image">
+                                <canvas class="real-satellite-preview" width="300" height="300" data-resolution="modis" data-lat="33.4484" data-lon="-112.0740"></canvas>
+                                <div class="preview-overlay">
+                                    <div class="preview-instruction">MODIS view of the same region - notice how individual fields merge into larger patterns!</div>
+                                    <div class="preview-tips">
+                                        <strong>MODIS Tips:</strong>
+                                        <ul>
+                                            <li>Focus on general vegetation patterns</li>
+                                            <li>Look for large agricultural zones</li>
+                                            <li>NDVI values help identify crop health</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hunt-actions">
+                                <button class="hunt-marker-btn" data-correct="true" data-type="region">
+                                    🗺️ Identify Agricultural Region
+                                </button>
+                                <button class="hunt-marker-btn" data-correct="false" data-type="wrong">
+                                    🏔️ Identify Mountains
+                                </button>
+                            </div>
+                            <div class="hunt-feedback" id="modis-feedback"></div>
+                        </div>
+
+                        <div class="hunt-scenario" data-resolution="smap" data-answer="moisture">
+                            <div class="scenario-header">
+                                <h5>SMAP (9km) - Low Resolution</h5>
+                                <p>Identify the dry/desert regions</p>
+                            </div>
+                            <div class="hunt-image">
+                                <canvas class="real-satellite-preview" width="300" height="300" data-resolution="smap" data-lat="33.4484" data-lon="-112.0740"></canvas>
+                                <div class="preview-overlay">
+                                    <div class="preview-instruction">SMAP soil moisture data - perfect for understanding irrigation patterns!</div>
+                                    <div class="preview-tips">
+                                        <strong>SMAP Tips:</strong>
+                                        <ul>
+                                            <li>Red areas = dry soil/desert regions</li>
+                                            <li>This region shows low soil moisture</li>
+                                            <li>Indicates arid/semi-arid conditions</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hunt-actions">
+                                <button class="hunt-marker-btn" data-correct="false" data-type="wrong">
+                                    💧 Identify High Soil Moisture
+                                </button>
+                                <button class="hunt-marker-btn" data-correct="true" data-type="desert">
+                                    🏜️ Identify Desert Areas
+                                </button>
+                            </div>
+                            <div class="hunt-feedback" id="smap-feedback"></div>
+                        </div>
+                    </div>
+
+                    <div class="demo-results">
+                        <div class="progress-indicator">
+                            <div class="progress-ring">
+                                <div class="progress-fill" id="demo-progress" style="width: 0%"></div>
+                            </div>
+                            <span class="progress-text">0% Complete</span>
+                        </div>
+                        <div class="results-summary" id="results-summary" style="display: none;">
+                            <h4>Training Complete!</h4>
+                            <p>You've learned how different satellite resolutions reveal different agricultural information.</p>
+                            <div class="key-learnings">
+                                <div class="learning-point">
+                                    <strong>High Resolution (Landsat):</strong> See individual fields and boundaries
+                                </div>
+                                <div class="learning-point">
+                                    <strong>Medium Resolution (MODIS):</strong> Regional patterns and large-scale monitoring
+                                </div>
+                                <div class="learning-point">
+                                    <strong>Low Resolution (SMAP):</strong> Soil moisture over large areas
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lesson-navigation">
+                        <button class="back-btn">Back to Challenge</button>
+                        <div class="demo-controls">
+                            <button class="reset-demo-btn">Reset Demo</button>
+                            <button class="next-lesson-btn" style="display: none;">Complete Lesson</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Initialize the pixel hunt demo
+        this.initializePixelHuntDemo();
+    }
+
+    /**
+     * Initialize pixel hunt demo interactions
+     */
+    initializePixelHuntDemo() {
+        let score = 0;
+        let totalClicks = 0;
+        let correctClicks = 0;
+
+        // Add click handlers for markers
+        const markers = this.ui.educationPanel.querySelectorAll('[data-correct]');
+        markers.forEach(marker => {
+            marker.addEventListener('click', (e) => {
+                e.stopPropagation();
+                totalClicks++;
+
+                const isCorrect = marker.dataset.correct === 'true';
+                const scenario = marker.closest('.hunt-scenario');
+                const resolution = scenario.dataset.resolution;
+                const feedbackElement = document.getElementById(`${resolution}-feedback`);
+
+                if (isCorrect) {
+                    correctClicks++;
+                    score += 10;
+                    marker.classList.add('correct-click');
+                    feedbackElement.innerHTML = `<span class="correct">Correct! Good identification!</span>`;
+
+                    // Award individual achievement based on resolution
+                    this.awardIndividualAchievement(resolution);
+                } else {
+                    score = Math.max(0, score - 5);
+                    marker.classList.add('incorrect-click');
+                    feedbackElement.innerHTML = `<span class="incorrect">Not quite right. Try again!</span>`;
+                }
+
+                document.getElementById('hunt-score').textContent = score;
+                this.updateDemoProgress(correctClicks, totalClicks);
+            });
+        });
+
+        // Add navigation event listeners
+        this.attachDemoEventListeners();
+
+        // Load real satellite data previews
+        console.log('📡 About to load satellite previews in demo...');
+        setTimeout(() => {
+            console.log('📡 Timeout triggered, calling loadSatellitePreviews() in demo');
+            this.loadSatellitePreviews();
+        }, 500);
+    }
+
+    /**
+     * Update demo progress
+     */
+    updateDemoProgress(correct, total) {
+        const maxCorrect = 3; // 1 correct answer per scenario (3 scenarios total)
+        const progress = Math.min(100, (correct / maxCorrect) * 100);
+
+        document.getElementById('demo-progress').style.width = progress + '%';
+        document.querySelector('.progress-text').textContent = Math.round(progress) + '% Complete';
+
+        if (correct >= maxCorrect) {
+            setTimeout(() => {
+                document.getElementById('results-summary').style.display = 'block';
+                document.querySelector('.next-lesson-btn').style.display = 'inline-block';
+
+                // Award Resolution Master achievement
+                this.awardPixelHuntAchievements();
+            }, 500);
+        }
+    }
+
+    /**
+     * Attach demo event listeners
+     */
+    attachDemoEventListeners() {
+        // Close button
+        const closePanelBtn = this.ui.educationPanel.querySelector('.close-panel-btn');
+        if (closePanelBtn) {
+            closePanelBtn.addEventListener('click', () => {
+                this.goBackToPixelOverview();
+            });
+        }
+
+        // Back button
+        const backBtn = this.ui.educationPanel.querySelector('.back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                this.showNextLesson(); // Go back to challenge overview
+            });
+        }
+
+        // Reset demo button
+        const resetBtn = this.ui.educationPanel.querySelector('.reset-demo-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.showPixelHuntDemo(); // Restart the demo
+            });
+        }
+
+        // Complete lesson button
+        const nextLessonBtn = this.ui.educationPanel.querySelector('.next-lesson-btn');
+        if (nextLessonBtn) {
+            nextLessonBtn.addEventListener('click', () => {
+                this.showLessonCompletion();
+            });
+        }
+    }
+
+    /**
+     * Show lesson completion and progress to next lesson
+     */
+    showLessonCompletion() {
+        // Show completion screen with achievements and next steps
+        this.ui.educationPanel.innerHTML = `
+            <div class="panel-header">
+                <h3>Lesson Complete!</h3>
+                <button class="close-panel-btn" aria-label="Close panel">×</button>
+            </div>
+            <div class="panel-content lesson-completion">
+                <div class="completion-animation">
+                    <div class="success-icon"></div>
+                    <h2>Training Complete!</h2>
+                </div>
+
+                <div class="achievements-earned">
+                    <h4>Achievements Unlocked</h4>
+                    <div class="achievement-list">
+                        <div class="achievement-item">
+                            <span class="achievement-icon">🌾</span>
+                            <div class="achievement-info">
+                                <h5>Field Expert</h5>
+                                <p>Successfully identify crop fields in Landsat imagery</p>
+                            </div>
+                        </div>
+                        <div class="achievement-item">
+                            <span class="achievement-icon">🗺️</span>
+                            <div class="achievement-info">
+                                <h5>Regional Analyst</h5>
+                                <p>Correctly identify agricultural regions in MODIS data</p>
+                            </div>
+                        </div>
+                        <div class="achievement-item">
+                            <span class="achievement-icon">🏜️</span>
+                            <div class="achievement-info">
+                                <h5>Moisture Detective</h5>
+                                <p>Identify dry regions using SMAP soil moisture data</p>
+                            </div>
+                        </div>
+                        <div class="achievement-item">
+                            <span class="achievement-icon">🎯</span>
+                            <div class="achievement-info">
+                                <h5>Resolution Master</h5>
+                                <p>Complete all three resolution training steps</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lesson-summary">
+                    <h4>What You Learned</h4>
+                    <ul class="learning-points">
+                        <li>How satellite pixels represent real-world areas on Earth</li>
+                        <li>The difference between Landsat (30m), MODIS (250m), and SMAP (9km) resolutions</li>
+                        <li>When to use different satellite resolutions for agricultural monitoring</li>
+                        <li>How to identify agricultural features in satellite imagery</li>
+                    </ul>
+                </div>
+
+                <div class="next-steps">
+                    <h4>Next Steps</h4>
+                    <p>You're now ready to explore advanced satellite data analysis!</p>
+
+                    <div class="completion-actions">
+                        <button class="game-start-btn start-game-btn">
+                            🎮 Start Pixel Hunt Challenge!
+                        </button>
+                        <button class="primary-btn continue-learning-btn">
+                            Continue to Advanced Lessons
+                        </button>
+                        <button class="secondary-btn explore-data-btn">
+                            Explore Real Satellite Data
+                        </button>
+                        <button class="secondary-btn return-overview-btn">
+                            Return to Overview
+                        </button>
+                    </div>
+                </div>
+
+                <div class="progress-indicator">
+                    <div class="progress-text">Pixel Awareness Training: Complete</div>
+                    <div class="overall-progress">
+                        <span>Overall Progress: </span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: 25%"></div>
+                        </div>
+                        <span>25%</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add event listeners for completion actions
+        this.attachCompletionEventListeners();
+
+        // Log completion achievement
+        console.log('Pixel Awareness Training completed!');
+
+        // Emit completion event for tracking
+        if (this.gameEngine && this.gameEngine.getEventSystem) {
+            this.gameEngine.getEventSystem().emit('lesson:completed', {
+                lessonType: 'pixel_awareness',
+                achievements: ['pixel_detective', 'resolution_master', 'agricultural_analyst'],
+                completedAt: new Date()
+            });
+        }
+    }
+
+    /**
+     * Attach event listeners for lesson completion actions
+     */
+    attachCompletionEventListeners() {
+        // Close panel button
+        const closePanelBtn = this.ui.educationPanel.querySelector('.close-panel-btn');
+        if (closePanelBtn) {
+            closePanelBtn.addEventListener('click', () => {
+                // Switch to data visualization tab
+                const dataTab = document.querySelector('.tab[data-tab="data"]');
+                if (dataTab) {
+                    dataTab.click();
+                }
+            });
+        }
+
+        // Continue Learning button - proceed to next lesson module
+        const continueLearningBtn = this.ui.educationPanel.querySelector('.continue-learning-btn');
+        if (continueLearningBtn) {
+            continueLearningBtn.addEventListener('click', () => {
+                this.proceedToNextModule();
+            });
+        }
+
+        // Explore Real Data button - open data visualization
+        const exploreDataBtn = this.ui.educationPanel.querySelector('.explore-data-btn');
+        if (exploreDataBtn) {
+            exploreDataBtn.addEventListener('click', () => {
+                // Switch to data tab and highlight data exploration
+                const dataTab = document.querySelector('.tab[data-tab="data"]');
+                if (dataTab) {
+                    dataTab.click();
+                    // Show data exploration guidance
+                    setTimeout(() => {
+                        this.showDataExplorationGuide();
+                    }, 500);
+                }
+            });
+        }
+
+        // Start Game button - go to Pixel Hunt game
+        const startGameBtn = this.ui.educationPanel.querySelector('.start-game-btn');
+        if (startGameBtn) {
+            startGameBtn.addEventListener('click', () => {
+                // Find the pixel hunt tab button (not content)
+                const pixelHuntTabBtn = document.querySelector('.tab[data-tab="pixel-hunt"]');
+                if (pixelHuntTabBtn) {
+                    pixelHuntTabBtn.click();
+                } else {
+                    console.log('Pixel Hunt tab button not found');
+                    // Alternative: try to activate the tab content directly
+                    const pixelHuntContent = document.getElementById('pixelHuntTab');
+                    if (pixelHuntContent) {
+                        // Hide all other tab contents
+                        document.querySelectorAll('.tab-content').forEach(tab => {
+                            tab.classList.remove('active');
+                        });
+                        // Show pixel hunt content
+                        pixelHuntContent.classList.add('active');
+                        // Update tab buttons
+                        document.querySelectorAll('.tab').forEach(tab => {
+                            tab.classList.remove('active');
+                        });
+                        const pixelHuntBtn = document.querySelector('.tab[data-tab="pixel-hunt"]');
+                        if (pixelHuntBtn) {
+                            pixelHuntBtn.classList.add('active');
+                        }
+                    }
+                }
+            });
+        }
+
+        // Return to Overview button - go back to education overview
+        const returnOverviewBtn = this.ui.educationPanel.querySelector('.return-overview-btn');
+        if (returnOverviewBtn) {
+            returnOverviewBtn.addEventListener('click', () => {
+                this.goBackToPixelOverview();
+            });
+        }
+    }
+
+    /**
+     * Proceed to next education module
+     */
+    async proceedToNextModule() {
+        try {
+            console.log('Proceeding to next education module...');
+
+            // Try to get next lesson from education engine
+            const educationEngine = this.gameEngine.getManagers().education;
+            if (educationEngine && typeof educationEngine.getNextModule === 'function') {
+                const nextModule = await educationEngine.getNextModule('pixel_awareness');
+                if (nextModule) {
+                    this.showModuleContent(nextModule);
+                    return;
+                }
+            }
+
+            // Fallback: Show next available lesson
+            this.showNextAvailableLesson();
+
+        } catch (error) {
+            console.error('Failed to proceed to next module:', error);
+            this.showNextAvailableLesson();
+        }
+    }
+
+    /**
+     * Show next available lesson or module selection
+     */
+    showNextAvailableLesson() {
+        this.ui.educationPanel.innerHTML = `
+            <div class="panel-header">
+                <h3>Choose Your Next Learning Path</h3>
+                <button class="close-panel-btn" aria-label="Close panel">×</button>
+            </div>
+            <div class="panel-content next-lessons">
+                <div class="intro-text">
+                    <p>Great job completing the Pixel Awareness Training! Choose your next learning adventure:</p>
+                </div>
+
+                <div class="lesson-modules">
+                    <div class="module-card" data-module="temporal_analysis">
+                        <div class="module-icon"></div>
+                        <h4>Temporal Analysis</h4>
+                        <p>Learn how satellite data changes over time to monitor crop growth and seasonal patterns.</p>
+                        <div class="module-difficulty">Difficulty: Intermediate</div>
+                        <div class="module-duration">Duration: ~15 minutes</div>
+                        <button class="start-module-btn" data-module="temporal_analysis">Start Module</button>
+                    </div>
+
+                    <div class="module-card" data-module="spectral_analysis">
+                        <div class="module-icon"></div>
+                        <h4>Spectral Band Analysis</h4>
+                        <p>Discover how different spectral bands reveal crop health, water stress, and soil conditions.</p>
+                        <div class="module-difficulty">Difficulty: Advanced</div>
+                        <div class="module-duration">Duration: ~20 minutes</div>
+                        <button class="start-module-btn" data-module="spectral_analysis">Start Module</button>
+                    </div>
+
+                    <div class="module-card" data-module="data_integration">
+                        <div class="module-icon"></div>
+                        <h4>Multi-Source Data Integration</h4>
+                        <p>Learn to combine data from multiple satellites for comprehensive agricultural monitoring.</p>
+                        <div class="module-difficulty">Difficulty: Advanced</div>
+                        <div class="module-duration">Duration: ~25 minutes</div>
+                        <button class="start-module-btn" data-module="data_integration">Start Module</button>
+                    </div>
+
+                    <div class="module-card" data-module="practical_applications">
+                        <div class="module-icon"></div>
+                        <h4>Practical Farm Applications</h4>
+                        <p>Apply your knowledge to real-world farming scenarios and decision-making processes.</p>
+                        <div class="module-difficulty">Difficulty: Intermediate</div>
+                        <div class="module-duration">Duration: ~30 minutes</div>
+                        <button class="start-module-btn" data-module="practical_applications">Start Module</button>
+                    </div>
+                </div>
+
+                <div class="navigation-options">
+                    <button class="secondary-btn return-overview-btn">Return to Education Overview</button>
+                    <button class="secondary-btn explore-tools-btn">Explore Advanced Tools</button>
+                </div>
+            </div>
+        `;
+
+        // Attach event listeners for module selection
+        this.attachModuleSelectionListeners();
+
+        // Load real satellite data previews
+        console.log('📡 About to load satellite previews...');
+        setTimeout(() => {
+            console.log('📡 Timeout triggered, calling loadSatellitePreviews()');
+            this.loadSatellitePreviews();
+        }, 500);
+    }
+
+    /**
+     * Show data exploration guide for new learners
+     */
+    showDataExplorationGuide() {
+        // Create a temporary overlay guide
+        const guide = document.createElement('div');
+        guide.className = 'data-exploration-guide';
+        guide.innerHTML = `
+            <div class="guide-content">
+                <h3>Ready to Explore Real Satellite Data!</h3>
+                <p>Now that you understand satellite pixels, try these data exploration activities:</p>
+                <ul>
+                    <li>🗺️ Use the farm canvas to see different resolution views</li>
+                    <li>Check the data tablet for real agricultural metrics</li>
+                    <li>Try switching between Landsat, MODIS, and SMAP data</li>
+                    <li>Look for patterns in vegetation indices and soil moisture</li>
+                </ul>
+                <button class="got-it-btn">Got it!</button>
+            </div>
+        `;
+
+        document.body.appendChild(guide);
+
+        // Auto-remove guide after user clicks or 10 seconds
+        const gotItBtn = guide.querySelector('.got-it-btn');
+        const removeGuide = () => {
+            if (guide.parentNode) {
+                guide.parentNode.removeChild(guide);
+            }
+        };
+
+        gotItBtn.addEventListener('click', removeGuide);
+        setTimeout(removeGuide, 10000);
+    }
+
+    /**
+     * Attach event listeners for module selection
+     */
+    attachModuleSelectionListeners() {
+        // Close panel button
+        const closePanelBtn = this.ui.educationPanel.querySelector('.close-panel-btn');
+        if (closePanelBtn) {
+            closePanelBtn.addEventListener('click', () => {
+                const dataTab = document.querySelector('.tab[data-tab="data"]');
+                if (dataTab) dataTab.click();
+            });
+        }
+
+        // Module start buttons
+        this.ui.educationPanel.querySelectorAll('.start-module-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const moduleId = e.target.dataset.module;
+                this.startEducationModule(moduleId);
+            });
+        });
+
+        // Navigation buttons
+        const returnOverviewBtn = this.ui.educationPanel.querySelector('.return-overview-btn');
+        if (returnOverviewBtn) {
+            returnOverviewBtn.addEventListener('click', () => {
+                this.goBackToPixelOverview();
+            });
+        }
+
+        const exploreToolsBtn = this.ui.educationPanel.querySelector('.explore-tools-btn');
+        if (exploreToolsBtn) {
+            exploreToolsBtn.addEventListener('click', () => {
+                // Show advanced tools dropdown
+                const navButton = document.querySelector('.nav-button');
+                if (navButton) {
+                    navButton.click();
+                }
+            });
+        }
+    }
+
+    /**
+     * Start a specific education module
+     */
+    startEducationModule(moduleId) {
+        console.log(`🎓 Starting education module: ${moduleId}`);
+
+        // For now, show a placeholder for the requested module
+        this.ui.educationPanel.innerHTML = `
+            <div class="panel-header">
+                <h3>🚧 Module Coming Soon</h3>
+                <button class="close-panel-btn" aria-label="Close panel">×</button>
+            </div>
+            <div class="panel-content module-placeholder">
+                <div class="construction-notice">
+                    <div class="construction-icon">🚧</div>
+                    <h2>${this.getModuleName(moduleId)}</h2>
+                    <p>This advanced learning module is currently under development.</p>
+                </div>
+
+                <div class="coming-soon-features">
+                    <h4>Coming Soon:</h4>
+                    <ul>
+                        ${this.getModuleFeatures(moduleId).map(feature => `<li>${feature}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="alternative-actions">
+                    <h4>In the meantime, try:</h4>
+                    <button class="primary-btn explore-data-btn">Explore Real Satellite Data</button>
+                    <button class="secondary-btn try-advanced-tools-btn">Try Advanced Visualization Tools</button>
+                    <button class="secondary-btn return-overview-btn">Return to Education Overview</button>
+                </div>
+            </div>
+        `;
+
+        // Attach placeholder event listeners
+        this.attachPlaceholderListeners();
+    }
+
+    /**
+     * Get module name for display
+     */
+    getModuleName(moduleId) {
+        const names = {
+            'temporal_analysis': 'Temporal Analysis Module',
+            'spectral_analysis': 'Spectral Band Analysis Module',
+            'data_integration': 'Multi-Source Data Integration Module',
+            'practical_applications': 'Practical Farm Applications Module'
+        };
+        return names[moduleId] || 'Advanced Learning Module';
+    }
+
+    /**
+     * Get module features for display
+     */
+    getModuleFeatures(moduleId) {
+        const features = {
+            'temporal_analysis': [
+                'Interactive time-series analysis tools',
+                'Crop growth stage identification',
+                'Seasonal pattern recognition exercises',
+                'Drought and flood impact assessment'
+            ],
+            'spectral_analysis': [
+                'Interactive spectral signature explorer',
+                'NDVI and other vegetation indices',
+                'Water stress detection techniques',
+                'Soil composition analysis methods'
+            ],
+            'data_integration': [
+                'Multi-satellite data fusion techniques',
+                'Cross-platform data calibration',
+                'Complementary sensor combinations',
+                'Integrated decision-making workflows'
+            ],
+            'practical_applications': [
+                'Real farm scenario simulations',
+                'Economic impact calculations',
+                'Precision agriculture workflows',
+                'ROI analysis for satellite data use'
+            ]
+        };
+        return features[moduleId] || ['Advanced interactive lessons', 'Hands-on exercises', 'Real-world applications'];
+    }
+
+    /**
+     * Attach event listeners for module placeholders
+     */
+    attachPlaceholderListeners() {
+        // Close panel
+        const closePanelBtn = this.ui.educationPanel.querySelector('.close-panel-btn');
+        if (closePanelBtn) {
+            closePanelBtn.addEventListener('click', () => {
+                const dataTab = document.querySelector('.tab[data-tab="data"]');
+                if (dataTab) dataTab.click();
+            });
+        }
+
+        // Explore data button
+        const exploreDataBtn = this.ui.educationPanel.querySelector('.explore-data-btn');
+        if (exploreDataBtn) {
+            exploreDataBtn.addEventListener('click', () => {
+                const dataTab = document.querySelector('.tab[data-tab="data"]');
+                if (dataTab) {
+                    dataTab.click();
+                    setTimeout(() => this.showDataExplorationGuide(), 500);
+                }
+            });
+        }
+
+        // Try advanced tools button
+        const tryAdvancedBtn = this.ui.educationPanel.querySelector('.try-advanced-tools-btn');
+        if (tryAdvancedBtn) {
+            tryAdvancedBtn.addEventListener('click', () => {
+                const navButton = document.querySelector('.nav-button');
+                if (navButton) navButton.click();
+            });
+        }
+
+        // Return to overview
+        const returnOverviewBtn = this.ui.educationPanel.querySelector('.return-overview-btn');
+        if (returnOverviewBtn) {
+            returnOverviewBtn.addEventListener('click', () => {
+                this.goBackToPixelOverview();
+            });
+        }
+    }
+
+    /**
+     * Initialize data visualization
+     */
+    async initializeDataVisualization() {
+        console.log('🔄 Initializing data visualization - NEW LAYOUT');
+
+        if (!this.ui.dataDisplay) {
+            console.warn('Data display element not found');
+            return;
+        }
+
+        console.log('Data display element found:', this.ui.dataDisplay);
+
+        // Initialize data visualization with new vertical scroll layout
+        this.ui.dataDisplay.innerHTML = `
+            <div class="satellite-data-tab">
+                <!-- 섹션 1: 상단 영역 -->
+                <div class="top-section">
+                    <div class="data-controls">
+                        <div class="data-controls-header">
+                            <h3 class="data-controls-title">Real-Time Satellite Data</h3>
+                            <div class="data-controls-buttons">
+                                <button id="autoRefreshBtn" class="btn-secondary">
+                                    <span class="btn-icon">🔄</span>
+                                    <span class="btn-text">Auto Refresh</span>
+                                </button>
+                                <button id="exportDataBtn" class="btn-primary">
+                                    <span class="btn-text">Export</span>
+                                </button>
+                                <button id="mlPredictBtn" class="btn-primary">
+                                    <span class="btn-text">🟢 ML Predict</span>
+                                </button>
+                                <button id="mlAnomalyBtn" class="btn-secondary">
+                                    <span class="btn-text">🔴 Anomaly Check</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="location-section">
+                            <label>Location:</label>
+                            <div class="location-inputs">
+                                <input type="number" id="latInput" placeholder="Latitude" value="43.2220" step="0.0001" style="width: 130px; padding: 7px; font-size: 13px;">
+                                <input type="number" id="lonInput" placeholder="Longitude" value="106.9057" step="0.0001" style="width: 130px; padding: 7px; font-size: 13px;">
+                            </div>
+                            <label>Resolution:</label>
+                            <select id="resolutionSelect" style="width: 100%; padding: 8px; font-size: 14px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="9000">SMAP 9km - Soil Moisture</option>
+                                <option value="250">MODIS 250m - Vegetation</option>
+                                <option value="30">Landsat 30m - High Detail</option>
+                            </select>
+                            <button id="fetchDataBtn" class="btn-primary fetch-data-btn">
+                                <span class="btn-text">Fetch Data</span>
+                            </button>
+                            <div class="status-bar">
+                                <span class="status" id="dataStatus">🔴 Ready to fetch data</span>
+                                <span class="last-update" id="lastUpdate">Last update: Never</span>
+                            </div>
+                        </div>
+
+                        <div class="anomaly-section">
+                            <div class="section-header" onclick="app.toggleAnomalySection(this)">
+                                <span>🔴 Anomaly Detection Results</span>
+                                <span class="toggle-icon">▼</span>
+                            </div>
+                            <div class="section-content" id="anomalyContent">
+                                <p style="text-align: center; color: #757575; font-size: 14px; padding: 20px;">
+                                    Click "🔴 Anomaly Check" button to run anomaly detection
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <div class="chart-header">
+                            <h4>Data Overview</h4>
+                            <div class="chart-controls">
+                                <select id="chartTypeSelect">
+                                    <option value="line">Line Chart</option>
+                                    <option value="bar">Bar Chart</option>
+                                    <option value="radar">Radar Chart</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="dataChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 섹션 2: 데이터 카드들 -->
+                <div class="data-cards-container">
+                    <h3>Satellite Data Cards</h3>
+                    <div class="data-cards-grid">
+                        <div class="data-card enhanced" id="smapCard">
+                            <div class="card-header">
+                                <h4>SMAP Soil Moisture</h4>
+                                <div class="card-status" id="smapStatus">📶</div>
+                            </div>
+                            <div class="data-content" id="smapContent">
+                                <div class="no-data-message">Click "Fetch Data" to load satellite data</div>
+                            </div>
+                            <div class="mini-chart-container">
+                                <canvas id="smapChart" width="200" height="100"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="data-card enhanced" id="modisCard">
+                            <div class="card-header">
+                                <h4>MODIS Vegetation</h4>
+                                <div class="card-status" id="modisStatus">📶</div>
+                            </div>
+                            <div class="data-content" id="modisContent">
+                                <div class="no-data-message">Click "Fetch Data" to load satellite data</div>
+                            </div>
+                            <div class="mini-chart-container">
+                                <canvas id="modisChart" width="200" height="100"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="data-card enhanced" id="landsatCard">
+                            <div class="card-header">
+                                <h4>Landsat Imagery</h4>
+                                <div class="card-status" id="landsatStatus">📶</div>
+                            </div>
+                            <div class="data-content" id="landsatContent">
+                                <div class="no-data-message">Click "Fetch Data" to load satellite data</div>
+                            </div>
+                            <div class="mini-chart-container">
+                                <canvas id="landsatChart" width="200" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 섹션 3: 히스토리컬 데이터 -->
+                <div class="historical-section">
+                    <h3>Historical Data Trends</h3>
+                    <div class="historical-header">
+                        <div class="time-range-selector">
+                            <select id="timeRangeSelect">
+                                <option value="7">Last 7 days</option>
+                                <option value="30">Last 30 days</option>
+                                <option value="90">Last 3 months</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="historical-chart-container">
+                        <canvas id="historicalChart" width="800" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Initialize charts and event listeners
+        this.initializeCharts();
+        this.setupDataVisualizationEvents();
+
+        // Initialize with sample historical data
+        this.initializeHistoricalData();
+    }
+
+    /**
+     * Initialize all charts for data visualization
+     */
+    initializeCharts() {
+        // Check if Chart.js is loaded
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js not loaded yet, retrying...');
+            // Add timeout to prevent infinite retries
+            if (!this.chartRetryCount) this.chartRetryCount = 0;
+            this.chartRetryCount++;
+
+            if (this.chartRetryCount > 10) {
+                console.error('Chart.js failed to load after 10 retries, skipping charts');
+                return;
+            }
+
+            setTimeout(() => this.initializeCharts(), 500);
+            return;
+        }
+
+        console.log('✅ Chart.js is available, initializing charts');
+
+        // Initialize main data chart
+        this.initializeMainChart();
+
+        // Initialize mini charts for each data source
+        this.initializeMiniCharts();
+
+        // Initialize historical chart
+        this.initializeHistoricalChart();
+    }
+
+    /**
+     * Initialize main data overview chart
+     */
+    initializeMainChart() {
+        const ctx = document.getElementById('dataChart');
+        if (!ctx) {
+            console.warn('dataChart canvas element not found');
+            return;
+        }
+
+        try {
+            this.mainChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['SMAP Surface', 'SMAP Root Zone', 'MODIS NDVI', 'MODIS EVI', 'Landsat NDVI', 'Landsat Temp'],
+                datasets: [{
+                    label: 'Current Values',
+                    data: [0, 0, 0, 0, 0, 0],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Satellite Data Overview',
+                        font: { size: 16, weight: 'bold' }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+        } catch (error) {
+            console.error('❌ Failed to initialize main chart:', error);
+        }
+    }
+
+    /**
+     * Initialize mini charts for each data card
+     */
+    initializeMiniCharts() {
+        try {
+            // SMAP mini chart
+            const smapCtx = document.getElementById('smapChart');
+            if (smapCtx) {
+                this.smapMiniChart = new Chart(smapCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Surface Moisture',
+                        data: [],
+                        borderColor: '#2980b9',
+                        backgroundColor: 'rgba(41, 128, 185, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Root Zone Moisture',
+                        data: [],
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+
+        // MODIS mini chart
+        const modisCtx = document.getElementById('modisChart');
+        if (modisCtx) {
+            this.modisMiniChart = new Chart(modisCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'NDVI',
+                        data: [],
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Landsat mini chart
+        const landsatCtx = document.getElementById('landsatChart');
+        if (landsatCtx) {
+            this.landsatMiniChart = new Chart(landsatCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'NDVI',
+                        data: [],
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+        } catch (error) {
+            console.error('❌ Failed to initialize mini charts:', error);
+        }
+    }
+
+    /**
+     * Initialize historical trends chart
+     */
+    initializeHistoricalChart() {
+        const ctx = document.getElementById('historicalChart');
+        if (!ctx) return;
+
+        try {
+            this.historicalChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'SMAP Surface Moisture',
+                    data: [],
+                    borderColor: '#2980b9',
+                    backgroundColor: 'rgba(41, 128, 185, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                }, {
+                    label: 'MODIS NDVI',
+                    data: [],
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                }, {
+                    label: 'Landsat NDVI',
+                    data: [],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Historical Data Trends',
+                        font: { size: 16, weight: 'bold' }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'category',
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: 1,
+                        title: {
+                            display: true,
+                            text: 'Value'
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+        } catch (error) {
+            console.error('❌ Failed to initialize historical chart:', error);
+        }
+    }
+
+    /**
+     * Setup event listeners for data visualization
+     */
+    setupDataVisualizationEvents() {
+        console.log('Setting up data visualization events');
+
+        // Use setTimeout to ensure DOM is fully ready
+        setTimeout(() => {
+            // Fetch data button
+            const fetchDataBtn = document.getElementById('fetchDataBtn');
+            console.log('fetchDataBtn element found:', !!fetchDataBtn);
+
+            if (fetchDataBtn) {
+                // Remove any existing listeners first
+                const newFetchBtn = fetchDataBtn.cloneNode(true);
+                fetchDataBtn.parentNode.replaceChild(newFetchBtn, fetchDataBtn);
+
+                newFetchBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('🖱️ fetchDataBtn clicked - calling fetchSampleData');
+                    try {
+                        this.fetchSampleData();
+                    } catch (error) {
+                        console.error('❌ Error calling fetchSampleData:', error);
+                    }
+                });
+                console.log('fetchDataBtn event listener attached');
+            } else {
+                console.error('fetchDataBtn element not found');
+                // Retry after a short delay
+                setTimeout(() => {
+                    this.setupDataVisualizationEvents();
+                }, 500);
+                return;
+            }
+
+            // Auto refresh toggle
+            const autoRefreshBtn = document.getElementById('autoRefreshBtn');
+            if (autoRefreshBtn) {
+                autoRefreshBtn.addEventListener('click', () => {
+                    this.toggleAutoRefresh();
+                });
+            }
+
+            // Export data button
+            const exportDataBtn = document.getElementById('exportDataBtn');
+            if (exportDataBtn) {
+                exportDataBtn.addEventListener('click', () => {
+                    this.exportData();
+                });
+            }
+
+            // ML Prediction button
+            const mlPredictBtn = document.getElementById('mlPredictBtn');
+            if (mlPredictBtn) {
+                mlPredictBtn.addEventListener('click', () => {
+                    this.runMLPrediction();
+                });
+            }
+
+            // ML Anomaly Detection button
+            const mlAnomalyBtn = document.getElementById('mlAnomalyBtn');
+            if (mlAnomalyBtn) {
+                mlAnomalyBtn.addEventListener('click', () => {
+                    this.runAnomalyDetection();
+                });
+            }
+
+            // Chart type selector
+            const chartTypeSelect = document.getElementById('chartTypeSelect');
+            if (chartTypeSelect) {
+                chartTypeSelect.addEventListener('change', (e) => {
+                    this.changeChartType(e.target.value);
+                });
+            }
+
+            // Time range selector for historical data
+            const timeRangeSelect = document.getElementById('timeRangeSelect');
+            if (timeRangeSelect) {
+                timeRangeSelect.addEventListener('change', (e) => {
+                    this.updateHistoricalData(parseInt(e.target.value));
+                });
+            }
+
+            // Resolution change listener
+            const resolutionSelect = document.getElementById('resolutionSelect');
+            if (resolutionSelect) {
+                resolutionSelect.addEventListener('change', (e) => {
+                    this.handleResolutionChange(e);
+                });
+            }
+
+        }, 100); // End setTimeout
+    }
+
+    /**
+     * Initialize historical data with sample data
+     */
+    initializeHistoricalData() {
+        const days = 30;
+        const labels = [];
+        const smapData = [];
+        const modisData = [];
+        const landsatData = [];
+
+        // Generate sample historical data
+        for (let i = days; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(date.toISOString().split('T')[0]);
+
+            // Generate realistic sample data with some variation
+            smapData.push(0.2 + Math.sin(i * 0.1) * 0.1 + Math.random() * 0.05);
+            modisData.push(0.6 + Math.sin(i * 0.15) * 0.2 + Math.random() * 0.1);
+            landsatData.push(0.7 + Math.sin(i * 0.12) * 0.15 + Math.random() * 0.08);
+        }
+
+        // Update historical chart
+        if (this.historicalChart) {
+            this.historicalChart.data.labels = labels;
+            this.historicalChart.data.datasets[0].data = smapData;
+            this.historicalChart.data.datasets[1].data = modisData;
+            this.historicalChart.data.datasets[2].data = landsatData;
+            this.historicalChart.update();
+        }
+    }
+
+    /**
+     * Start an education module
+     */
+    async startEducationModule(moduleId) {
+        try {
+            const educationEngine = this.gameEngine.getManagers().education;
+            const result = await educationEngine.startModule(moduleId, {
+                experience: 'beginner',
+                farmingContext: 'tutorial'
+            });
+
+            if (result.status === 'started') {
+                this.showEducationModule(result.session, result.firstLesson);
+            } else if (result.status === 'prerequisites_required') {
+                this.showPrerequisiteMessage(result.missing, result.recommendations);
+            }
+        } catch (error) {
+            console.error('Failed to start education module:', error);
+            this.showErrorMessage('Failed to start learning module');
+        }
+    }
+
+    /**
+     * Show education module interface
+     */
+    showEducationModule(session, firstLesson) {
+        const educationPanel = document.getElementById('educationPanel');
+        if (!educationPanel) {
+            console.warn('Education panel not found');
+            return;
+        }
+
+        // Check if lesson content already exists to prevent duplicates
+        if (document.querySelector('.education-session')) {
+            console.log('Education session already exists, not creating duplicate');
+            return;
+        }
+
+        // Store original content if not already stored
+        if (!this.originalEducationContent) {
+            this.originalEducationContent = educationPanel.innerHTML;
+        }
+
+        // Extract description from lesson content based on lesson structure
+        let lessonDescription;
+        if (firstLesson.content?.explanation) {
+            lessonDescription = firstLesson.content.explanation;
+        } else if (firstLesson.description) {
+            lessonDescription = firstLesson.description;
+        } else {
+            // Create module-specific descriptions
+            switch (session.id) {
+                case 'depth_analysis':
+                    lessonDescription = 'Learn about soil moisture at different depths and how SMAP L3 and L4 data help farmers understand water availability.';
+                    break;
+                case 'satellite_systems':
+                    lessonDescription = 'Explore NASA\'s Earth observation satellites and understand how they work together to monitor our planet.';
+                    break;
+                case 'pixel_awareness':
+                default:
+                    lessonDescription = 'Learn the fundamentals of satellite imagery and pixel understanding.';
+                    break;
+            }
+        }
+
+        educationPanel.innerHTML = `
+            <div class="education-session">
+                <div class="panel-header">
+                    <h3>📚 ${session.title}</h3>
+                    <button class="close-panel-btn" onclick="app.closeEducationModule()">×</button>
+                </div>
+                <div class="lesson-content">
+                    <h4>${firstLesson.title}</h4>
+                    <p>${lessonDescription}</p>
+                    <div class="lesson-objectives">
+                        <h5>Learning Objectives:</h5>
+                        <ul>
+                            ${(firstLesson.learningObjectives || []).map(obj => `<li>${obj}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="lesson-progress">
+                        <div class="progress-bar" style="width: 0%"></div>
+                    </div>
+                    <button class="start-lesson-btn" onclick="app.startLesson('${firstLesson.id}')">
+                        Start Lesson
+                    </button>
+                </div>
+            </div>
+        `;
+        educationPanel.style.display = 'block';
+    }
+
+    /**
+     * Show prerequisite message
+     */
+    showPrerequisiteMessage(missing, recommendations) {
+        const educationPanel = document.getElementById('educationPanel');
+        if (!educationPanel) {
+            console.warn('Education panel not found');
+            return;
+        }
+
+        // Store original content if not already stored
+        if (!this.originalEducationContent) {
+            this.originalEducationContent = educationPanel.innerHTML;
+        }
+
+        educationPanel.innerHTML = `
+            <div class="prerequisite-message">
+                <div class="panel-header">
+                    <h3>📋 Prerequisites Required</h3>
+                    <button class="close-panel-btn" onclick="app.closeEducationModule()">×</button>
+                </div>
+                <div class="prerequisite-content">
+                    <p>Please complete the following modules first:</p>
+                    <ul class="missing-prerequisites">
+                        ${missing.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                    <div class="recommendations">
+                        <h4>Recommended Path:</h4>
+                        <ol>
+                            ${recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ol>
+                    </div>
+                    <button class="understand-btn" onclick="app.closeEducationModule()">
+                        I Understand
+                    </button>
+                </div>
+            </div>
+        `;
+        educationPanel.style.display = 'block';
+    }
+
+    /**
+     * Close education module
+     */
+    closeEducationModule() {
+        const educationPanel = document.getElementById('educationPanel');
+        if (educationPanel) {
+            // Remove any lesson content or education sessions
+            const existingLesson = document.querySelector('.lesson-content');
+            const existingSession = document.querySelector('.education-session');
+
+            if (existingLesson) {
+                existingLesson.remove();
+            }
+            if (existingSession) {
+                existingSession.remove();
+            }
+
+            // Restore original content instead of just hiding
+            if (this.originalEducationContent) {
+                educationPanel.innerHTML = this.originalEducationContent;
+                // Re-attach event listeners for the original content
+                this.attachEducationEventListeners();
+            }
+            educationPanel.style.display = 'block';
+        }
+    }
+
+    /**
+     * Re-attach event listeners to education panel
+     */
+    attachEducationEventListeners() {
+        const educationPanel = document.getElementById('educationPanel');
+        if (!educationPanel) return;
+
+        // Add module event listeners
+        educationPanel.querySelectorAll('.start-module-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const moduleCard = e.target.closest('.module-card');
+                const moduleId = moduleCard.dataset.module;
+                this.startEducationModule(moduleId);
+            });
+        });
+
+        // Update achievements display
+        this.updateAchievements();
+    }
+
+    /**
+     * Start a specific lesson
+     */
+    async startLesson(lessonId) {
+        try {
+            const educationEngine = this.gameEngine.getManagers().education;
+            const result = await educationEngine.startLesson(lessonId);
+
+            if (result.status === 'started') {
+                // Update lesson interface
+                this.showLessonContent(result.lesson);
+            }
+        } catch (error) {
+            console.error('Failed to start lesson:', error);
+            this.showErrorMessage('Failed to start lesson');
+        }
+    }
+
+    /**
+     * Show lesson content
+     */
+    showLessonContent(lesson) {
+        const educationPanel = document.getElementById('educationPanel');
+        if (!educationPanel) return;
+
+        const lessonContent = educationPanel.querySelector('.lesson-content');
+        if (lessonContent) {
+            // Properly render lesson content based on its structure
+            let contentHtml = '';
+
+            if (lesson.content && typeof lesson.content === 'object') {
+                // Handle structured content object
+                if (lesson.content.explanation) {
+                    contentHtml += `<p class="lesson-explanation">${lesson.content.explanation}</p>`;
+                }
+
+                if (lesson.content.visualization) {
+                    contentHtml += this.createVisualization(lesson.content.visualization, lesson.id);
+                }
+
+                if (lesson.content.interactives && lesson.content.interactives.length > 0) {
+                    contentHtml += `
+                        <div class="lesson-interactives">
+                            <h5>Interactive Elements</h5>
+                            <ul class="interactives-list">
+                                ${lesson.content.interactives.map(interactive =>
+                                    `<li>${interactive.replace('_', ' ').toUpperCase()}</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                if (lesson.content.datasets) {
+                    contentHtml += `
+                        <div class="lesson-datasets">
+                            <h5>Datasets Used</h5>
+                            <ul class="datasets-list">
+                                ${lesson.content.datasets.map(dataset =>
+                                    `<li>${dataset.replace('_', ' ').toUpperCase()}</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                if (lesson.content.satellites) {
+                    contentHtml += `
+                        <div class="lesson-satellites">
+                            <h5>Satellites Featured</h5>
+                            <ul class="satellites-list">
+                                ${lesson.content.satellites.map(satellite =>
+                                    `<li>${satellite}</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+            } else if (typeof lesson.content === 'string') {
+                // Handle simple string content
+                contentHtml = `<p class="lesson-explanation">${lesson.content}</p>`;
+            } else {
+                // Fallback content
+                contentHtml = `<p class="lesson-explanation">Interactive lesson content for ${lesson.title}</p>`;
+            }
+
+            lessonContent.innerHTML = `
+                <h4>${lesson.title}</h4>
+                <div class="lesson-body">
+                    ${contentHtml}
+                </div>
+                <div class="lesson-progress">
+                    <div class="progress-bar" style="width: 0%"></div>
+                </div>
+                <div class="lesson-controls">
+                    ${lesson.hasNext ? `<button class="next-lesson-btn" onclick="app.nextLesson()">Next</button>` : ''}
+                    <button class="complete-lesson-btn" onclick="app.completeLesson('${lesson.id}')">Complete</button>
+                </div>
+            `;
+
+            // Initialize any visualizations that were just added
+            setTimeout(() => this.initializeVisualizations(lesson), 100);
+        }
+    }
+
+    /**
+     * Initialize visualizations after they're added to DOM
+     */
+    initializeVisualizations(lesson) {
+        if (lesson.content?.visualization === 'pixel_grid') {
+            const gridId = `pixel-grid-${lesson.id}`;
+            // Initialize the pixel grid with default values
+            this.updatePixelGrid(gridId, 2, 250);
+        }
+    }
+
+    /**
+     * Create visualization based on type
+     */
+    createVisualization(visualizationType, lessonId) {
+        switch (visualizationType) {
+            case 'pixel_grid':
+                return this.createPixelGridVisualization(lessonId);
+            case 'soil_profile_3d':
+                return this.createSoilProfileVisualization(lessonId);
+            case 'satellite_launch_history':
+                return this.createSatelliteTimelineVisualization(lessonId);
+            default:
+                return `
+                    <div class="lesson-visualization">
+                        <h5>Interactive Visualization</h5>
+                        <div class="visualization-placeholder">
+                            <p>${visualizationType.replace('_', ' ').toUpperCase()} visualization would appear here</p>
+                        </div>
+                    </div>
+                `;
+        }
+    }
+
+    /**
+     * Create interactive pixel grid visualization
+     */
+    createPixelGridVisualization(lessonId) {
+        const gridId = `pixel-grid-${lessonId}`;
+        const zoomId = `zoom-control-${lessonId}`;
+        const sizeId = `size-control-${lessonId}`;
+
+        return `
+            <div class="lesson-visualization pixel-grid-container">
+                <h5>Interactive Pixel Grid Visualization</h5>
+
+                <div class="visualization-controls">
+                    <div class="control-group">
+                        <label for="${zoomId}">Zoom Level:</label>
+                        <input type="range" id="${zoomId}" min="1" max="4" value="2" step="1"
+                               onchange="app.updatePixelGrid('${gridId}', this.value, document.getElementById('${sizeId}').value)">
+                        <span id="${zoomId}-value">2x</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="${sizeId}">Pixel Size (m):</label>
+                        <select id="${sizeId}" onchange="app.updatePixelGrid('${gridId}', document.getElementById('${zoomId}').value, this.value)">
+                            <option value="30">30m (Landsat)</option>
+                            <option value="250" selected>250m (MODIS)</option>
+                            <option value="500">500m (MODIS)</option>
+                            <option value="1000">1km (MODIS)</option>
+                            <option value="9000">9km (SMAP)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-comparison">
+                    <div class="grid-section">
+                        <h6>Satellite View</h6>
+                        <div id="${gridId}" class="pixel-grid-canvas"></div>
+                        <div class="grid-info">
+                            <span class="pixel-count">Grid: <span id="${gridId}-count">16x16</span></span>
+                            <span class="coverage-area">Area: <span id="${gridId}-area">4km²</span></span>
+                        </div>
+                    </div>
+
+                    <div class="resolution-comparison">
+                        <h6>Resolution Comparison</h6>
+                        <div class="resolution-examples">
+                            <div class="resolution-example landsat">
+                                <div class="example-grid landsat-grid"></div>
+                                <span>Landsat 30m</span>
+                            </div>
+                            <div class="resolution-example modis">
+                                <div class="example-grid modis-grid"></div>
+                                <span>MODIS 250m</span>
+                            </div>
+                            <div class="resolution-example smap">
+                                <div class="example-grid smap-grid"></div>
+                                <span>SMAP 9km</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="educational-insights">
+                    <h6>💡 Key Insights</h6>
+                    <ul class="insights-list">
+                        <li><strong>Pixel Size:</strong> Larger pixels cover more area but show less detail</li>
+                        <li><strong>Trade-off:</strong> Higher resolution = more detail but smaller coverage</li>
+                        <li><strong>Application:</strong> Choose resolution based on what you want to monitor</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Create soil profile visualization
+     */
+    createSoilProfileVisualization(lessonId) {
+        const profileId = `soil-profile-${lessonId}`;
+
+        return `
+            <div class="lesson-visualization soil-profile-container">
+                <h5>3D Soil Profile Visualization</h5>
+
+                <div class="soil-profile-display" id="${profileId}">
+                    <div class="soil-layers">
+                        <div class="soil-layer surface-layer" data-depth="0-5cm">
+                            <div class="layer-content">
+                                <span class="layer-label">Surface Layer (0-5cm)</span>
+                                <span class="smap-indicator">SMAP L3 measures here</span>
+                                <div class="moisture-indicator surface-moisture"></div>
+                            </div>
+                        </div>
+
+                        <div class="soil-layer root-zone-layer" data-depth="0-100cm">
+                            <div class="layer-content">
+                                <span class="layer-label">Root Zone (0-100cm)</span>
+                                <span class="smap-indicator">SMAP L4 estimates here</span>
+                                <div class="moisture-indicator root-moisture"></div>
+                            </div>
+                        </div>
+
+                        <div class="soil-layer deep-layer" data-depth="100cm+">
+                            <div class="layer-content">
+                                <span class="layer-label">Deep Soil (100cm+)</span>
+                                <span class="description">Groundwater influence</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="plant-root-system">
+                        <div class="plant-above-ground"></div>
+                        <div class="root-network"></div>
+                    </div>
+                </div>
+
+                <div class="moisture-controls">
+                    <h6>💧 Moisture Simulation</h6>
+                    <button onclick="app.simulateRainfall('${profileId}')" class="simulation-btn">
+                        🌧️ Simulate Rainfall
+                    </button>
+                    <button onclick="app.simulateDrought('${profileId}')" class="simulation-btn">
+                        ☀️ Simulate Drought
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Create satellite timeline visualization
+     */
+    createSatelliteTimelineVisualization(lessonId) {
+        const timelineId = `satellite-timeline-${lessonId}`;
+
+        return `
+            <div class="lesson-visualization timeline-container">
+                <h5>NASA Earth Observation Timeline</h5>
+
+                <div class="timeline-display" id="${timelineId}">
+                    <div class="timeline-track">
+                        <div class="timeline-event" data-year="1972" style="left: 10%;">
+                            <div class="event-marker landsat"></div>
+                            <div class="event-info">
+                                <span class="satellite-name">Landsat 1</span>
+                                <span class="launch-year">1972</span>
+                            </div>
+                        </div>
+
+                        <div class="timeline-event" data-year="1999" style="left: 40%;">
+                            <div class="event-marker modis"></div>
+                            <div class="event-info">
+                                <span class="satellite-name">Terra/MODIS</span>
+                                <span class="launch-year">1999</span>
+                            </div>
+                        </div>
+
+                        <div class="timeline-event" data-year="2014" style="left: 70%;">
+                            <div class="event-marker smap"></div>
+                            <div class="event-info">
+                                <span class="satellite-name">SMAP</span>
+                                <span class="launch-year">2015</span>
+                            </div>
+                        </div>
+
+                        <div class="timeline-event" data-year="2014" style="left: 85%;">
+                            <div class="event-marker gpm"></div>
+                            <div class="event-info">
+                                <span class="satellite-name">GPM</span>
+                                <span class="launch-year">2014</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="satellite-details">
+                    <div class="satellite-card active" data-satellite="landsat">
+                        <h6>Landsat Series</h6>
+                        <p>Longest-running Earth observation program</p>
+                        <ul>
+                            <li>Resolution: 30m</li>
+                            <li>Revisit: 16 days</li>
+                            <li>Bands: Visible, NIR, SWIR, Thermal</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Update pixel grid visualization
+     */
+    updatePixelGrid(gridId, zoom, pixelSize) {
+        const grid = document.getElementById(gridId);
+        const zoomValue = document.getElementById(gridId.replace('pixel-grid', 'zoom-control') + '-value');
+        const countSpan = document.getElementById(gridId + '-count');
+        const areaSpan = document.getElementById(gridId + '-area');
+
+        if (!grid) return;
+
+        // Update zoom display
+        if (zoomValue) zoomValue.textContent = zoom + 'x';
+
+        // Calculate grid parameters
+        const baseSize = 16;
+        const gridSize = Math.floor(baseSize / zoom);
+        const totalArea = Math.pow(gridSize * parseInt(pixelSize), 2) / 1000000; // km²
+
+        // Update info displays
+        if (countSpan) countSpan.textContent = `${gridSize}x${gridSize}`;
+        if (areaSpan) areaSpan.textContent = `${totalArea.toFixed(1)}km²`;
+
+        // Generate grid HTML
+        let gridHtml = '';
+        for (let i = 0; i < gridSize * gridSize; i++) {
+            const hue = Math.random() * 120 + 60; // Green to yellow range
+            const saturation = 50 + Math.random() * 30;
+            const lightness = 40 + Math.random() * 20;
+            gridHtml += `<div class="pixel" style="background: hsl(${hue}, ${saturation}%, ${lightness}%); width: ${100/gridSize}%; height: ${100/gridSize}%;" title="Pixel ${i + 1}: ${pixelSize}m resolution"></div>`;
+        }
+
+        grid.innerHTML = gridHtml;
+        grid.style.display = 'flex';
+        grid.style.flexWrap = 'wrap';
+        grid.style.width = '300px';
+        grid.style.height = '300px';
+        grid.style.border = '2px solid #333';
+        grid.style.backgroundColor = '#000';
+    }
+
+    /**
+     * Simulate rainfall on soil profile
+     */
+    simulateRainfall(profileId) {
+        const profile = document.getElementById(profileId);
+        if (!profile) return;
+
+        // Add rainfall animation
+        profile.classList.add('rainfall-simulation');
+
+        // Animate moisture levels
+        const surfaceMoisture = profile.querySelector('.surface-moisture');
+        const rootMoisture = profile.querySelector('.root-moisture');
+
+        if (surfaceMoisture) {
+            surfaceMoisture.style.width = '80%';
+            surfaceMoisture.style.backgroundColor = '#2196F3';
+        }
+
+        setTimeout(() => {
+            if (rootMoisture) {
+                rootMoisture.style.width = '60%';
+                rootMoisture.style.backgroundColor = '#42A5F5';
+            }
+        }, 1000);
+
+        setTimeout(() => {
+            profile.classList.remove('rainfall-simulation');
+        }, 3000);
+    }
+
+    /**
+     * Simulate drought conditions
+     */
+    simulateDrought(profileId) {
+        const profile = document.getElementById(profileId);
+        if (!profile) return;
+
+        const surfaceMoisture = profile.querySelector('.surface-moisture');
+        const rootMoisture = profile.querySelector('.root-moisture');
+
+        if (surfaceMoisture) {
+            surfaceMoisture.style.width = '20%';
+            surfaceMoisture.style.backgroundColor = '#FF5722';
+        }
+
+        if (rootMoisture) {
+            rootMoisture.style.width = '30%';
+            rootMoisture.style.backgroundColor = '#FF7043';
+        }
+    }
+
+    /**
+     * Go to next lesson
+     */
+    async nextLesson() {
+        try {
+            const educationEngine = this.gameEngine.getManagers().education;
+            const result = await educationEngine.getNextLesson();
+
+            if (result && result.lesson) {
+                this.showLessonContent(result.lesson);
+            } else {
+                this.showErrorMessage('No next lesson available');
+            }
+        } catch (error) {
+            console.error('Failed to get next lesson:', error);
+            this.showErrorMessage('Failed to load next lesson');
+        }
+    }
+
+    /**
+     * Complete current lesson
+     */
+    async completeLesson(lessonId) {
+        try {
+            const educationEngine = this.gameEngine.getManagers().education;
+            const result = await educationEngine.completeLesson(lessonId);
+
+            if (result.status === 'completed') {
+                // Show completion message
+                this.showSuccessMessage('Lesson completed successfully!');
+
+                // Update progress display
+                this.updateLearningProgress();
+
+                // Close education module after a short delay
+                setTimeout(() => {
+                    this.closeEducationModule();
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Failed to complete lesson:', error);
+            this.showErrorMessage('Failed to complete lesson');
+        }
+    }
+
+    /**
+     * Update learning progress display
+     */
+    updateLearningProgress() {
+        try {
+            const educationEngine = this.gameEngine.getManagers().education;
+            const progress = educationEngine.getProgress();
+
+            // Update progress indicators if they exist
+            const progressElements = document.querySelectorAll('.learning-progress-bar');
+            progressElements.forEach(element => {
+                element.style.width = `${progress.overallProgress * 100}%`;
+            });
+
+            // Update achievements
+            this.updateAchievements();
+        } catch (error) {
+            console.error('Failed to update learning progress:', error);
+        }
+    }
+
+    /**
+     * Show success message
+     */
+    showSuccessMessage(message) {
+        const statusDisplay = document.getElementById('statusDisplay');
+        if (statusDisplay) {
+            statusDisplay.innerHTML = `<div class="success-message">${message}</div>`;
+            setTimeout(() => {
+                statusDisplay.innerHTML = '';
+            }, 3000);
+        }
+    }
+
+    /**
+     * Fetch sample satellite data
+     */
+    async fetchSampleData() {
+        console.log('🔍 fetchSampleData called - starting data fetch process');
+
+        const latInput = document.getElementById('latInput');
+        const lonInput = document.getElementById('lonInput');
+        const resolutionSelect = document.getElementById('resolutionSelect');
+
+        console.log('DOM elements found:', {
+            latInput: !!latInput,
+            lonInput: !!lonInput,
+            resolutionSelect: !!resolutionSelect
+        });
+
+        if (!latInput || !lonInput || !resolutionSelect) {
+            console.error('Required input elements not found');
+            this.showNotification('❌ Error: Input elements not found', 'error');
+            return;
+        }
+
+        const lat = parseFloat(latInput.value);
+        const lon = parseFloat(lonInput.value);
+        const resolution = resolutionSelect.value;
+
+        console.log('Input values:', { lat, lon, resolution });
+
+        if (isNaN(lat) || isNaN(lon)) {
+            console.error('Invalid coordinates:', { lat, lon });
+            this.showErrorMessage('Please enter valid coordinates');
+            return;
+        }
+
+        // Check for authentication token
+        const token = this.getNASAToken();
+        console.log('🔑 Token check:', { hasToken: !!token, tokenLength: token?.length });
+
+        if (!token) {
+            console.log('⚠️ No token found, showing sample data instead');
+            this.showNotification('⚠️ No token found. Showing sample data. Authenticate for real NASA data.', 'info');
+            this.showSampleData();
+            return;
+        }
+
+        try {
+            // Show loading state
+            this.showDataLoading();
+            this.showNotification('Fetching real satellite data...', 'info');
+
+            // Fetch real NASA data with authentication
+            const promises = [
+                this.fetchSMAPData(lat, lon, token),
+                this.fetchMODISData(lat, lon, token),
+                this.fetchLandsatData(lat, lon, token)
+            ];
+
+            const [smapData, modisData, landsatData] = await Promise.allSettled(promises);
+
+            // Check if any data was successfully fetched
+            const hasValidData = smapData.status === 'fulfilled' ||
+                                modisData.status === 'fulfilled' ||
+                                landsatData.status === 'fulfilled';
+
+            if (hasValidData) {
+                // Update display with real data
+                this.updateDataCards({
+                    smap: smapData.status === 'fulfilled' ? smapData.value : null,
+                    modis: modisData.status === 'fulfilled' ? modisData.value : null,
+                    landsat: landsatData.status === 'fulfilled' ? landsatData.value : null
+                });
+
+                this.showNotification('✅ Real satellite data loaded!', 'success');
+            } else {
+                console.log('⚠️ All API requests failed, showing sample data');
+                this.showNotification('⚠️ API requests failed. Showing sample data.', 'info');
+                this.showSampleData();
+            }
+
+        } catch (error) {
+            console.error('Data fetch failed:', error);
+            this.showErrorMessage('Failed to fetch satellite data');
+
+            // Show sample data as fallback
+            this.showSampleData();
+        }
+    }
+
+    /**
+     * Fetch real SMAP data from NASA API
+     */
+    async fetchSMAPData(lat, lon, token) {
+        try {
+            console.log(`🛰️ Fetching SMAP data for ${lat}, ${lon} with token: ${token.substring(0, 8)}...`);
+
+            // Use proxy server for CORS handling
+            const response = await fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`SMAP API error: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ SMAP data received:', data);
+
+            return data;
+        } catch (error) {
+            console.error('SMAP data fetch failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Fetch real MODIS data from NASA API
+     */
+    async fetchMODISData(lat, lon, token) {
+        try {
+            console.log(`🌿 Fetching MODIS data for ${lat}, ${lon} with token: ${token.substring(0, 8)}...`);
+
+            // Use proxy server for CORS handling
+            const response = await fetch(`http://localhost:3001/api/modis/ndvi?lat=${lat}&lon=${lon}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`MODIS API error: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ MODIS data received:', data);
+
+            return data;
+        } catch (error) {
+            console.error('MODIS data fetch failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Fetch real Landsat data from NASA API
+     */
+    async fetchLandsatData(lat, lon, token) {
+        try {
+            console.log(`🛰️ Fetching Landsat data for ${lat}, ${lon} with token: ${token.substring(0, 8)}...`);
+
+            // Use proxy server for CORS handling
+            const response = await fetch(`http://localhost:3001/api/landsat/imagery?lat=${lat}&lon=${lon}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Landsat API error: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ Landsat data received:', data);
+
+            return data;
+        } catch (error) {
+            console.error('Landsat data fetch failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Show sample data as fallback
+     */
+    showSampleData() {
+        const sampleData = {
+            smap: {
+                surface_moisture: 0.25,
+                root_zone_moisture: 0.18,
+                source: 'Sample Data',
+                timestamp: new Date().toISOString(),
+                resolution: '9km'
+            },
+            modis: {
+                ndvi: 0.65,
+                evi: 0.55,
+                source: 'Sample Data',
+                timestamp: new Date().toISOString(),
+                resolution: '250m'
+            },
+            landsat: {
+                ndvi: 0.72,
+                temperature: 22.5,
+                source: 'Sample Data',
+                timestamp: new Date().toISOString(),
+                resolution: '30m'
+            }
+        };
+
+        this.updateDataCards(sampleData);
+        this.showNotification('Showing sample data (authenticate for real data)', 'info');
+    }
+
+    /**
+     * Toggle auto refresh functionality
+     */
+    toggleAutoRefresh() {
+        const btn = document.getElementById('autoRefreshBtn');
+        if (!btn) {
+            console.error('Auto refresh button not found');
+            return;
+        }
+
+        const icon = btn.querySelector('.btn-icon');
+        const text = btn.querySelector('.btn-text');
+
+        if (this.autoRefreshInterval) {
+            // Stop auto refresh
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+            btn.classList.remove('active');
+            if (icon) icon.textContent = '🔄';
+            if (text) text.textContent = 'Auto Refresh';
+            this.showNotification('Auto refresh disabled', 'info');
+        } else {
+            // Start auto refresh
+            this.autoRefreshInterval = setInterval(() => {
+                if (this.getNASAToken()) {
+                    this.fetchSampleData();
+                }
+            }, 30000); // Refresh every 30 seconds
+
+            btn.classList.add('active');
+            if (icon) icon.textContent = '⏸️';
+            if (text) text.textContent = 'Stop Refresh';
+            this.showNotification('Auto refresh enabled (30s interval)', 'success');
+        }
+    }
+
+    /**
+     * Export current data to JSON/CSV
+     */
+    exportData() {
+        if (!this.currentData) {
+            this.showNotification('No data to export. Fetch data first.', 'error');
+            return;
+        }
+
+        try {
+            // Prepare export data
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                location: {
+                    latitude: parseFloat(document.getElementById('latInput').value),
+                    longitude: parseFloat(document.getElementById('lonInput').value)
+                },
+                data: this.currentData,
+                metadata: {
+                    source: 'NASA Farm Navigators',
+                    version: '2.0.0',
+                    exported_by: this.isTokenAuthenticated() ? 'Authenticated User' : 'Guest'
+                }
+            };
+
+            // Create downloadable file
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+
+            // Download file
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `satellite_data_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            this.showNotification('Data exported successfully!', 'success');
+        } catch (error) {
+            console.error('Export failed:', error);
+            this.showNotification('Export failed', 'error');
+        }
+    }
+
+    /**
+     * Run ML-powered predictions for soil moisture and crop yield
+     */
+    async runMLPrediction() {
+        try {
+            this.showNotification('🟢 Running ML predictions...', 'info');
+
+            const latInput = document.getElementById('latInput');
+            const lonInput = document.getElementById('lonInput');
+
+            if (!latInput?.value || !lonInput?.value) {
+                this.showNotification('Please enter location coordinates first', 'error');
+                return;
+            }
+
+            const locationData = {
+                lat: parseFloat(latInput.value),
+                lon: parseFloat(lonInput.value)
+            };
+
+            // Get temporal analysis tools from game engine
+            const components = this.gameEngine.getAdvancedComponents();
+            const temporalTools = components.temporalAnalysisTools;
+
+            if (!temporalTools) {
+                this.showNotification('ML service not available', 'error');
+                return;
+            }
+
+            // Generate mock historical data for prediction
+            const historicalData = this.generateMockHistoricalData();
+
+            // Run soil moisture prediction
+            const soilPrediction = await temporalTools.predictSoilMoisture(locationData, historicalData);
+
+            // Mock satellite data for crop yield prediction
+            const satelliteData = {
+                soilMoisture: 0.3 + Math.random() * 0.4,
+                ndvi: 0.5 + Math.random() * 0.4,
+                temperature: 20 + Math.random() * 15,
+                precipitation: Math.random() * 100
+            };
+
+            // Run crop yield prediction (assuming corn)
+            const yieldPrediction = await temporalTools.predictCropYield('corn', locationData, satelliteData);
+
+            // Display results
+            this.displayMLPredictionResults(soilPrediction, yieldPrediction);
+            this.showNotification('🟢 ML predictions completed successfully!', 'success');
+
+        } catch (error) {
+            console.error('ML prediction failed:', error);
+            this.showNotification('ML prediction failed: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Run ML-powered anomaly detection
+     */
+    async runAnomalyDetection() {
+        try {
+            this.showNotification('🔴 Running anomaly detection...', 'info');
+
+            // Get temporal analysis tools
+            const components = this.gameEngine.getAdvancedComponents();
+            const temporalTools = components.temporalAnalysisTools;
+
+            if (!temporalTools) {
+                this.showNotification('ML service not available', 'error');
+                return;
+            }
+
+            // Generate mock time series data for anomaly detection
+            const timeSeriesData = this.generateMockTimeSeriesData();
+
+            // Run anomaly detection
+            const anomalies = await temporalTools.detectAnomalies(timeSeriesData);
+
+            // Display results
+            this.displayAnomalyResults(anomalies);
+            this.showNotification(`🔴 Found ${anomalies.anomalies.length} anomalies!`, 'success');
+
+        } catch (error) {
+            console.error('Anomaly detection failed:', error);
+            this.showNotification('Anomaly detection failed: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Generate mock historical data for ML predictions
+     */
+    generateMockHistoricalData() {
+        const data = [];
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30); // 30 days of history
+
+        for (let i = 0; i < 30; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+
+            data.push({
+                date: date.toISOString().split('T')[0],
+                value: 0.2 + Math.random() * 0.6, // Soil moisture 0.2-0.8
+                temperature: 15 + Math.random() * 20, // 15-35°C
+                precipitation: Math.random() * 10 // 0-10mm
+            });
+        }
+
+        return data;
+    }
+
+    /**
+     * Generate mock time series data for anomaly detection
+     */
+    generateMockTimeSeriesData() {
+        const data = [];
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 60); // 60 days of data
+
+        for (let i = 0; i < 60; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+
+            let value = 0.4 + 0.2 * Math.sin(i * 0.1) + Math.random() * 0.1; // Normal pattern
+
+            // Add some anomalies
+            if (i === 15 || i === 35 || i === 50) {
+                value += Math.random() > 0.5 ? 0.4 : -0.3; // Random anomalies
+            }
+
+            data.push({
+                date: date.toISOString().split('T')[0],
+                value: Math.max(0, Math.min(1, value))
+            });
+        }
+
+        return data;
+    }
+
+    /**
+     * Display ML prediction results in the chart section
+     */
+    displayMLPredictionResults(soilPrediction, yieldPrediction) {
+        const chartContainer = document.querySelector('.chart-section .chart-container');
+        if (!chartContainer) return;
+
+        chartContainer.innerHTML = `
+            <div class="ml-results-container">
+                <h3>🟢 ML Prediction Results</h3>
+
+                <div class="prediction-cards">
+                    <div class="prediction-card soil-moisture">
+                        <h4>Soil Moisture Forecast</h4>
+                        <div class="prediction-summary">
+                            <p><strong>Model:</strong> ${soilPrediction.model || 'Statistical Fallback'}</p>
+                            <p><strong>Accuracy:</strong> ${(soilPrediction.accuracy * 100).toFixed(0)}%</p>
+                            <p><strong>Next 7 days:</strong> ${soilPrediction.predictions?.slice(0, 7).map(p => p.soilMoisture.toFixed(2)).join(', ') || 'Stable conditions'}</p>
+                        </div>
+                    </div>
+
+                    <div class="prediction-card crop-yield">
+                        <h4>Crop Yield Prediction</h4>
+                        <div class="prediction-summary">
+                            <p><strong>Predicted Yield:</strong> ${yieldPrediction.predictedYield.toFixed(1)} bushels/acre</p>
+                            <p><strong>Confidence:</strong> ${(yieldPrediction.confidence * 100).toFixed(0)}%</p>
+                            <p><strong>Method:</strong> ${yieldPrediction.method || 'ML-enhanced estimation'}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ml-info">
+                    <p><small>Predictions based on satellite data, weather patterns, and machine learning models.
+                    Results are educational and should be validated with ground truth data.</small></p>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Toggle anomaly section visibility
+     */
+    toggleAnomalySection(headerElement) {
+        const content = headerElement.nextElementSibling;
+        const toggleIcon = headerElement.querySelector('.toggle-icon');
+
+        if (content.classList.contains('collapsed')) {
+            content.classList.remove('collapsed');
+            headerElement.classList.remove('collapsed');
+            toggleIcon.textContent = '▼';
+        } else {
+            content.classList.add('collapsed');
+            headerElement.classList.add('collapsed');
+            toggleIcon.textContent = '▶';
+        }
+    }
+
+    /**
+     * Display anomaly detection results
+     */
+    displayAnomalyResults(anomalies) {
+        const anomalyContent = document.getElementById('anomalyContent');
+        if (!anomalyContent) return;
+
+        const anomalyList = anomalies.anomalies.map(a =>
+            `<li>Date: ${a.date}, Value: ${a.value.toFixed(3)}, Severity: ${(a.severity * 100).toFixed(0)}% (${a.type})</li>`
+        ).join('');
+
+        anomalyContent.innerHTML = `
+            <div class="anomaly-summary">
+                <div class="summary-stats">
+                    <p><strong>Anomalies Found:</strong> ${anomalies.anomalies.length}</p>
+                    <p><strong>Detection Method:</strong> ${anomalies.method}</p>
+                    <p><strong>Confidence:</strong> ${(anomalies.confidence * 100).toFixed(0)}%</p>
+                </div>
+            </div>
+
+            ${anomalies.anomalies.length > 0 ? `
+                <div class="anomaly-list">
+                    <h4>Detected Anomalies:</h4>
+                    <ul>
+                        ${anomalyList}
+                    </ul>
+                </div>
+            ` : `
+                <div class="no-anomalies">
+                    <p>✅ No significant anomalies detected in the data.</p>
+                    <p>Conditions appear stable and within normal parameters.</p>
+                </div>
+            `}
+
+            <div class="anomaly-info">
+                <p><small>Anomaly detection helps identify unusual patterns that may require farmer attention.
+                High severity anomalies should be investigated immediately.</small></p>
+            </div>
+        `;
+
+        // Automatically expand the section when results are displayed
+        const sectionHeader = document.querySelector('.section-header');
+        const sectionContent = document.getElementById('anomalyContent');
+        if (sectionHeader && sectionContent) {
+            sectionContent.classList.remove('collapsed');
+            sectionHeader.classList.remove('collapsed');
+            sectionHeader.querySelector('.toggle-icon').textContent = '▼';
+        }
+    }
+
+    /**
+     * Change chart type for main chart
+     */
+    changeChartType(type) {
+        if (!this.mainChart) return;
+
+        try {
+            // Destroy current chart and create new one with different type
+            const data = this.mainChart.data;
+            const options = this.mainChart.options;
+
+            this.mainChart.destroy();
+
+            // Adjust options for different chart types
+            if (type === 'radar') {
+                options.scales = {
+                    r: {
+                        beginAtZero: true,
+                        max: 1
+                    }
+                };
+            } else {
+                options.scales = {
+                    y: {
+                        beginAtZero: true,
+                        max: 1
+                    }
+                };
+            }
+
+            // Create new chart
+            const ctx = document.getElementById('dataChart');
+            this.mainChart = new Chart(ctx, {
+                type: type,
+                data: data,
+                options: options
+            });
+
+            this.showNotification(`Chart type changed to ${type}`, 'success');
+        } catch (error) {
+            console.error('Failed to change chart type:', error);
+            this.showNotification('Failed to change chart type', 'error');
+        }
+    }
+
+    /**
+     * Update historical data for different time ranges
+     */
+    updateHistoricalData(days) {
+        if (!this.historicalChart) return;
+
+        const labels = [];
+        const smapData = [];
+        const modisData = [];
+        const landsatData = [];
+
+        // Generate data for the selected time range
+        for (let i = days; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(date.toISOString().split('T')[0]);
+
+            // Generate realistic sample data with seasonal patterns
+            const seasonalFactor = Math.sin((365 - i) * 2 * Math.PI / 365);
+            smapData.push(Math.max(0, 0.2 + seasonalFactor * 0.1 + Math.random() * 0.05));
+            modisData.push(Math.max(0, 0.6 + seasonalFactor * 0.2 + Math.random() * 0.1));
+            landsatData.push(Math.max(0, 0.7 + seasonalFactor * 0.15 + Math.random() * 0.08));
+        }
+
+        // Update chart
+        this.historicalChart.data.labels = labels;
+        this.historicalChart.data.datasets[0].data = smapData;
+        this.historicalChart.data.datasets[1].data = modisData;
+        this.historicalChart.data.datasets[2].data = landsatData;
+        this.historicalChart.update();
+
+        this.showNotification(`Historical data updated (${days} days)`, 'success');
+    }
+
+    /**
+     * Update data display cards
+     */
+    updateDataCards(data) {
+        console.log('updateDataCards called with data:', data);
+        // Store current data for export functionality
+        this.currentData = data;
+
+        // Update data status
+        this.updateDataStatus(data);
+
+        // Update SMAP card
+        const smapContent = document.getElementById('smapContent');
+        const smapStatus = document.getElementById('smapStatus');
+        if (smapContent) {
+            if (data.smap) {
+                smapContent.innerHTML = `
+                    <div class="data-value">Surface: ${data.smap.surface_moisture?.toFixed(3) || 'N/A'}</div>
+                    <div class="data-value">Root Zone: ${data.smap.root_zone_moisture?.toFixed(3) || 'N/A'}</div>
+                    <div class="data-meta">Source: ${data.smap.source || 'Unknown'}</div>
+                    <div class="data-meta">Time: ${new Date(data.smap.timestamp).toLocaleString()}</div>
+                    <div class="data-meta">Resolution: ${data.smap.resolution || 'Unknown'}</div>
+                `;
+                if (smapStatus) smapStatus.textContent = '✅';
+            } else {
+                smapContent.innerHTML = '<div class="error-message">Failed to load SMAP data</div>';
+                if (smapStatus) smapStatus.textContent = '❌';
+            }
+        }
+
+        // Update MODIS card
+        const modisContent = document.getElementById('modisContent');
+        const modisStatus = document.getElementById('modisStatus');
+        if (modisContent) {
+            if (data.modis) {
+                modisContent.innerHTML = `
+                    <div class="data-value">NDVI: ${data.modis.ndvi?.toFixed(3) || 'N/A'}</div>
+                    ${data.modis.evi ? `<div class="data-value">EVI: ${data.modis.evi.toFixed(3)}</div>` : ''}
+                    <div class="data-meta">Source: ${data.modis.source || 'Unknown'}</div>
+                    <div class="data-meta">Time: ${new Date(data.modis.timestamp).toLocaleString()}</div>
+                    <div class="data-meta">Resolution: ${data.modis.resolution || 'Unknown'}</div>
+                `;
+                if (modisStatus) modisStatus.textContent = '✅';
+            } else {
+                modisContent.innerHTML = '<div class="error-message">Failed to load MODIS data</div>';
+                if (modisStatus) modisStatus.textContent = '❌';
+            }
+        }
+
+        // Update Landsat card
+        const landsatContent = document.getElementById('landsatContent');
+        const landsatStatus = document.getElementById('landsatStatus');
+        if (landsatContent) {
+            if (data.landsat) {
+                landsatContent.innerHTML = `
+                    <div class="data-value">NDVI: ${data.landsat.ndvi?.toFixed(3) || 'N/A'}</div>
+                    ${data.landsat.temperature ? `<div class="data-value">🌡️ Temp: ${data.landsat.temperature.toFixed(1)}°C</div>` : ''}
+                    <div class="data-meta">Source: ${data.landsat.source || 'Unknown'}</div>
+                    <div class="data-meta">Time: ${new Date(data.landsat.timestamp).toLocaleString()}</div>
+                    <div class="data-meta">Resolution: ${data.landsat.resolution || 'Unknown'}</div>
+                `;
+                if (landsatStatus) landsatStatus.textContent = '✅';
+            } else {
+                landsatContent.innerHTML = '<div class="error-message">Failed to load Landsat data</div>';
+                if (landsatStatus) landsatStatus.textContent = '❌';
+            }
+        }
+
+        // Update all charts with new data
+        this.updateCharts(data);
+    }
+
+    /**
+     * Update data status indicators
+     */
+    updateDataStatus(data) {
+        const dataStatus = document.getElementById('dataStatus');
+        const lastUpdate = document.getElementById('lastUpdate');
+
+        if (dataStatus) {
+            const successCount = Object.values(data).filter(d => d !== null).length;
+            const totalCount = Object.keys(data).length;
+
+            if (successCount === totalCount) {
+                dataStatus.textContent = '🟢 All data loaded successfully';
+            } else if (successCount > 0) {
+                dataStatus.textContent = '🟡 Partial data loaded';
+            } else {
+                dataStatus.textContent = '🔴 Data loading failed';
+            }
+        }
+
+        if (lastUpdate) {
+            lastUpdate.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+        }
+    }
+
+    /**
+     * Update all charts with new data
+     */
+    updateCharts(data) {
+        // Update main chart
+        if (this.mainChart && data) {
+            const chartData = [
+                data.smap?.surface_moisture || 0,
+                data.smap?.root_zone_moisture || 0,
+                data.modis?.ndvi || 0,
+                data.modis?.evi || 0,
+                data.landsat?.ndvi || 0,
+                data.landsat?.temperature ? data.landsat.temperature / 50 : 0 // Normalize temperature
+            ];
+
+            this.mainChart.data.datasets[0].data = chartData;
+            this.mainChart.update('active');
+        }
+
+        // Update mini charts with sample time series data
+        this.updateMiniCharts(data);
+    }
+
+    /**
+     * Update mini charts with time series data
+     */
+    updateMiniCharts(data) {
+        const now = new Date();
+        const timeLabels = [];
+        for (let i = 9; i >= 0; i--) {
+            const time = new Date(now.getTime() - i * 60000); // Last 10 minutes
+            timeLabels.push(time.toLocaleTimeString());
+        }
+
+        // Update SMAP mini chart
+        if (this.smapMiniChart && data.smap) {
+            // Add some historical variation to current values
+            const surfaceData = [];
+            const rootZoneData = [];
+            const baseValues = {
+                surface: data.smap.surface_moisture,
+                rootZone: data.smap.root_zone_moisture
+            };
+
+            for (let i = 0; i < 10; i++) {
+                surfaceData.push(baseValues.surface + (Math.random() - 0.5) * 0.02);
+                rootZoneData.push(baseValues.rootZone + (Math.random() - 0.5) * 0.015);
+            }
+
+            this.smapMiniChart.data.labels = timeLabels;
+            this.smapMiniChart.data.datasets[0].data = surfaceData;
+            this.smapMiniChart.data.datasets[1].data = rootZoneData;
+            this.smapMiniChart.update('none');
+        }
+
+        // Update MODIS mini chart
+        if (this.modisMiniChart && data.modis) {
+            const ndviData = [];
+            const baseNDVI = data.modis.ndvi;
+
+            for (let i = 0; i < 10; i++) {
+                ndviData.push(baseNDVI + (Math.random() - 0.5) * 0.05);
+            }
+
+            this.modisMiniChart.data.labels = timeLabels;
+            this.modisMiniChart.data.datasets[0].data = ndviData;
+            this.modisMiniChart.update('none');
+        }
+
+        // Update Landsat mini chart
+        if (this.landsatMiniChart && data.landsat) {
+            const ndviData = [];
+            const baseNDVI = data.landsat.ndvi;
+
+            for (let i = 0; i < 10; i++) {
+                ndviData.push(baseNDVI + (Math.random() - 0.5) * 0.03);
+            }
+
+            this.landsatMiniChart.data.labels = timeLabels;
+            this.landsatMiniChart.data.datasets[0].data = ndviData;
+            this.landsatMiniChart.update('none');
+        }
+    }
+
+    /**
+     * Handle authentication button click
+     */
+    async handleAuthClick() {
+        try {
+            if (this.isTokenAuthenticated()) {
+                // User is authenticated - show logout/token management
+                this.showTokenManagementModal();
+            } else {
+                // User is not authenticated - open NASA Earthdata and show token modal
+                this.openNASAEarthdataLogin();
+            }
+        } catch (error) {
+            console.error('Authentication error:', error);
+            this.showErrorMessage('Authentication failed');
+        }
+    }
+
+    /**
+     * Open NASA Earthdata login in new tab and show token modal
+     */
+    openNASAEarthdataLogin() {
+        // Open NASA Earthdata login in new tab
+        window.open('https://urs.earthdata.nasa.gov/', '_blank');
+
+        // Show token input modal
+        setTimeout(() => {
+            this.showTokenManagementModal();
+        }, 1000);
+    }
+
+    /**
+     * Show token management modal
+     */
+    showTokenManagementModal() {
+        const modal = document.getElementById('tokenModal');
+        if (!modal) {
+            console.error('Token modal not found');
+            return;
+        }
+
+        // Update modal content with current token status
+        this.updateTokenModalStatus();
+
+        // Show modal
+        modal.style.display = 'flex';
+
+        // Set up modal event listeners if not already set
+        if (!this.tokenModalListenersSet) {
+            this.setupTokenModalListeners();
+            this.tokenModalListenersSet = true;
+        }
+    }
+
+    /**
+     * Setup token modal event listeners
+     */
+    setupTokenModalListeners() {
+        // Close modal button
+        const closeTokenModal = document.getElementById('closeTokenModal');
+        if (closeTokenModal) {
+            closeTokenModal.addEventListener('click', () => {
+                const tokenModal = document.getElementById('tokenModal');
+                if (tokenModal) tokenModal.style.display = 'none';
+            });
+        } else {
+            console.log('⚠️ closeTokenModal button not found');
+        }
+
+        // Click outside to close
+        const tokenModal = document.getElementById('tokenModal');
+        if (tokenModal) {
+            tokenModal.addEventListener('click', (e) => {
+                if (e.target.id === 'tokenModal') {
+                    tokenModal.style.display = 'none';
+                }
+            });
+        } else {
+            console.log('⚠️ tokenModal not found');
+        }
+
+        // Toggle token visibility
+        const toggleTokenVisibility = document.getElementById('toggleTokenVisibility');
+        if (toggleTokenVisibility) {
+            toggleTokenVisibility.addEventListener('click', () => {
+                const tokenInput = document.getElementById('tokenInput');
+                const toggleBtn = document.getElementById('toggleTokenVisibility');
+
+                if (tokenInput && toggleBtn) {
+                    if (tokenInput.type === 'password') {
+                        tokenInput.type = 'text';
+                        toggleBtn.textContent = '🙈';
+                        toggleBtn.title = 'Hide token';
+                    } else {
+                        tokenInput.type = 'password';
+                        toggleBtn.textContent = '👁️';
+                        toggleBtn.title = 'Show token';
+                    }
+                }
+            });
+        } else {
+            console.log('⚠️ toggleTokenVisibility button not found');
+        }
+
+        // Save token button
+        const saveTokenBtn = document.getElementById('saveToken');
+        if (saveTokenBtn) {
+            saveTokenBtn.addEventListener('click', () => {
+                this.saveNASAToken();
+            });
+        } else {
+            console.log('⚠️ saveToken button not found');
+        }
+
+        // Clear token button
+        const clearTokenBtn = document.getElementById('clearToken');
+        if (clearTokenBtn) {
+            clearTokenBtn.addEventListener('click', () => {
+                this.clearNASAToken();
+            });
+        } else {
+            console.log('⚠️ clearToken button not found');
+        }
+
+        // Test connection button
+        document.getElementById('testConnection').addEventListener('click', () => {
+            this.testNASAConnection();
+        });
+
+        // Auto-save on Enter key
+        document.getElementById('tokenInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.saveNASAToken();
+            }
+        });
+    }
+
+    /**
+     * Save NASA token to local storage
+     */
+    saveNASAToken() {
+        const tokenInput = document.getElementById('tokenInput');
+        const token = tokenInput.value.trim();
+
+        if (!token) {
+            this.showNotification('Please enter a valid token', 'error');
+            return;
+        }
+
+        try {
+            // Save token to local storage
+            localStorage.setItem('nasa_earthdata_token', token);
+
+            // Update UI
+            this.updateAuthenticationStatus();
+            this.updateTokenModalStatus();
+
+            // Show success message
+            this.showNotification('Token saved successfully!', 'success');
+
+            // Clear input for security
+            tokenInput.value = '';
+
+            console.log('NASA Earthdata token saved');
+        } catch (error) {
+            console.error('Failed to save token:', error);
+            this.showNotification('Failed to save token', 'error');
+        }
+    }
+
+    /**
+     * Clear NASA token from local storage
+     */
+    clearNASAToken() {
+        try {
+            localStorage.removeItem('nasa_earthdata_token');
+
+            // Update UI
+            this.updateAuthenticationStatus();
+            this.updateTokenModalStatus();
+
+            // Clear input
+            document.getElementById('tokenInput').value = '';
+
+            // Show success message
+            this.showNotification('🗑️ Token cleared', 'success');
+
+            console.log('NASA Earthdata token cleared');
+        } catch (error) {
+            console.error('Failed to clear token:', error);
+            this.showNotification('Failed to clear token', 'error');
+        }
+    }
+
+    /**
+     * Test NASA connection
+     */
+    async testNASAConnection() {
+        const token = this.getNASAToken();
+
+        if (!token) {
+            this.showNotification('⚠️ No token found. Please save a token first.', 'error');
+            return;
+        }
+
+        try {
+            this.showNotification('🧪 Testing connection...', 'info');
+
+            // Test connection with a simple API call
+            const response = await fetch('https://cmr.earthdata.nasa.gov/search/collections', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                this.showNotification('Connection successful!', 'success');
+            } else {
+                this.showNotification('Connection failed. Please check your token.', 'error');
+            }
+        } catch (error) {
+            console.error('Connection test failed:', error);
+            this.showNotification('Connection test failed', 'error');
+        }
+    }
+
+    /**
+     * Get NASA token from local storage
+     */
+    getNASAToken() {
+        const token = localStorage.getItem('nasa_earthdata_token');
+        console.log('getNASAToken called:', {
+            hasToken: !!token,
+            tokenLength: token?.length,
+            tokenPreview: token ? `${token.substring(0, 8)}...${token.substring(token.length - 4)}` : 'null'
+        });
+        return token;
+    }
+
+    /**
+     * Check if user is token authenticated
+     */
+    isTokenAuthenticated() {
+        const token = this.getNASAToken();
+        return token && token.length > 0;
+    }
+
+    /**
+     * Update token modal status display
+     */
+    updateTokenModalStatus() {
+        const token = this.getNASAToken();
+        const statusIndicator = document.querySelector('#currentTokenDisplay .token-status-indicator');
+        const statusText = document.querySelector('#currentTokenDisplay .token-status-text');
+
+        if (token) {
+            statusIndicator.textContent = '🟢';
+            statusText.textContent = `Token stored (${token.substring(0, 8)}...${token.substring(token.length - 4)})`;
+        } else {
+            statusIndicator.textContent = '🔴';
+            statusText.textContent = 'No token stored';
+        }
+    }
+
+    /**
+     * Show notification message
+     */
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+
+        // Style notification
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#3498db'};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            z-index: 3000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease-out;
+        `;
+
+        // Add to DOM
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    /**
+     * Update authentication status in UI
+     */
+    updateAuthenticationStatus(isAuthenticated = null, userInfo = null) {
+        // Check token authentication if not explicitly provided
+        if (isAuthenticated === null) {
+            isAuthenticated = this.isTokenAuthenticated();
+        }
+
+        if (this.ui.authButton) {
+            if (isAuthenticated) {
+                this.ui.authButton.textContent = 'Manage Token';
+                this.ui.authButton.className = 'auth-button authenticated';
+            } else {
+                this.ui.authButton.textContent = 'Login to NASA Earthdata';
+                this.ui.authButton.className = 'auth-button';
+            }
+        }
+
+        // Update header token status
+        const tokenStatus = document.getElementById('tokenStatus');
+        if (tokenStatus) {
+            const indicator = tokenStatus.querySelector('.status-indicator');
+            const text = tokenStatus.querySelector('.status-text');
+
+            if (isAuthenticated) {
+                indicator.textContent = '🟢';
+                text.textContent = 'Token active';
+            } else {
+                indicator.textContent = '🔴';
+                text.textContent = 'No token';
+            }
+        }
+    }
+
+    /**
+     * Handle resolution change
+     */
+    handleResolutionChange(event) {
+        const resolution = parseInt(event.target.value);
+        const resolutionManager = this.gameEngine.getManagers().resolution;
+        resolutionManager.setCurrentResolution(resolution);
+
+        // Update game state
+        const gameState = this.gameEngine.getGameState();
+        gameState.currentResolution = resolution;
+
+        this.showInfoMessage(`Resolution changed to ${resolution}m`);
+    }
+
+    /**
+     * Handle online status change
+     */
+    handleOnlineStatusChange() {
+        this.isOnline = navigator.onLine;
+        this.updateConnectionStatus();
+
+        if (this.isOnline) {
+            this.showInfoMessage('Connection restored');
+            // Trigger sync if needed
+            this.gameEngine.syncOfflineChanges();
+        } else {
+            this.showInfoMessage('Working offline');
+        }
+    }
+
+    /**
+     * Set up navigation to advanced components
+     */
+    setupAdvancedNavigation() {
+        const navItems = [
+            { id: 'navMultiResolution', component: 'multiResolutionVisualizer', title: 'Multi-Resolution Visualizer' },
+            { id: 'navRealTimeComparison', component: 'realTimeComparison', title: 'Real-Time Comparison' },
+            { id: 'navSatelliteOrbit', component: 'satelliteOrbitVisualization', title: 'Satellite Orbit Visualization' },
+            { id: 'navMissionTimeline', component: 'satelliteMissionTimeline', title: 'Mission Timeline & Data Planner' },
+            { id: 'navTemporalAnalysis', component: 'temporalAnalysisTools', title: 'Temporal Analysis Tools' },
+            { id: 'navTutorial', component: 'interactiveTutorial', title: 'Interactive Tutorial' },
+            { id: 'navDemoScenarios', component: 'demoScenarios', title: 'Demo Scenarios' }
+        ];
+
+        navItems.forEach(item => {
+            const element = document.getElementById(item.id);
+            if (element) {
+                element.addEventListener('click', () => {
+                    this.showAdvancedComponent(item.component, item.title);
+                });
+            }
+        });
+
+        // Add close/back button handler
+        this.setupBackNavigation();
+    }
+
+    /**
+     * Show an advanced component
+     */
+    async showAdvancedComponent(componentName, title) {
+        try {
+            const advancedContainer = document.getElementById('advancedComponentsContainer');
+            const defaultLayout = document.getElementById('defaultLayout');
+
+            // Hide default layout and show advanced container
+            defaultLayout.style.display = 'none';
+            advancedContainer.style.display = 'block';
+
+            // Clear previous content
+            advancedContainer.innerHTML = `
+                <div class="advanced-component-header">
+                    <button class="back-button" id="backToMain">← Back to Main</button>
+                    <h2>${title}</h2>
+                    <div class="component-info">Advanced NASA Farm Navigators Feature</div>
+                </div>
+                <div class="component-content" id="componentContent">
+                    <div class="loading-component">
+                        <div class="loading-spinner"></div>
+                        <p>Loading ${title}...</p>
+                    </div>
+                </div>
+            `;
+
+            // Set up back button
+            document.getElementById('backToMain').addEventListener('click', () => {
+                this.showDefaultLayout();
+            });
+
+            // Get the component instance and render it
+            const components = this.gameEngine.getAdvancedComponents();
+            const component = components[componentName];
+
+            if (component && typeof component.createInterface === 'function') {
+                const contentContainer = document.getElementById('componentContent');
+                await component.createInterface(contentContainer);
+
+                // Make component globally accessible for interface interactions
+                window[componentName] = component;
+            } else if (component && typeof component.createAnalysisInterface === 'function') {
+                // Handle temporal analysis tools which use createAnalysisInterface
+                const contentContainer = document.getElementById('componentContent');
+                await component.createAnalysisInterface(contentContainer);
+                window[componentName] = component;
+            } else if (component && typeof component.createDemoInterface === 'function') {
+                // Handle demo scenarios which use createDemoInterface
+                const contentContainer = document.getElementById('componentContent');
+                await component.createDemoInterface(contentContainer);
+                window[componentName] = component;
+            } else {
+                throw new Error(`Component ${componentName} not available or doesn't have a supported interface method`);
+            }
+
+            this.showInfoMessage(`Opened ${title}`);
+        } catch (error) {
+            console.error(`Failed to load ${componentName}:`, error);
+            this.showErrorMessage(`Failed to load ${title}: ${error.message}`);
+            this.showDefaultLayout();
+        }
+    }
+
+    /**
+     * Show default layout
+     */
+    showDefaultLayout() {
+        const advancedContainer = document.getElementById('advancedComponentsContainer');
+        const defaultLayout = document.getElementById('defaultLayout');
+
+        advancedContainer.style.display = 'none';
+        defaultLayout.style.display = 'grid';
+    }
+
+    /**
+     * Setup back navigation from advanced components
+     */
+    setupBackNavigation() {
+        // Add keyboard shortcut for going back (Escape key)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const advancedContainer = document.getElementById('advancedComponentsContainer');
+                if (advancedContainer.style.display !== 'none') {
+                    this.showDefaultLayout();
+                }
+            }
+        });
+    }
+
+    /**
+     * Update authentication UI
+     */
+    updateAuthUI(isAuthenticated, userInfo) {
+        if (this.ui.authButton) {
+            if (isAuthenticated) {
+                this.ui.authButton.textContent = `Logout (${userInfo?.first_name || 'User'})`;
+                this.ui.authButton.className = 'auth-button authenticated';
+            } else {
+                this.ui.authButton.textContent = 'Login to NASA Earthdata';
+                this.ui.authButton.className = 'auth-button';
+            }
+        }
+    }
+
+    /**
+     * Update connection status display
+     */
+    updateConnectionStatus() {
+        if (this.ui.statusDisplay) {
+            this.ui.statusDisplay.innerHTML = `
+                <div class="status-item">
+                    <span class="status-label">Connection:</span>
+                    <span class="status-value ${this.isOnline ? 'online' : 'offline'}">
+                        ${this.isOnline ? '🟢 Online' : '🔴 Offline'}
+                    </span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Cache:</span>
+                    <span class="status-value">
+                        ${this.gameEngine ? '🟢 Active' : '🔴 Inactive'}
+                    </span>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Update achievements display
+     */
+    updateAchievements() {
+        const achievementList = document.getElementById('achievementList');
+        if (!achievementList) return;
+
+        const educationEngine = this.gameEngine.getManagers().education;
+        const achievements = educationEngine.getUnlockedAchievements();
+
+        if (achievements.length === 0) {
+            achievementList.innerHTML = '<p>No achievements unlocked yet</p>';
+        } else {
+            achievementList.innerHTML = achievements.map(achievement => `
+                <div class="achievement-item">
+                    <div class="achievement-title">${achievement.title}</div>
+                    <div class="achievement-desc">${achievement.description}</div>
+                </div>
+            `).join('');
+        }
+    }
+
+    /**
+     * Run integration tests
+     */
+    async runTests() {
+        console.log('🧪 Running integration tests...');
+        const testSuite = new IntegrationTestSuite();
+        const results = await testSuite.runAllTests();
+
+        if (results.failed === 0) {
+            this.showInfoMessage('All tests passed! 🎉');
+        } else {
+            this.showErrorMessage(`${results.failed} tests failed`);
+        }
+    }
+
+    /**
+     * Get debug mode from URL or localStorage
+     */
+    getDebugMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.has('debug') || localStorage.getItem('debug_mode') === 'true';
+    }
+
+    /**
+     * Show loading screen
+     */
+    showLoadingScreen() {
+        if (this.ui.loadingScreen) {
+            this.ui.loadingScreen.style.display = 'flex';
+        }
+    }
+
+    /**
+     * Hide loading screen
+     */
+    hideLoadingScreen() {
+        if (this.ui.loadingScreen) {
+            this.ui.loadingScreen.style.display = 'none';
+        }
+    }
+
+    /**
+     * Show main application
+     */
+    showMainApp() {
+        if (this.ui.mainContainer) {
+            this.ui.mainContainer.style.display = 'block';
+        }
+    }
+
+    /**
+     * Show error screen
+     */
+    showErrorScreen(error) {
+        // Only show error screen if body exists
+        if (!document.body) {
+            console.error('Critical error: document.body not available');
+            return;
+        }
+
+        document.body.innerHTML = `
+            <div class="error-screen">
+                <h1>Application Error</h1>
+                <p>NASA Farm Navigators failed to initialize:</p>
+                <pre>${error.message}</pre>
+                <button onclick="location.reload()">Reload Application</button>
+            </div>
+        `;
+    }
+
+    /**
+     * Show notification methods
+     */
+    showInfoMessage(message) {
+        this.showNotification(message, 'info');
+    }
+
+    showErrorMessage(message) {
+        this.showNotification(message, 'error');
+    }
+
+    showAchievementNotification(achievement) {
+        this.showNotification(`🏆 Achievement Unlocked: ${achievement.title}`, 'achievement');
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    showDataLoading() {
+        // Update status bar to show loading
+        const dataStatus = document.getElementById('dataStatus');
+        if (dataStatus) {
+            dataStatus.textContent = '🔄 Loading satellite data...';
+        }
+
+        // Update data cards if they exist
+        const cards = ['smapContent', 'modisContent', 'landsatContent'];
+        cards.forEach(cardId => {
+            const element = document.getElementById(cardId);
+            if (element) {
+                element.innerHTML = '<div class="loading">Loading...</div>';
+            }
+        });
+    }
+
+
+    /**
+     * Initialize resolution explorer
+     */
+    initializeResolutionExplorer() {
+        const resolutionRange = document.getElementById('resolutionRange');
+        if (resolutionRange) {
+            resolutionRange.addEventListener('input', (e) => {
+                this.updateResolutionDisplay(e.target.value);
+            });
+            // Initialize with default value
+            this.updateResolutionDisplay(resolutionRange.value);
+        }
+    }
+
+    /**
+     * Update resolution display
+     */
+    updateResolutionDisplay(value) {
+        const resolutions = ['30m (Landsat)', '250m (MODIS)', '500m (MODIS)', '9km (SMAP)'];
+        const currentResolution = document.getElementById('currentResolution');
+        if (currentResolution) {
+            currentResolution.textContent = resolutions[value] || resolutions[2];
+        }
+
+        // Update resolution grid visualization
+        this.updateResolutionGrid(parseInt(value));
+    }
+
+    /**
+     * Update resolution grid
+     */
+    updateResolutionGrid(resolutionIndex) {
+        const grid = document.getElementById('resolutionGrid');
+        if (!grid) return;
+
+        const gridSizes = [16, 8, 4, 2]; // Grid size for each resolution
+        const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0'];
+        const gridSize = gridSizes[resolutionIndex] || 8;
+        const color = colors[resolutionIndex] || '#2196F3';
+
+        let gridHTML = '';
+        for (let i = 0; i < gridSize * gridSize; i++) {
+            gridHTML += `<div class="grid-pixel" style="background-color: ${color}; opacity: ${0.5 + Math.random() * 0.5};"></div>`;
+        }
+
+        grid.innerHTML = gridHTML;
+        grid.style.display = 'grid';
+        grid.style.gridTemplate = `repeat(${gridSize}, 1fr) / repeat(${gridSize}, 1fr)`;
+        grid.style.width = '300px';
+        grid.style.height = '300px';
+        grid.style.gap = '1px';
+        grid.style.backgroundColor = '#333';
+        grid.style.border = '2px solid #666';
+        grid.style.margin = '20px auto';
+    }
+
+    /**
+     * Initialize advanced tools
+     */
+    initializeAdvancedTools() {
+        // Advanced tools are already rendered, just ensure they're interactive
+        console.log('Advanced tools panel initialized');
+    }
+
+    /**
+     * Launch advanced tool
+     */
+    async launchAdvancedTool(toolId) {
+        try {
+            console.log(`Launching advanced tool: ${toolId}`);
+
+            const managers = this.gameEngine.getManagers();
+            const advancedComponents = this.gameEngine.getAdvancedComponents();
+
+            const toolContainer = document.getElementById('advancedComponentsContainer');
+            if (!toolContainer) return;
+
+            switch (toolId) {
+                case 'multiResolution':
+                    if (advancedComponents.multiResolutionVisualizer) {
+                        await advancedComponents.multiResolutionVisualizer.createInterface(toolContainer);
+                    }
+                    break;
+                case 'realTimeComparison':
+                    if (advancedComponents.realTimeComparison) {
+                        await advancedComponents.realTimeComparison.createInterface(toolContainer);
+                    }
+                    break;
+                case 'satelliteOrbit':
+                    if (advancedComponents.satelliteOrbitVisualization) {
+                        await advancedComponents.satelliteOrbitVisualization.createInterface(toolContainer);
+                    }
+                    break;
+                case 'missionTimeline':
+                    if (advancedComponents.satelliteMissionTimeline) {
+                        await advancedComponents.satelliteMissionTimeline.createInterface(toolContainer);
+                    }
+                    break;
+                case 'temporalAnalysis':
+                    if (advancedComponents.temporalAnalysisTools) {
+                        await advancedComponents.temporalAnalysisTools.createAnalysisInterface(toolContainer);
+                    }
+                    break;
+                case 'demoScenarios':
+                    if (advancedComponents.demoScenarios) {
+                        await advancedComponents.demoScenarios.createDemoInterface(toolContainer);
+                    }
+                    break;
+            }
+        } catch (error) {
+            console.error(`Failed to launch ${toolId}:`, error);
+        }
+    }
+
+    /**
+     * Initialize farm game when tab is activated (using dynamic imports)
+     */
+    async initializeFarmGame() {
+        try {
+            if (!this.farmSimulation) {
+                const { FarmSimulationEngine } = await import('./game/FarmSimulationEngine.js');
+                this.farmSimulation = new FarmSimulationEngine();
+            }
+            const farmGameContainer = document.getElementById('farmGameContainer');
+            if (!this.farmGameUI && farmGameContainer) {
+                const { FarmGameUI } = await import('./game/FarmGameUI.js');
+                this.farmGameUI = new FarmGameUI(this.farmSimulation, farmGameContainer);
+                // Make farmGameUI globally accessible
+                window.farmGameUI = this.farmGameUI;
+
+                // Register Farm Game with GameEngine for location integration
+                if (this.gameEngine && this.gameEngine.setFarmGame) {
+                    this.gameEngine.setFarmGame(this.farmGameUI);
+                    console.log('🚜 Farm Game registered with GameEngine during initialization');
+                }
+            }
+        } catch (error) {
+            console.error('Failed to initialize farm game:', error);
+            const farmGameContainer = document.getElementById('farmGameContainer');
+            if (farmGameContainer) {
+                farmGameContainer.innerHTML = '<div class="error-message">Farm game failed to load. Please refresh the page.</div>';
+            }
+        }
+    }
+
+    /**
+     * Load real satellite data previews for training section
+     */
+    async loadSatellitePreviews() {
+        console.log('🛰️ Loading satellite previews...');
+        const previews = document.querySelectorAll('.real-satellite-preview');
+        console.log(`Found ${previews.length} preview canvases`);
+
+        for (const canvas of previews) {
+            const resolution = canvas.dataset.resolution;
+            const lat = canvas.dataset.lat;
+            const lon = canvas.dataset.lon;
+
+            try {
+                // Use the same API endpoint as Pixel Hunt Challenge
+                const response = await fetch(`http://localhost:3001/api/pixel-hunt/data?lat=${lat}&lon=${lon}&resolution=${resolution}`);
+                const data = await response.json();
+
+                if (data.pixels && data.pixels.length > 0) {
+                    this.renderSatellitePreview(canvas, data.pixels, resolution);
+                } else {
+                    this.renderPreviewPlaceholder(canvas, resolution);
+                }
+            } catch (error) {
+                console.error(`Failed to load ${resolution} preview:`, error);
+                this.renderPreviewPlaceholder(canvas, resolution);
+            }
+        }
+    }
+
+    /**
+     * Render satellite data on preview canvas
+     */
+    renderSatellitePreview(canvas, pixels, resolution) {
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // Clear canvas
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, width, height);
+
+        // Calculate grid size based on resolution
+        const gridSize = Math.sqrt(pixels.length);
+        const cellWidth = width / gridSize;
+        const cellHeight = height / gridSize;
+
+        // Render pixels
+        for (let i = 0; i < pixels.length; i++) {
+            const pixel = pixels[i];
+            const row = Math.floor(i / gridSize);
+            const col = i % gridSize;
+
+            const x = col * cellWidth;
+            const y = row * cellHeight;
+
+            // Color based on data type and values
+            let color = this.getPixelColor(pixel, resolution);
+
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, cellWidth, cellHeight);
+        }
+
+        // Add resolution label
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText(`${resolution.toUpperCase()} Data`, 10, 25);
+    }
+
+    /**
+     * Get pixel color based on resolution and data values
+     */
+    getPixelColor(pixel, resolution) {
+        switch (resolution) {
+            case 'landsat':
+                // Use NDVI for vegetation mapping
+                const ndvi = pixel.ndvi || 0;
+                if (ndvi > 0.6) return '#228B22'; // Dark green - healthy crops
+                if (ndvi > 0.3) return '#32CD32'; // Light green - moderate vegetation
+                if (ndvi > 0.1) return '#90EE90'; // Very light green - sparse vegetation
+                return '#8B4513'; // Brown - bare soil
+
+            case 'modis':
+                // Use NDVI with broader categories
+                const modisNdvi = pixel.ndvi || 0;
+                if (modisNdvi > 0.5) return '#006400'; // Dark green
+                if (modisNdvi > 0.2) return '#228B22'; // Medium green
+                return '#DEB887'; // Tan - non-vegetated
+
+            case 'smap':
+                // Use soil moisture data
+                const moisture = pixel.soilMoisture || pixel.surface_moisture || 0;
+                if (moisture > 0.4) return '#0000FF'; // Blue - high moisture
+                if (moisture > 0.25) return '#4169E1'; // Royal blue - medium moisture
+                if (moisture > 0.15) return '#87CEEB'; // Sky blue - low moisture
+                return '#FF4500'; // Red-orange - very dry
+
+            default:
+                return '#808080'; // Gray fallback
+        }
+    }
+
+    /**
+     * Render placeholder when data loading fails
+     */
+    renderPreviewPlaceholder(canvas, resolution) {
+        const ctx = canvas.getContext('2d');
+
+        // Clear canvas
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw placeholder text
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${resolution.toUpperCase()} Preview`, canvas.width/2, canvas.height/2 - 10);
+        ctx.fillText('Loading...', canvas.width/2, canvas.height/2 + 10);
+    }
+
+    /**
+     * Award individual achievements based on resolution training completion
+     */
+    awardIndividualAchievement(resolution) {
+        console.log(`🏆 Awarding individual achievement for ${resolution}`);
+        const achievementKey = `pixelHunt_${resolution}`;
+
+        // Check if already awarded
+        if (this.hasAchievement(achievementKey)) {
+            console.log(`🏆 Achievement ${achievementKey} already awarded`);
+            return;
+        }
+
+        let achievementData = {};
+        switch (resolution) {
+            case 'landsat':
+                achievementData = {
+                    name: 'Field Expert',
+                    description: 'Successfully identify crop fields in Landsat imagery',
+                    icon: '🌾',
+                    points: 25
+                };
+                break;
+            case 'modis':
+                achievementData = {
+                    name: 'Regional Analyst',
+                    description: 'Correctly identify agricultural regions in MODIS data',
+                    icon: '🗺️',
+                    points: 25
+                };
+                break;
+            case 'smap':
+                achievementData = {
+                    name: 'Moisture Detective',
+                    description: 'Identify dry regions using SMAP soil moisture data',
+                    icon: '🏜️',
+                    points: 25
+                };
+                break;
+        }
+
+        this.unlockAchievement(achievementKey, achievementData);
+    }
+
+    /**
+     * Award completion achievement for finishing all pixel hunt training
+     */
+    awardPixelHuntAchievements() {
+        const masterKey = 'pixelHunt_master';
+
+        if (this.hasAchievement(masterKey)) return;
+
+        const achievementData = {
+            name: 'Resolution Master',
+            description: 'Complete all three resolution training steps',
+            icon: '🎯',
+            points: 100
+        };
+
+        this.unlockAchievement(masterKey, achievementData);
+    }
+
+    /**
+     * Check if user has specific achievement
+     */
+    hasAchievement(achievementKey) {
+        const achievements = JSON.parse(localStorage.getItem('pixelHuntAchievements') || '{}');
+        return achievements[achievementKey] !== undefined;
+    }
+
+    /**
+     * Clear all achievements for testing
+     */
+    clearAchievements() {
+        console.log('🧹 Clearing all achievements for testing');
+        localStorage.removeItem('pixelHuntAchievements');
+        console.log('✅ Achievements cleared from localStorage');
+
+        // Also refresh Farm Game UI if available
+        if (window.farmGameUI && typeof window.farmGameUI.refreshAchievements === 'function') {
+            console.log('🎮 Refreshing Farm Game UI achievements');
+            window.farmGameUI.refreshAchievements();
+        }
+    }
+
+    /**
+     * Unlock achievement and show notification
+     */
+    unlockAchievement(achievementKey, achievementData) {
+        console.log(`🏆 Unlocking achievement: ${achievementKey}`, achievementData);
+
+        // Save to localStorage
+        const achievements = JSON.parse(localStorage.getItem('pixelHuntAchievements') || '{}');
+        achievements[achievementKey] = {
+            ...achievementData,
+            unlockedAt: new Date().toISOString()
+        };
+        localStorage.setItem('pixelHuntAchievements', JSON.stringify(achievements));
+        console.log(`💾 Saved achievements to localStorage:`, achievements);
+
+        // Show notification
+        console.log(`🔔 Showing achievement notification for: ${achievementData.name}`);
+        this.showAchievementNotification(achievementData);
+
+        // Update farm game achievements if available
+        this.updateFarmGameAchievements(achievementKey, achievementData);
+    }
+
+    /**
+     * Show achievement notification
+     */
+    showAchievementNotification(achievement) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'achievement-notification';
+        notification.innerHTML = `
+            <div class="achievement-content">
+                <div class="achievement-icon">${achievement.icon}</div>
+                <div class="achievement-text">
+                    <h4>🏆 Achievement Unlocked!</h4>
+                    <h5>${achievement.name}</h5>
+                    <p>${achievement.description}</p>
+                    <span class="points">+${achievement.points} points</span>
+                </div>
+            </div>
+        `;
+
+        // Add to document
+        document.body.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => notification.classList.add('show'), 100);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+    }
+
+    /**
+     * Update farm game achievements if the farm game UI is available
+     */
+    updateFarmGameAchievements(achievementKey, achievementData) {
+        console.log(`🎮 Updating farm game achievements for: ${achievementKey}`);
+
+        // Check if farm game UI exists and update it
+        if (window.farmGameUI && typeof window.farmGameUI.awardCustomAchievement === 'function') {
+            console.log(`🎮 Farm Game UI found, calling awardCustomAchievement`);
+            window.farmGameUI.awardCustomAchievement(achievementKey, achievementData);
+        } else {
+            console.log(`🎮 Farm Game UI not available:`, {
+                farmGameUIExists: !!window.farmGameUI,
+                methodExists: window.farmGameUI ? typeof window.farmGameUI.awardCustomAchievement : 'N/A'
+            });
+        }
+    }
+
+    /**
+     * Display pixel hunt achievements in main app achievements tab
+     */
+    displayPixelHuntAchievements() {
+        console.log('🏆 Displaying pixel hunt achievements in main app');
+        const achievementList = document.getElementById('achievementList');
+
+        if (!achievementList) {
+            console.log('🏆 Achievement list element not found');
+            return;
+        }
+
+        // Get achievements from localStorage
+        const pixelHuntData = JSON.parse(localStorage.getItem('pixelHuntAchievements') || '{}');
+        console.log('🏆 Pixel hunt data from localStorage:', pixelHuntData);
+
+        // Define achievement templates (same as Farm Game UI)
+        const achievementTemplates = {
+            'pixelHunt_landsat': {
+                name: 'Field Expert',
+                description: 'Successfully identify crop fields in Landsat imagery',
+                icon: '🌾'
+            },
+            'pixelHunt_modis': {
+                name: 'Regional Analyst',
+                description: 'Master agricultural region identification in MODIS data',
+                icon: '🗺️'
+            },
+            'pixelHunt_smap': {
+                name: 'Moisture Detective',
+                description: 'Identify dry desert regions using SMAP moisture data',
+                icon: '💧'
+            },
+            'pixelHunt_master': {
+                name: 'Resolution Master',
+                description: 'Complete all three resolution training steps',
+                icon: '🎯'
+            }
+        };
+
+        let achievementHTML = '<h3>🏆 Pixel Hunt Training Achievements</h3>';
+        let hasAchievements = false;
+
+        // Process each achievement
+        Object.keys(achievementTemplates).forEach(key => {
+            const template = achievementTemplates[key];
+            const achievementData = pixelHuntData[key];
+            const isUnlocked = achievementData !== undefined;
+
+            hasAchievements = hasAchievements || isUnlocked;
+
+            achievementHTML += `
+                <div class="achievement-item ${isUnlocked ? 'unlocked' : 'locked'}">
+                    <div class="achievement-icon">${template.icon}</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">${template.name}</div>
+                        <div class="achievement-description">${template.description}</div>
+                        ${isUnlocked ? `<div class="achievement-date">Unlocked: ${new Date(achievementData.unlockedAt).toLocaleDateString()}</div>` : '<div class="achievement-status">Not yet unlocked</div>'}
+                    </div>
+                </div>
+            `;
+        });
+
+        if (!hasAchievements) {
+            achievementHTML += '<p>No achievements unlocked yet. Complete pixel hunt training scenarios to earn achievements!</p>';
+        }
+
+        achievementList.innerHTML = achievementHTML;
+        console.log('🏆 Achievement display updated');
+    }
+
+}
+
+// Initialize application when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new NASAFarmNavigatorsApp();
+    // Make app instance globally available for button handlers
+    window.app = app;
+    app.initialize().catch(error => {
+        console.error('Application failed to start:', error);
+    });
+});
+
+// Export for testing
+export { NASAFarmNavigatorsApp };

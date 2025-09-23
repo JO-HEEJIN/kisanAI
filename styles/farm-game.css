@@ -1,0 +1,5501 @@
+/* NASA Farm Navigators - Farm Game Styles */
+
+.farm-game-container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #e8f5e8, #f0f8e8);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Game Header */
+.game-header {
+    background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 40%, #FFC107 100%);
+    color: #1B5E20;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 20px;
+    border-bottom: 4px solid #2E7D32;
+    border-radius: 12px 12px 0 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.game-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7);
+    animation: rainbow 3s linear infinite;
+}
+
+@keyframes rainbow {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.game-header h1 {
+    color: #1B5E20;
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
+    font-weight: 700;
+    font-size: 2.2rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.game-header h1::before {
+    content: '🌾';
+    font-size: 1.8rem;
+    animation: sway 2s ease-in-out infinite;
+}
+
+@keyframes sway {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+}
+
+.time-display {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 12px 18px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.current-time {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.week {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1B5E20;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.week::before {
+    content: '📅';
+    font-size: 1.2rem;
+}
+
+.season {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2E7D32;
+    text-transform: capitalize;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.season::before {
+    content: '🌱';
+    font-size: 1rem;
+}
+
+.season.spring::before { content: '🌸'; }
+.season.summer::before { content: '☀️'; }
+.season.fall::before { content: '🍂'; }
+.season.winter::before { content: '❄️'; }
+
+.game-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.game-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.game-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.6s ease;
+}
+
+.game-btn:hover::before {
+    left: 100%;
+}
+
+.game-btn.secondary {
+    background: linear-gradient(45deg, #2E7D32, #4CAF50);
+    color: white;
+    border: 2px solid #1B5E20;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.game-btn.secondary:hover {
+    background: linear-gradient(45deg, #1B5E20, #2E7D32);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
+}
+
+.farm-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    padding: 12px 16px;
+    border-radius: 15px;
+    border: 2px solid #28a745;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    margin: 15px 0;
+}
+
+.farm-stats::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: rotate(45deg);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 70px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #2C3E50;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-shadow: none;
+    margin: 0;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2C3E50;
+    text-shadow: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+}
+
+.stat-value::before {
+    font-size: 1.0rem;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+.stat-item:nth-child(1) {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    border-color: #FFD700;
+}
+.stat-item:nth-child(1) .stat-value::before { content: '💰'; }
+
+.stat-item:nth-child(2) {
+    background: linear-gradient(135deg, #87CEEB, #4682B4);
+    border-color: #87CEEB;
+}
+.stat-item:nth-child(2) .stat-value::before { content: '💧'; }
+.stat-item:nth-child(2) .stat-label,
+.stat-item:nth-child(2) .stat-value { color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+
+.stat-item:nth-child(3) {
+    background: linear-gradient(135deg, #98FB98, #32CD32);
+    border-color: #98FB98;
+}
+.stat-item:nth-child(3) .stat-value::before { content: '🌱'; }
+
+.stat-item:nth-child(4) {
+    background: linear-gradient(135deg, #DEB887, #CD853F);
+    border-color: #DEB887;
+}
+.stat-item:nth-child(4) .stat-value::before { content: '🌾'; }
+
+/* NASA Live Data in Header */
+.nasa-live-data {
+    display: flex;
+    gap: 20px;
+    background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+    padding: 12px 18px;
+    border-radius: 15px;
+    border: 2px solid #1976D2;
+    box-shadow: 0 3px 10px rgba(25, 118, 210, 0.2);
+}
+
+.nasa-data-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 70px;
+}
+
+.nasa-data-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #0D47A1;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.nasa-data-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1565C0;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.nasa-data-item:nth-child(1) .nasa-data-value::before { content: '🛰️'; font-size: 1rem; }
+.nasa-data-item:nth-child(2) .nasa-data-value::before { content: '🌱'; font-size: 1rem; }
+.nasa-data-item:nth-child(3) .nasa-data-value::before { content: '🌡️'; font-size: 1rem; }
+
+.nasa-stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nasa-icon {
+    font-size: 1.2rem;
+}
+
+.nasa-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.nasa-value {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #FF6B6B;
+}
+
+/* Weather Conditions Strip */
+.weather-conditions-strip {
+    background: linear-gradient(90deg, #e3f2fd, #bbdefb);
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.weather-conditions-strip h4 {
+    margin: 0 0 8px 0;
+    color: #1565c0;
+    font-size: 1rem;
+}
+
+.weather-display-horizontal {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.weather-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.weather-label {
+    font-weight: 500;
+    color: #424242;
+    font-size: 0.9rem;
+}
+
+.weather-value {
+    color: #1565c0;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* Navigation */
+.game-nav {
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0;
+    display: flex;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.nav-tab {
+    padding: 16px 24px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: 500;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.nav-tab:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.nav-tab.active {
+    color: #2E7D32;
+    border-bottom-color: #2E7D32;
+    background: #f8f9fa;
+}
+
+/* Main Content */
+.game-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.game-view {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: none;
+}
+
+.game-view.active {
+    display: block;
+}
+
+/* Overview View */
+.overview-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 24px;
+    height: 100%;
+}
+
+.farm-map {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.field-tile {
+    background: #f0f8f0;
+    border: 2px solid #e0e8e0;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.field-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.field-tile.corn {
+    background: #fff3e0;
+    border-color: #ffcc02;
+}
+
+.field-tile.wheat {
+    background: #f3e5ab;
+    border-color: #daa520;
+}
+
+.field-tile.soybeans {
+    background: #e8f5e8;
+    border-color: #4caf50;
+}
+
+.crop-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.crop-type {
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.crop-stage {
+    font-size: 0.8rem;
+    color: #666;
+    text-transform: capitalize;
+}
+
+.health-bar {
+    width: 100%;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.health-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff4444, #ffaa00, #44ff44);
+    transition: width 0.3s ease;
+}
+
+.health-text {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.weather-conditions, .recent-activities {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.weather-display {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.weather-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.activity-log {
+    margin-top: 16px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Crops View */
+.crops-container {
+    max-width: 1200px;
+}
+
+.crops-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+/* Individual Crop Management Styles */
+.crop-individual-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.mini-action-btn {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid #4caf50;
+    background: white;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mini-action-btn:hover {
+    background: #4caf50;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.crop-card {
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    border: 1px solid #d0d0d0;
+    border-radius: 12px;
+    padding: 15px;
+    margin: 10px 0;
+    max-width: 100%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.crop-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.crop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.crop-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2e7d32;
+    margin: 0;
+}
+
+.crop-area {
+    font-size: 14px;
+    color: #666;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    text-align: right;
+}
+
+.crop-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stat-label {
+    width: 80px;
+    font-size: 13px;
+    color: #555;
+    font-weight: 500;
+}
+
+.stat-bar {
+    flex: 1;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.stat-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.stat-fill.growth { background: #ffc107; }
+.stat-fill.water { background: #2196f3; }
+.stat-fill.nutrients { background: #4caf50; }
+.stat-fill.health { background: #ff5722; }
+
+.stat-value {
+    min-width: 40px;
+    text-align: right;
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+}
+
+.crop-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+    font-size: 13px;
+}
+
+.crop-stage {
+    color: #666;
+    font-style: italic;
+}
+
+.crop-health {
+    font-weight: 600;
+    color: #4caf50;
+}
+
+.area-info {
+    display: inline-block;
+    font-weight: 600;
+}
+
+/* Harvest Dialog Styles */
+.harvest-overview {
+    padding: 20px;
+}
+
+.ready-crops {
+    display: grid;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.harvest-crop-card {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid #E4002B;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.harvest-crop-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(228, 0, 43, 0.2);
+    border-color: #FF4444;
+}
+
+.harvest-crop-card .crop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.harvest-crop-card h5 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #2c3e50;
+}
+
+/* 수확 카드 정보 섹션 스타일 개선 */
+.harvest-info-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.harvest-info-section .info-row {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.harvest-info-section .info-row:hover {
+    background: #f1f3f5;
+}
+
+.harvest-info-section .info-label {
+    color: #495057;  /* 진한 회색 라벨 */
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin: 0 10px;
+    flex: 1;
+}
+
+.harvest-info-section .info-value {
+    color: #212529;  /* 거의 검은색 값 */
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.crop-status {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.crop-status.ready {
+    background: #d4edda;
+    color: #155724;
+}
+
+.crop-status.almost-ready {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.harvest-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.harvest-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    border-left: 4px solid #E4002B;
+    color: #2c3e50; /* 진한 회색 텍스트로 가시성 개선 */
+}
+
+.harvest-metric.profit {
+    grid-column: 1 / -1;
+    font-weight: 600;
+}
+
+/* 수확 메트릭 라벨과 값 스타일 추가 */
+.harvest-metric .metric-label {
+    color: #6c757d;  /* 라벨은 회색 */
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.harvest-metric .metric-value {
+    color: #000000;  /* 값은 검은색으로 강조 */
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.harvest-metric .icon {
+    margin-right: 8px;
+    font-size: 1.1rem;
+}
+
+.harvest-metric .positive {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.harvest-metric .negative {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.harvest-quality {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.harvest-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, #E4002B, #FF4444);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(228, 0, 43, 0.3);
+}
+
+.action-btn.secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn.secondary:hover {
+    background: #5a6268;
+}
+
+/* Harvest Results Styles */
+.harvest-results {
+    padding: 20px;
+}
+
+.result-summary {
+    background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.result-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.metric-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.metric-value {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.metric-value.profit.positive {
+    color: #28a745;
+}
+
+.metric-value.profit.negative {
+    color: #dc3545;
+}
+
+.next-steps {
+    text-align: center;
+}
+
+.suggestions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.suggestion-btn {
+    background: linear-gradient(135deg, #000000, #1a1a1a);
+    color: white;
+    border: 2px solid #E4002B;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.suggestion-btn:hover {
+    background: linear-gradient(135deg, #E4002B, #FF4444);
+    transform: translateY(-2px);
+}
+
+.crop-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.progress-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress-item span:first-child {
+    width: 80px;
+    font-weight: 500;
+    color: #666;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar.water .progress-fill {
+    background: linear-gradient(90deg, #1976d2, #42a5f5);
+}
+
+.progress-bar.nutrients .progress-fill {
+    background: linear-gradient(90deg, #388e3c, #66bb6a);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2e7d32, #4caf50);
+    transition: width 0.3s ease;
+}
+
+.crop-status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.crop-status span {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.harvest-ready {
+    color: #ff9800 !important;
+    font-weight: 600;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Resources View */
+.resources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.resource-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+}
+
+.resource-icon {
+    font-size: 3rem;
+}
+
+.resource-info h5 {
+    margin: 0;
+    color: #333;
+}
+
+.resource-amount {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2E7D32;
+}
+
+.resource-status {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.resource-status.good {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.resource-status.medium {
+    background: #fff3e0;
+    color: #ff9800;
+}
+
+.resource-status.low {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+/* Alerts View */
+.alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.alert-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-left: 4px solid #ccc;
+}
+
+.alert-card.high {
+    border-left-color: #d32f2f;
+    background: #ffebee;
+}
+
+.alert-card.medium {
+    border-left-color: #ff9800;
+    background: #fff3e0;
+}
+
+.alert-card.low {
+    border-left-color: #2e7d32;
+    background: #e8f5e8;
+}
+
+.alert-icon {
+    font-size: 2rem;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-content h5 {
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.alert-content p {
+    margin: 0 0 8px 0;
+    color: #666;
+}
+
+.alert-time {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+.alert-urgency {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.alert-urgency.high {
+    background: #d32f2f;
+    color: white;
+}
+
+.alert-urgency.medium {
+    background: #ff9800;
+    color: white;
+}
+
+.alert-urgency.low {
+    background: #2e7d32;
+    color: white;
+}
+
+.no-alerts {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px;
+}
+
+/* Decision Panel */
+.decision-panel {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 1000;
+    width: 300px;
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+}
+
+.decision-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.decision-panel h3 {
+    margin: 0;
+    color: #2E7D32;
+}
+
+.help-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 50%;
+    color: #2E7D32;
+    transition: background 0.2s ease;
+}
+
+.help-btn:hover {
+    background: rgba(46, 125, 50, 0.1);
+}
+
+/* NASA Panel responsive positioning */
+@media (max-width: 768px) {
+    .nasa-data-panel {
+        right: 12px;
+        bottom: 12px;
+        left: auto;
+        min-width: 250px;
+        max-width: calc(100vw - 24px);
+    }
+
+    .game-instructions-panel {
+        left: 12px;
+        bottom: 80px;
+        max-width: calc(100vw - 24px);
+    }
+
+    .decision-panel {
+        right: 12px;
+        top: 12px;
+        min-width: 200px;
+        max-height: calc(100vh - 120px);
+    }
+}
+
+.decision-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.decision-btn {
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.decision-btn.irrigation {
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    color: white;
+}
+
+.decision-btn.fertilizer {
+    background: linear-gradient(135deg, #388e3c, #66bb6a);
+    color: white;
+}
+
+.decision-btn.harvest {
+    background: linear-gradient(135deg, #f57c00, #ffb74d);
+    color: white;
+}
+
+.decision-btn.livestock {
+    background: linear-gradient(135deg, #7b1fa2, #ba68c8);
+    color: white;
+}
+
+.decision-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Old NASA Data Panel - Removed draggable styles */
+
+.nasa-data-panel.collapsed {
+    min-width: auto;
+    max-width: none;
+}
+
+.nasa-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 16px 8px 16px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.nasa-panel-header h4 {
+    margin: 0;
+    color: #1976d2;
+    font-size: 16px;
+}
+
+.toggle-nasa-panel {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 50%;
+    color: #1976d2;
+    transition: all 0.2s ease;
+}
+
+.toggle-nasa-panel:hover {
+    background: rgba(25, 118, 210, 0.1);
+    transform: scale(1.1);
+}
+
+.nasa-panel-content {
+    padding: 12px 16px 16px 16px;
+}
+
+.nasa-data-display {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.data-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.data-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.data-value {
+    font-weight: 600;
+    color: #1976d2;
+}
+
+.nasa-update-btn {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #1976d2;
+    background: rgba(25, 118, 210, 0.1);
+    color: #1976d2;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.nasa-update-btn:hover {
+    background: #1976d2;
+    color: white;
+}
+
+/* NASA Data Value Colors */
+.data-value.good {
+    color: #4CAF50;
+    font-weight: 600;
+}
+
+.data-value.warning {
+    color: #FF9800;
+    font-weight: 600;
+}
+
+.data-value.critical {
+    color: #f44336;
+    font-weight: 600;
+}
+
+/* Pulse animation for highlighting */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 8px 30px rgba(46, 125, 50, 0.4);
+        transform: scale(1.02);
+    }
+    100% {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        transform: scale(1);
+    }
+}
+
+/* Available Actions Styles */
+.crop-option-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.crop-option, .feed-option, .treatment-option {
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f9f9f9;
+}
+
+.crop-option:hover, .feed-option:hover, .treatment-option:hover {
+    border-color: #4CAF50;
+    background: #f0f8f0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.crop-icon {
+    font-size: 36px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.suitability.good {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.suitability.poor {
+    color: #f44336;
+    font-weight: bold;
+}
+
+.resource-info {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.crop-detail-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+    background: #fafafa;
+}
+
+.crop-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.growth-stage {
+    font-style: italic;
+    color: #666;
+}
+
+.crop-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+}
+
+.metric {
+    display: flex;
+    justify-content: space-between;
+}
+
+.metric-label {
+    font-weight: bold;
+}
+
+.metric-value.excellent {
+    color: #2196F3;
+    font-weight: bold;
+}
+
+.metric-value.fair {
+    color: #FF9800;
+}
+
+.metric-value.poor {
+    color: #f44336;
+}
+
+.livestock-status, .livestock-details {
+    background: #f0f0f0;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.health-status {
+    font-size: 18px;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 15px 0;
+}
+
+.health-status.excellent {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.health-status.good {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.health-status.fair {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.health-status.poor {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.recommendations {
+    background: #e8f4fd;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    border-left: 4px solid #2196F3;
+}
+
+/* Game Instructions Panel */
+.game-instructions-panel {
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 1000;
+    width: 280px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.instructions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.instructions-header h4 {
+    margin: 0;
+    color: #2E7D32;
+}
+
+.toggle-instructions {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: background 0.2s ease;
+}
+
+.toggle-instructions:hover {
+    background: rgba(46, 125, 50, 0.1);
+}
+
+.instructions-content {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.instruction-step {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #4CAF50;
+}
+
+.instruction-step h5 {
+    margin: 0 0 8px 0;
+    color: #2E7D32;
+    font-size: 14px;
+}
+
+.instruction-step p,
+.instruction-step li {
+    margin: 4px 0;
+    color: #37474f;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.instruction-step ol,
+.instruction-step ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.instruction-step strong {
+    color: #2E7D32;
+}
+
+/* Modal Dialogs */
+.game-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 10000;
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    width: 95vw;
+    max-width: 1600px;
+    height: 92vh;
+    max-height: 92vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    z-index: 10001;
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+/* Modal Header - NASA Space Apps Branding */
+.modal-header {
+    background: linear-gradient(135deg, #E4002B, #FF4444);
+    color: white;
+    padding: 20px;
+    margin: -40px -40px 20px -40px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(228, 0, 43, 0.2);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.modal-header .close-btn {
+    background: rgba(255,255,255,0.2);
+    border: 2px solid white;
+    color: white;
+    font-size: 1.5rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-header .close-btn:hover {
+    background: white;
+    color: #E4002B;
+    transform: rotate(90deg);
+}
+
+.current-conditions {
+    background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+    border: 2px solid #666;
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    position: relative;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.current-conditions h4 {
+    color: #FF6B6B;
+    margin: 0 0 15px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.condition-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+}
+
+.condition-item span:first-child {
+    color: #FFB3B3;
+    font-weight: 500;
+}
+
+.condition-item span:last-child {
+    color: white;
+    font-weight: 600;
+}
+
+.water-indicator {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* NASA Data Panel in Modal */
+.modal-content .nasa-data-panel {
+    background: linear-gradient(135deg, #000000, #1a1a1a);
+    border: 2px solid #E4002B;
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+    position: relative;
+    z-index: 1;
+    width: auto;
+    max-width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.modal-content .nasa-data-panel h4 {
+    color: #FF6B6B;
+    margin: 0 0 15px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-content .satellite-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.modal-content .metric {
+    background: rgba(255,255,255,0.05);
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 3px solid #E4002B;
+}
+
+.modal-content .metric strong {
+    color: #FFB3B3;
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.modal-content .metric span {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.modal-content .nasa-recommendation-box {
+    background: rgba(228, 0, 43, 0.1);
+    border: 2px solid #E4002B;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.modal-content .nasa-recommendation-box strong {
+    color: #FF6B6B;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.modal-content .recommendation-text {
+    color: white;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* Status Color Classes for NASA Data */
+.modal-content span.critical {
+    color: #FF4444 !important;
+    font-weight: 600;
+}
+
+.modal-content span.warning {
+    color: #FFA726 !important;
+    font-weight: 600;
+}
+
+.modal-content span.good {
+    color: #66BB6A !important;
+    font-weight: 600;
+}
+
+.modal-content span.poor {
+    color: #FF7043 !important;
+    font-weight: 600;
+}
+
+.modal-content span.fair {
+    color: #FFCA28 !important;
+    font-weight: 600;
+}
+
+.modal-content span.dry {
+    color: #FF5252 !important;
+    font-weight: 600;
+}
+
+.modal-content span.moderate {
+    color: #42A5F5 !important;
+    font-weight: 600;
+}
+
+.modal-content span.wet {
+    color: #26C6DA !important;
+    font-weight: 600;
+}
+
+.modal-content span.warming {
+    color: #FF7043 !important;
+    font-weight: 600;
+}
+
+.modal-content span.stable {
+    color: #66BB6A !important;
+    font-weight: 600;
+}
+
+.modal-content span.cooling {
+    color: #42A5F5 !important;
+    font-weight: 600;
+}
+
+.water-indicator.low {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.water-indicator.medium {
+    background: #fff3e0;
+    color: #ff9800;
+}
+
+.water-indicator.good {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.irrigation-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px;
+    margin: 30px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.option-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.option-card:hover {
+    border-color: #2e7d32;
+    background: #e8f5e8;
+    transform: translateY(-2px);
+}
+
+.option-card h5 {
+    margin: 0 0 8px 0;
+    color: #2e7d32;
+}
+
+.option-card p {
+    margin: 4px 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Fix for event delegation - prevent child elements from blocking clicks */
+.option-card * {
+    pointer-events: none;
+}
+
+.option-card {
+    pointer-events: auto;
+}
+
+.nasa-recommendation {
+    background: #e3f2fd;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.nasa-recommendation h4 {
+    margin: 0 0 8px 0;
+    color: #1976d2;
+}
+
+/* Action Buttons */
+.crop-actions, .livestock-actions, .resource-actions {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 24px;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    margin: 4px 8px 4px 0;
+    border: 1px solid #2e7d32;
+    background: rgba(46, 125, 50, 0.1);
+    color: #2e7d32;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: #2e7d32;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Notifications */
+.game-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 3000;
+    animation: slideIn 0.3s ease;
+    max-width: 400px;
+}
+
+.game-notification.success {
+    background: linear-gradient(135deg, #2e7d32, #4caf50);
+}
+
+.game-notification.error {
+    background: linear-gradient(135deg, #d32f2f, #f44336);
+}
+
+.game-notification.info {
+    background: linear-gradient(135deg, #1976d2, #2196f3);
+}
+
+.game-notification.fade-out {
+    animation: slideOut 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .decision-panel {
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
+        margin: 20px auto;
+        width: 100%;
+        max-width: 300px;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .nasa-data-panel {
+        position: relative;
+        left: auto;
+        bottom: auto;
+        margin: 20px auto;
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .game-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .farm-stats {
+        justify-content: center;
+    }
+
+    .overview-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+    }
+
+    .crops-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .resources-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .irrigation-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-header {
+        padding: 12px 16px;
+    }
+
+    .game-view {
+        padding: 16px;
+    }
+
+    .modal-content {
+        margin: 20px;
+        max-width: calc(100% - 40px);
+    }
+
+    .resources-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Responsive game layout */
+    .game-layout {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .game-main-area {
+        order: 2;
+    }
+
+    .universal-decision-panel {
+        max-width: none;
+        min-width: auto;
+        order: 1;
+    }
+
+    .decision-panel.fixed-panel {
+        position: static;
+        max-height: none;
+    }
+}
+
+/* NASA Data Panel Styles */
+.nasa-data-panel {
+    background: linear-gradient(135deg, #000000, #1a1a1a);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 15px 0;
+    color: white;
+    border: 2px solid #E4002B;
+    box-shadow: 0 4px 15px rgba(228, 0, 43, 0.3);
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.nasa-data-panel h4 {
+    margin: 0 0 20px 0;
+    color: #E4002B;
+    font-size: 1.3em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.satellite-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.metric {
+    background: rgba(228, 0, 43, 0.1);
+    border: 2px solid rgba(228, 0, 43, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 0.95em;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.metric strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #FF6B6B;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 0.5px;
+}
+
+.metric .critical { color: #ff6b6b; font-weight: bold; }
+.metric .warning { color: #ffa726; font-weight: bold; }
+.metric .good { color: #66bb6a; font-weight: bold; }
+.metric .poor { color: #ff6b6b; font-weight: bold; }
+.metric .fair { color: #ffa726; font-weight: bold; }
+.metric .dry { color: #ff8a65; font-weight: bold; }
+.metric .moderate { color: #ffb74d; font-weight: bold; }
+.metric .wet { color: #81c784; font-weight: bold; }
+
+.nasa-recommendation-box {
+    background: rgba(228, 0, 43, 0.15);
+    border: 2px solid #E4002B;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 4px 15px rgba(228, 0, 43, 0.2);
+}
+
+.recommendation-text {
+    margin: 8px 0 0 0;
+    font-style: italic;
+    color: #FFE0E0;
+    font-weight: 500;
+    font-size: 1.05em;
+    line-height: 1.4;
+}
+
+/* Universal Game Layout */
+.game-layout {
+    display: flex;
+    gap: 20px;
+    height: 100%;
+    align-items: stretch;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.game-main-area {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+
+.universal-decision-panel {
+    flex: 0 0 350px;
+    width: 350px;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.decision-panel.fixed-panel {
+    background: linear-gradient(135deg, #000000, #1a1a1a);
+    border: 3px solid #E4002B;
+    border-radius: 15px;
+    padding: 20px;
+    position: sticky;
+    top: 20px;
+    height: fit-content;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    box-shadow: 0 8px 25px rgba(228, 0, 43, 0.3);
+    z-index: 20;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.decision-panel.fixed-panel .decision-header {
+    background: white;
+    color: #333;
+    padding: 15px;
+    border-radius: 10px;
+    margin: -20px -20px 20px -20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.decision-panel.fixed-panel .decision-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    flex: 1;
+}
+
+.decision-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.decision-btn {
+    background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+    border: 2px solid #E4002B;
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+
+.decision-btn:hover {
+    background: linear-gradient(135deg, #E4002B, #FF4444);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(228, 0, 43, 0.4);
+}
+
+.decision-btn:active {
+    transform: translateY(0);
+}
+
+/* Enhanced Option Cards */
+.option-card.recommended {
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    position: relative;
+}
+
+.nasa-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8em;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Stress Indicators */
+.stress-indicator {
+    font-size: 0.8em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 5px;
+}
+
+.stress-indicator.low {
+    background: #d4edda;
+    color: #155724;
+}
+
+.stress-indicator.medium {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.stress-indicator.high {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Nutrition Indicators */
+.nutrition-indicators {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 5px;
+}
+
+.nutrient-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8em;
+}
+
+.nutrient-bar span {
+    width: 15px;
+    font-weight: bold;
+    color: #666;
+}
+
+.nutrient-bar .bar {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    min-width: 0;
+    transition: width 0.3s ease;
+}
+
+.nutrient-bar .bar.low {
+    background: linear-gradient(90deg, #ff6b6b, #e74c3c);
+}
+
+.nutrient-bar .bar.medium {
+    background: linear-gradient(90deg, #ffa726, #ff9800);
+}
+
+.nutrient-bar .bar.good {
+    background: linear-gradient(90deg, #66bb6a, #4caf50);
+}
+
+/* Livestock Management Styles */
+.livestock-status {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.livestock-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    border-left: 4px solid #2e7d32;
+}
+
+.livestock-item span {
+    font-weight: bold;
+    color: #2e7d32;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.health-indicator, .production-indicator {
+    font-size: 0.9em;
+    margin: 4px 0;
+}
+
+.health-indicator {
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.health-indicator.poor {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.health-indicator.fair {
+    background: #fff3e0;
+    color: #ff9800;
+}
+
+.health-indicator.good {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.production-indicator {
+    color: #666;
+    font-style: italic;
+}
+
+/* Health indicator colors for metrics */
+.metric .high {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+.metric .medium {
+    color: #ffa726;
+    font-weight: bold;
+}
+
+.metric .low {
+    color: #66bb6a;
+    font-weight: bold;
+}
+
+/* Achievement System Styles */
+.achievements-container {
+    padding: 20px;
+}
+
+.score-summary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 20px;
+    color: white;
+    margin-bottom: 25px;
+}
+
+.total-score h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.8em;
+    text-align: center;
+}
+
+.score-breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.score-item {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px 15px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.score-item span:last-child {
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.achievement-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid #e0e0e0;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.achievement-card.unlocked {
+    background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+    border-color: #4caf50;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+}
+
+.achievement-card.locked {
+    opacity: 0.7;
+    background: #f5f5f5;
+}
+
+.achievement-icon {
+    font-size: 2.5em;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.achievement-info h5 {
+    margin: 0 0 8px 0;
+    color: #2e7d32;
+    font-size: 1.2em;
+}
+
+.achievement-info p {
+    margin: 0 0 15px 0;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.achievement-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #66bb6a);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.8em;
+    color: #666;
+    min-width: 35px;
+}
+
+.achievement-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #4caf50;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.leaderboard-section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+}
+
+.leaderboard-section h5 {
+    margin: 0 0 15px 0;
+    color: #2e7d32;
+    font-size: 1.1em;
+}
+
+.progress-goals {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.progress-goal {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border-left: 4px solid #2e7d32;
+}
+
+.goal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.goal-icon {
+    font-size: 1.2em;
+}
+
+.goal-title {
+    font-weight: bold;
+    color: #333;
+}
+
+.goal-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.goal-progress .progress-bar {
+    flex: 1;
+    height: 6px;
+}
+
+.goal-progress .progress-text {
+    font-size: 0.9em;
+    color: #666;
+    min-width: 50px;
+}
+
+/* Crisis Response Styles */
+.crisis-alert {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 5px solid #c0392b;
+}
+
+.crisis-alert p {
+    margin: 0;
+    font-weight: bold;
+}
+
+.crisis-panel {
+    border-color: #e74c3c !important;
+    background: linear-gradient(135deg, #c0392b, #e74c3c) !important;
+}
+
+.crisis-impact {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.impact-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 4px solid #666;
+}
+
+.impact-item.critical {
+    background: #ffebee;
+    border-left-color: #e74c3c;
+}
+
+.impact-item.warning {
+    background: #fff3e0;
+    border-left-color: #f39c12;
+}
+
+.impact-item.good {
+    background: #e8f5e8;
+    border-left-color: #27ae60;
+}
+
+.impact-icon {
+    font-size: 1.5em;
+    margin-right: 12px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.impact-details {
+    flex: 1;
+}
+
+.impact-details strong {
+    color: #2c3e50;
+    margin-right: 8px;
+}
+
+.crisis-options {
+    margin-top: 20px;
+}
+
+.crisis-options .option-card {
+    position: relative;
+    min-height: 200px;
+}
+
+.response-outcomes {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 4px;
+    border-left: 3px solid #3498db;
+}
+
+.response-outcomes small {
+    color: #2c3e50;
+    font-style: italic;
+}
+
+/* Farm Context Selection Styles */
+.farm-context-selection {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: white;
+}
+
+.selection-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.selection-header h2 {
+    font-size: 2.5em;
+    margin: 0 0 15px 0;
+    color: white;
+}
+
+.selection-header p {
+    font-size: 1.2em;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.farm-type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.farm-type-card {
+    background: white;
+    color: #333;
+    border-radius: 20px;
+    padding: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.farm-type-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+    transition: height 0.3s ease;
+}
+
+.farm-type-card.smallholder::before {
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+}
+
+.farm-type-card.industrial::before {
+    background: linear-gradient(90deg, #3498db, #2980b9);
+}
+
+.farm-type-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.farm-type-card:hover::before {
+    height: 8px;
+}
+
+.farm-type-icon {
+    font-size: 4em;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.farm-type-card h3 {
+    font-size: 1.8em;
+    margin: 0 0 20px 0;
+    text-align: center;
+    color: #2c3e50;
+}
+
+.farm-type-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.farm-type-stats .stat {
+    font-size: 0.9em;
+    color: #666;
+    font-weight: 500;
+}
+
+.farm-type-description {
+    margin-bottom: 20px;
+}
+
+.farm-type-description p {
+    margin: 8px 0;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+.farm-type-features {
+    background: #f1f3f4;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+.farm-type-features h5 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1em;
+}
+
+.farm-type-features ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.farm-type-features li {
+    margin: 5px 0;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.context-comparison {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.context-comparison h4 {
+    margin: 0 0 20px 0;
+    color: white;
+    text-align: center;
+    font-size: 1.3em;
+}
+
+.comparison-table {
+    display: grid;
+    gap: 10px;
+}
+
+.comparison-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 1fr;
+    gap: 15px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    align-items: center;
+}
+
+.comparison-category {
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.smallholder-value, .industrial-value {
+    font-size: 0.9em;
+    padding: 8px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.selection-footer {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.selection-footer p {
+    opacity: 0.8;
+    font-style: italic;
+}
+
+/* Responsive design for farm selection */
+@media (max-width: 768px) {
+    .farm-type-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .comparison-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .farm-type-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .selection-header h2 {
+        font-size: 2em;
+    }
+}
+
+/* Decision Feedback Dialog Styles */
+.decision-feedback-dialog {
+    background: white;
+    border-radius: 12px;
+    max-width: 800px;
+    margin: 20px auto;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.feedback-header {
+    background: linear-gradient(135deg, #1565C0, #1976D2);
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.feedback-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.feedback-content {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.feedback-section {
+    margin-bottom: 24px;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #ddd;
+}
+
+.feedback-section:last-child {
+    margin-bottom: 0;
+}
+
+.feedback-section.result-summary {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-left-color: #6c757d;
+}
+
+.feedback-section.nasa-insights {
+    background: linear-gradient(135deg, #e3f2fd, #e1f5fe);
+    border-left-color: #1976d2;
+}
+
+.feedback-section.learning-outcomes {
+    background: linear-gradient(135deg, #fff3e0, #fffe0d0);
+    border-left-color: #ff9800;
+}
+
+.feedback-section.real-world-context {
+    background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+    border-left-color: #4caf50;
+}
+
+.feedback-section.recommendations {
+    background: linear-gradient(135deg, #fce4ec, #f8bbd9);
+    border-left-color: #e91e63;
+}
+
+.feedback-section.progress-tracking {
+    background: linear-gradient(135deg, #f3e5f5, #e8eaf6);
+    border-left-color: #9c27b0;
+}
+
+.feedback-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.result-icon {
+    font-size: 1.5rem;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+}
+
+.result-icon.success {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+}
+
+.result-icon.warning {
+    background: rgba(255, 152, 0, 0.2);
+    color: #ff9800;
+}
+
+.result-message {
+    font-size: 1rem;
+    color: #555;
+    margin: 8px 0;
+    line-height: 1.5;
+}
+
+.score-change {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-top: 8px;
+}
+
+.nasa-alignment {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.nasa-alignment.aligned {
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #2e7d32;
+}
+
+.nasa-alignment.misaligned {
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    color: #f57c00;
+}
+
+.nasa-learning {
+    font-style: italic;
+    color: #666;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid #1976d2;
+}
+
+.learning-points, .recommendation-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.learning-points li, .recommendation-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    position: relative;
+    padding-left: 24px;
+}
+
+.learning-points li:last-child, .recommendation-list li:last-child {
+    border-bottom: none;
+}
+
+/* Satellite Data Integration Styles */
+.satellite-data-option {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.satellite-load-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: white;
+    color: #667eea;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.satellite-load-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.satellite-info {
+    margin-top: 10px;
+    color: white;
+    font-size: 0.9em;
+}
+
+.water-rate-config {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.rate-formula {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.formula-result {
+    font-size: 1.2em;
+    color: #1565c0;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+}
+
+.formula-factors {
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.formula-factors ul {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0;
+}
+
+.formula-factors li {
+    padding: 3px 0;
+    color: #546e7a;
+}
+
+.crop-varieties {
+    margin-top: 15px;
+}
+
+.crop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.crop-option {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.crop-option:hover {
+    border-color: #4caf50;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.crop-emoji {
+    font-size: 2em;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.crop-name {
+    display: block;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.water-need {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    margin: 2px;
+}
+
+.water-high {
+    background: #bbdefb;
+    color: #0d47a1;
+}
+
+.water-medium {
+    background: #fff9c4;
+    color: #f57f17;
+}
+
+.water-low {
+    background: #ffccbc;
+    color: #bf360c;
+}
+
+.water-very-low {
+    background: #d7ccc8;
+    color: #3e2723;
+}
+
+.temp-range {
+    display: block;
+    font-size: 0.8em;
+    color: #757575;
+    margin-top: 3px;
+}
+
+.location-info {
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.location-info h4 {
+    margin: 0;
+    color: #616161;
+}
+
+.satellite-location-info {
+    display: flex;
+    align-items: center;
+    margin: 0 15px;
+}
+
+.location-badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.satellite-badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-align: center;
+    margin: 10px 0;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.suitability.satellite {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.learning-points li:before {
+    content: "💡";
+    position: absolute;
+    left: 0;
+    top: 8px;
+}
+
+.recommendation-list li:before {
+    content: "👍";
+    position: absolute;
+    left: 0;
+    top: 8px;
+}
+
+.progress-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.progress-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress-label {
+    font-weight: 500;
+    min-width: 140px;
+    color: #333;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #66bb6a);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-fill.nasa {
+    background: linear-gradient(90deg, #1976d2, #42a5f5);
+}
+
+.progress-value {
+    font-weight: 600;
+    color: #333;
+    min-width: 40px;
+    text-align: right;
+}
+
+.feedback-actions {
+    padding: 20px 24px;
+    background: #f8f9fa;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+/* NASA Data Dialog Styles */
+.nasa-data-dialog {
+    background: white;
+    border-radius: 12px;
+    max-width: 700px;
+    margin: 20px auto;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.nasa-header {
+    background: linear-gradient(135deg, #0D47A1, #1565C0);
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.nasa-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.nasa-content {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.nasa-system {
+    background: linear-gradient(135deg, #e3f2fd, #e1f5fe);
+    border: 1px solid rgba(25, 118, 210, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.nasa-system:last-child {
+    margin-bottom: 0;
+}
+
+.nasa-system h4 {
+    margin: 0 0 8px 0;
+    color: #0d47a1;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.nasa-system p {
+    margin: 8px 0 16px 0;
+    color: #555;
+    line-height: 1.5;
+}
+
+.data-specs {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.spec {
+    background: rgba(25, 118, 210, 0.1);
+    color: #0d47a1;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.nasa-actions {
+    padding: 20px 24px;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Responsive Design for Feedback Dialogs */
+@media (max-width: 768px) {
+    .decision-feedback-dialog, .nasa-data-dialog {
+        margin: 10px;
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+    }
+
+    .feedback-content, .nasa-content {
+        padding: 16px;
+    }
+
+    .feedback-section {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .progress-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .progress-label {
+        min-width: auto;
+    }
+
+    .progress-bar {
+        width: 100%;
+    }
+
+    .feedback-actions {
+        flex-direction: column;
+    }
+
+    .data-specs {
+        justify-content: center;
+    }
+}
+
+/* Seasonal Progress View Styles */
+.seasonal-progress-container {
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    margin: 20px;
+}
+
+.season-overview {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.season-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.season-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #2e7d32;
+}
+
+.season-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.season-description {
+    background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid #4caf50;
+    font-style: italic;
+    color: #2e7d32;
+}
+
+.seasonal-activities {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.seasonal-activities h4 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.activities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.activity-card {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s ease;
+}
+
+.activity-card.completed {
+    background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+    border-color: #4caf50;
+}
+
+.activity-card.pending:hover {
+    border-color: #2196f3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+}
+
+.activity-icon {
+    font-size: 1.5rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-content h5 {
+    margin: 0 0 4px 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.activity-status {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.activity-btn {
+    background: linear-gradient(135deg, #2196f3, #42a5f5);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.activity-btn:hover {
+    background: linear-gradient(135deg, #1976d2, #2196f3);
+    transform: scale(1.05);
+}
+
+.season-timeline {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.season-timeline h4 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.timeline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.timeline-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.timeline-bar {
+    height: 12px;
+    background: #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.timeline-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #66bb6a);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.milestones-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.milestone-achieved {
+    background: linear-gradient(135deg, #ffd54f, #ffeb3b);
+    color: #f57f17;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 2px solid rgba(245, 127, 23, 0.2);
+}
+
+.weekly-summary {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.weekly-summary h4 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 2px solid transparent;
+}
+
+.summary-card.income {
+    border-color: #4caf50;
+    background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+}
+
+.summary-card.expenses {
+    border-color: #ff9800;
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+}
+
+.summary-card.profit.positive {
+    border-color: #2196f3;
+    background: linear-gradient(135deg, #e3f2fd, #e1f5fe);
+}
+
+.summary-card.profit.negative {
+    border-color: #f44336;
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+}
+
+.summary-icon {
+    font-size: 1.5rem;
+}
+
+.summary-content h5 {
+    margin: 0 0 4px 0;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.summary-value {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.crop-summary {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 20px;
+}
+
+.crop-summary h5 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.crop-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.crop-status-item {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.crop-type {
+    font-weight: 600;
+    color: #333;
+}
+
+.crop-stage {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.crop-health-bar {
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.health-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f44336, #ff9800, #4caf50);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.health-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.market-prices {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.market-prices h4 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.prices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.price-item {
+    background: linear-gradient(135deg, #e3f2fd, #e1f5fe);
+    border: 1px solid rgba(33, 150, 243, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+}
+
+.commodity-name {
+    display: block;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.commodity-price {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1976d2;
+}
+
+.seasonal-events {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.seasonal-events h4 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.event-card {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border: 2px solid rgba(255, 152, 0, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.event-header h5 {
+    margin: 0;
+    color: #ef6c00;
+    font-size: 1.1rem;
+}
+
+.event-week {
+    background: rgba(239, 108, 0, 0.1);
+    color: #ef6c00;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.event-description {
+    margin: 0 0 16px 0;
+    color: #333;
+    line-height: 1.5;
+}
+
+.event-benefits, .event-recommendations {
+    margin-bottom: 12px;
+}
+
+.event-benefits strong, .event-recommendations strong {
+    color: #ef6c00;
+    font-size: 0.9rem;
+}
+
+.event-benefits ul, .event-recommendations ul {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+}
+
+.event-benefits li, .event-recommendations li {
+    margin-bottom: 4px;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+/* Responsive Design for Seasonal Progress */
+@media (max-width: 768px) {
+    .seasonal-progress-container {
+        margin: 10px;
+        padding: 16px;
+    }
+
+    .season-overview, .seasonal-activities, .season-timeline, .weekly-summary, .market-prices, .seasonal-events {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .season-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .season-meta {
+        gap: 8px;
+    }
+
+    .activities-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .activity-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .crop-status-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .crop-status-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .prices-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .event-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+/* Tutorial and Onboarding Styles */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+}
+
+.tutorial-modal {
+    background: white;
+    border-radius: 16px;
+    max-width: 800px;
+    max-height: 90vh;
+    width: 90vw;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    animation: tutorialSlideIn 0.4s ease-out;
+}
+
+@keyframes tutorialSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.tutorial-header {
+    background: linear-gradient(135deg, #1565C0, #1976D2, #42A5F5);
+    color: white;
+    padding: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.tutorial-header h2 {
+    margin: 0 0 16px 0;
+    font-size: 1.6rem;
+    font-weight: 600;
+}
+
+.tutorial-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    padding: 10px;
+    margin: 10px 0;
+    min-height: 50px;
+}
+
+.tutorial-step {
+    font-size: 0.9rem;
+    opacity: 1;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.tutorial-progress-bar {
+    width: 200px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.tutorial-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #66BB6A);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.tutorial-content {
+    padding: 32px;
+    overflow-y: auto;
+    flex: 1;
+    line-height: 1.6;
+}
+
+.tutorial-welcome {
+    text-align: center;
+}
+
+.tutorial-hero h2 {
+    color: #1565C0;
+    margin: 0 0 8px 0;
+    font-size: 1.8rem;
+}
+
+.tutorial-subtitle {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0 0 24px 0;
+    font-style: italic;
+}
+
+.tutorial-intro {
+    text-align: left;
+    margin-bottom: 24px;
+}
+
+.tutorial-benefits {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+}
+
+.tutorial-benefits li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.tutorial-benefits li:last-child {
+    border-bottom: none;
+}
+
+.tutorial-farmtype {
+    background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+    border: 2px solid rgba(76, 175, 80, 0.3);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 24px;
+}
+
+.tutorial-context-desc {
+    color: #2e7d32;
+    font-style: italic;
+    margin: 8px 0 0 0;
+}
+
+/* Tutorial Time Section */
+.tutorial-time h3 {
+    color: #1976d2;
+    margin: 0 0 16px 0;
+}
+
+.time-breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.time-unit {
+    background: linear-gradient(135deg, #e3f2fd, #e1f5fe);
+    border: 2px solid rgba(25, 118, 210, 0.2);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+}
+
+.tutorial-highlight {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border-left: 4px solid #ff9800;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 20px 0;
+}
+
+.tutorial-highlight h4 {
+    margin: 0 0 8px 0;
+    color: #ef6c00;
+}
+
+/* Tutorial Navigation Section */
+.nav-explanations {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.3s ease;
+}
+
+.nav-item:hover {
+    border-color: #1976d2;
+    transform: translateX(4px);
+}
+
+.nav-icon {
+    font-size: 1.5rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+.nav-details strong {
+    color: #1976d2;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Tutorial NASA Section */
+.nasa-systems {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.nasa-system-info {
+    background: linear-gradient(135deg, #e3f2fd, #e1f5fe);
+    border: 2px solid rgba(25, 118, 210, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.nasa-system-info h4 {
+    margin: 0 0 12px 0;
+    color: #0d47a1;
+    font-size: 1.1rem;
+}
+
+.nasa-system-info p {
+    margin: 8px 0;
+    color: #333;
+}
+
+/* Tutorial Decisions Section */
+.decision-types {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.decision-example {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.decision-example h4 {
+    margin: 0 0 12px 0;
+    color: #1976d2;
+}
+
+.decision-example p {
+    margin: 8px 0;
+    color: #333;
+}
+
+.tutorial-scoring {
+    background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+    border-left: 4px solid #4caf50;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 20px 0;
+}
+
+.tutorial-scoring h4 {
+    margin: 0 0 12px 0;
+    color: #2e7d32;
+}
+
+.tutorial-scoring ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.tutorial-scoring li {
+    margin-bottom: 8px;
+    color: #333;
+}
+
+/* Tutorial Interactive Section */
+.scenario-setup {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border: 2px solid rgba(255, 152, 0, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.scenario-setup h4 {
+    margin: 0 0 12px 0;
+    color: #ef6c00;
+}
+
+.scenario-setup ul {
+    margin: 12px 0;
+    padding-left: 20px;
+}
+
+.tutorial-question {
+    background: linear-gradient(135deg, #e3f2fd, #e1f5fe);
+    border: 2px solid rgba(25, 118, 210, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.tutorial-question h4 {
+    margin: 0 0 12px 0;
+    color: #1976d2;
+}
+
+.tutorial-hint {
+    background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+    border-left: 4px solid #4caf50;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 20px 0;
+}
+
+/* Tutorial Feedback Section */
+.feedback-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.feedback-feature {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.feedback-feature h4 {
+    margin: 0 0 8px 0;
+    color: #1976d2;
+    font-size: 1rem;
+}
+
+.feedback-feature p {
+    margin: 0;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.tutorial-achievement {
+    background: linear-gradient(135deg, #ffd54f, #ffeb3b);
+    border: 2px solid rgba(245, 127, 23, 0.3);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.tutorial-achievement h4 {
+    margin: 0 0 8px 0;
+    color: #f57f17;
+}
+
+/* Tutorial Progression Section */
+.seasonal-guide {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.season-guide {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.season-guide h4 {
+    margin: 0 0 12px 0;
+    color: #1976d2;
+}
+
+.season-guide ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.season-guide li {
+    margin-bottom: 8px;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.progression-rewards {
+    background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+    border-left: 4px solid #4caf50;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 20px 0;
+}
+
+.progression-rewards h4 {
+    margin: 0 0 12px 0;
+    color: #2e7d32;
+}
+
+.progression-rewards ul {
+    margin: 12px 0 0 0;
+    padding-left: 20px;
+}
+
+/* Tutorial Actions */
+.tutorial-actions {
+    padding: 24px;
+    background: #f8f9fa;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tutorial-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+}
+
+.tutorial-btn.primary {
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    color: white;
+}
+
+.tutorial-btn.primary:hover {
+    background: linear-gradient(135deg, #1565c0, #1976d2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+}
+
+.tutorial-btn.secondary {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: #333;
+    border: 2px solid #dee2e6;
+}
+
+.tutorial-btn.secondary:hover {
+    background: linear-gradient(135deg, #e9ecef, #dee2e6);
+    border-color: #adb5bd;
+}
+
+.tutorial-skip {
+    padding: 16px 24px;
+    text-align: center;
+    border-top: 1px solid #e0e0e0;
+}
+
+.tutorial-skip-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: underline;
+}
+
+.tutorial-skip-btn:hover {
+    color: #333;
+}
+
+/* Element Highlighting */
+.tutorial-highlight-element {
+    position: relative;
+    z-index: 9999;
+    border: 3px solid #1976d2 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 0 20px rgba(25, 118, 210, 0.4) !important;
+    animation: tutorialPulse 2s infinite;
+}
+
+@keyframes tutorialPulse {
+    0% {
+        box-shadow: 0 0 20px rgba(25, 118, 210, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(25, 118, 210, 0.6);
+    }
+    100% {
+        box-shadow: 0 0 20px rgba(25, 118, 210, 0.4);
+    }
+}
+
+/* Tutorial Completion Dialog */
+.tutorial-completion-dialog {
+    background: white;
+    border-radius: 16px;
+    max-width: 700px;
+    margin: 20px auto;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+}
+
+.completion-header {
+    background: linear-gradient(135deg, #4caf50, #66bb6a);
+    color: white;
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.completion-header h2 {
+    margin: 0 0 16px 0;
+    font-size: 1.8rem;
+}
+
+.completion-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 12px 20px;
+    border-radius: 25px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.badge-icon {
+    font-size: 1.5rem;
+}
+
+.badge-text {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.completion-content {
+    padding: 32px 24px;
+}
+
+.completion-summary {
+    margin-bottom: 32px;
+}
+
+.completion-summary h3 {
+    margin: 0 0 16px 0;
+    color: #2e7d32;
+}
+
+.completion-rewards {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.completion-rewards li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+}
+
+.completion-rewards li:last-child {
+    border-bottom: none;
+}
+
+.next-steps {
+    margin-bottom: 32px;
+}
+
+.next-steps h3 {
+    margin: 0 0 16px 0;
+    color: #1976d2;
+}
+
+.next-step-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.next-step-card {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+}
+
+.next-step-card:hover {
+    border-color: #1976d2;
+    transform: translateY(-2px);
+}
+
+.step-icon {
+    font-size: 1.5rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+.step-content h4 {
+    margin: 0 0 4px 0;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.step-content p {
+    margin: 0;
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.tutorial-resources {
+    background: linear-gradient(135deg, #e3f2fd, #e1f5fe);
+    border: 2px solid rgba(25, 118, 210, 0.2);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+}
+
+.tutorial-resources h3 {
+    margin: 0 0 8px 0;
+    color: #1976d2;
+}
+
+.completion-actions {
+    padding: 24px;
+    background: #f8f9fa;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Quick Help Dialog */
+.quick-help-dialog {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    margin: 20px auto;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.help-header {
+    background: linear-gradient(135deg, #ff9800, #ffb74d);
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.help-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.help-content {
+    padding: 24px;
+}
+
+.help-section {
+    margin-bottom: 24px;
+}
+
+.help-section:last-child {
+    margin-bottom: 0;
+}
+
+.help-section h3 {
+    margin: 0 0 12px 0;
+    color: #ef6c00;
+    font-size: 1.1rem;
+}
+
+.help-section ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.help-section li {
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.help-actions {
+    padding: 20px 24px;
+    background: #f8f9fa;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Responsive Design for Tutorial */
+@media (max-width: 768px) {
+    .tutorial-modal {
+        width: 95vw;
+        max-height: 95vh;
+    }
+
+    .tutorial-content {
+        padding: 20px;
+    }
+
+    .tutorial-actions {
+        flex-direction: column;
+        padding: 20px;
+    }
+
+    .tutorial-btn {
+        width: 100%;
+    }
+
+    .time-breakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .nasa-systems {
+        gap: 16px;
+    }
+
+    .decision-types {
+        gap: 16px;
+    }
+
+    .feedback-features {
+        grid-template-columns: 1fr;
+    }
+
+    .seasonal-guide {
+        grid-template-columns: 1fr;
+    }
+
+    .next-step-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .nav-item {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .completion-content {
+        padding: 20px;
+    }
+
+    .completion-actions {
+        flex-direction: column;
+        padding: 20px;
+    }
+}
+
+/* Crop Area Selection Dialog Styles */
+.crop-area-selection {
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.crop-info {
+    background: linear-gradient(135deg, #2E7D32 0%, #4CAF50 30%, #8BC34A 70%, #CDDC39 100%);
+    padding: 25px;
+    border-radius: 20px;
+    margin-bottom: 25px;
+    border: 3px solid #FFC107;
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+    position: relative;
+    overflow: hidden;
+    animation: cropInfoGlow 3s ease-in-out infinite alternate;
+}
+
+.crop-info::before {
+    content: '🌱';
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 2rem;
+    opacity: 0.3;
+    animation: float 2s ease-in-out infinite;
+}
+
+.crop-info h4 {
+    color: #FFFFFF;
+    margin: 0 0 20px 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    letter-spacing: 1px;
+}
+
+.crop-details {
+    display: grid;
+    gap: 12px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-left: 4px solid #FF6B35;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.detail-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    background: rgba(255, 255, 255, 1);
+}
+
+.detail-item span:first-child {
+    font-weight: 500;
+    color: #495057;
+}
+
+.detail-item span:last-child {
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.land-status {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 2px solid #6c757d;
+}
+
+.land-status h4 {
+    color: #495057;
+    margin: 0 0 15px 0;
+    font-size: 1.2rem;
+}
+
+.land-metrics {
+    display: grid;
+    gap: 10px;
+}
+
+.land-metrics .metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.land-metrics .metric span:first-child {
+    font-weight: 500;
+    color: #495057;
+}
+
+.land-metrics .metric .available {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.land-metrics .metric .recovering {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.area-selector {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 2px solid #E4002B;
+}
+
+.area-selector h4 {
+    color: #856404;
+    margin: 0 0 15px 0;
+    font-size: 1.2rem;
+}
+
+.area-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.area-input-group label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.area-input-group input {
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.area-input-group input:focus {
+    outline: none;
+    border-color: #E4002B;
+    box-shadow: 0 0 0 3px rgba(228, 0, 43, 0.1);
+}
+
+.area-range {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.cost-calculator {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.cost-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cost-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.cost-item span:first-child {
+    font-weight: 500;
+    color: #495057;
+}
+
+.cost-item span:last-child {
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.cost-item.total {
+    border-top: 2px solid #E4002B;
+    padding-top: 12px;
+    font-size: 1.1rem;
+}
+
+.cost-item.total span {
+    color: #E4002B;
+    font-weight: 700;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.action-buttons .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.action-buttons .btn-primary {
+    background: linear-gradient(135deg, #E4002B, #FF4444);
+    color: white;
+}
+
+.action-buttons .btn-primary:hover {
+    background: linear-gradient(135deg, #c8002a, #e04040);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(228, 0, 43, 0.3);
+}
+
+.action-buttons .btn-secondary {
+    background: linear-gradient(135deg, #6c757d, #868e96);
+    color: white;
+}
+
+.action-buttons .btn-secondary:hover {
+    background: linear-gradient(135deg, #5a6268, #6c757d);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+/* NASA Satellite Data Strip Styles */
+.nasa-satellite-data-strip {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 0;
+    box-shadow: 0 4px 12px rgba(228, 0, 43, 0.2);
+    border: 2px solid #E4002B;
+}
+
+.nasa-satellite-data-strip h4 {
+    color: #ffffff;
+    margin: 0 0 12px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.satellite-data-horizontal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: space-between;
+}
+
+.satellite-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+    flex: 1;
+}
+
+.satellite-label {
+    color: #cccccc;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.satellite-value {
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+    background: rgba(228, 0, 43, 0.2);
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(228, 0, 43, 0.4);
+}
+
+.satellite-value.soil-moisture-value {
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    border: 1px solid #1976d2;
+}
+
+.satellite-value.ndvi-value {
+    background: linear-gradient(135deg, #388e3c, #66bb6a);
+    border: 1px solid #388e3c;
+}
+
+.satellite-value.temperature-value {
+    background: linear-gradient(135deg, #f57c00, #ffb74d);
+    border: 1px solid #f57c00;
+}
+
+.satellite-value.water-multiplier-value {
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    border: 1px solid #1976d2;
+}
+
+.satellite-value.nutrient-multiplier-value {
+    background: linear-gradient(135deg, #388e3c, #66bb6a);
+    border: 1px solid #388e3c;
+}
+
+/* Keyframes for crop-info animations */
+@keyframes cropInfoGlow {
+    0% { box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3); }
+    100% { box-shadow: 0 12px 35px rgba(255, 193, 7, 0.4); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+}
+
+/* Responsive design for satellite data */
+@media (max-width: 768px) {
+    .satellite-data-horizontal {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .satellite-item {
+        flex-direction: row;
+        justify-content: space-between;
+        min-width: unset;
+    }
+
+    .satellite-label {
+        margin-bottom: 0;
+    }
+}
+
+/* Individual Crop Fertilizer Dialog Styles */
+.crop-fertilizer-options {
+    padding: 20px;
+}
+
+.crop-current-status {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.crop-current-status h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+}
+
+.crop-current-status p {
+    margin: 5px 0;
+    color: #6c757d;
+}
+
+.fertilizer-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.fertilizer-btn {
+    background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+    border: 2px solid #4caf50;
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.fertilizer-btn:hover {
+    background: linear-gradient(135deg, #4caf50, #66bb6a);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.fertilizer-btn span {
+    display: block;
+    font-size: 14px;
+    font-weight: 400;
+    margin-top: 5px;
+    opacity: 0.8;
+}
+
+/* Crop Details Panel Styles */
+.crop-details-panel {
+    padding: 20px;
+}
+
+.detail-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.detail-section h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1.2rem;
+}
+
+.detail-section ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.detail-section li {
+    margin: 8px 0;
+    color: #6c757d;
+    line-height: 1.5;
+}
+
+
+/* Feed Livestock UI Improvement */
+.feed-livestock {
+    padding: 25px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    margin: 15px 0;
+}
+
+.feed-livestock p {
+    color: #2c3e50 !important;  /* 진한 색상으로 변경 */
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.feed-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.feed-option {
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    border: 2px solid #28a745;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.feed-option:hover {
+    background: linear-gradient(135deg, #28a745, #34ce57);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+}
+
+.feed-option h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50 !important;  /* 진한 색상 */
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.feed-option:hover h4 {
+    color: white !important;
+}
+
+.feed-option p {
+    margin: 5px 0;
+    color: #495057 !important;  /* 진한 회색 */
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.feed-option:hover p {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* General UI Improvements - 전체 UI 개선 */
+
+/* 버튼 스타일 개선 */
+.action-btn {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+.action-btn:hover {
+    background: linear-gradient(135deg, #0056b3, #004085) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+/* 모달 헤더 개선 */
+.modal-header {
+    background: linear-gradient(135deg, #2c3e50, #34495e) !important;
+    color: white !important;
+    padding: 20px;
+    border-radius: 12px 12px 0 0;
+    margin: -20px -20px 20px -20px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    color: white !important;
+}
+
+/* 전체 텍스트 가시성 개선 - 강제 적용 */
+p {
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
+}
+
+/* 라벨과 값 구분 */
+.stat {
+    color: #495057 !important;
+    font-weight: 600 !important;
+}
+
+.stat-value, .metric-value, .info-value {
+    color: #212529 !important;
+    font-weight: bold !important;
+}
+
+/* 리스트 스타일 개선 */
+li {
+    color: #495057 !important;
+    font-weight: 600 !important;
+    margin: 10px 0;
+}
+
+/* 카드 헤더 개선 */
+h4, h5 {
+    color: #2c3e50 !important;
+    font-weight: 700 !important;
+}
+
+/* 작물 카드 개선 */
+.crop-card h5 {
+    color: #2c3e50 !important;
+    font-weight: 700 !important;
+    font-size: 1.2rem;
+}
+
+.crop-card .stat {
+    color: #495057 !important;
+    font-weight: 600 !important;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 5px 10px;
+    border-radius: 6px;
+    margin: 3px 0;
+}
+
+/* 리소스 디스플레이 개선 */
+.resource-item {
+    background: linear-gradient(135deg, #ffffff, #f8f9fa) !important;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 8px 0;
+}
+
+.resource-item span {
+    color: #2c3e50 !important;
+    font-weight: 700 !important;
+}
+
+
+
+/* Game Header and Navigation Improvements */
+.game-header {
+    background: linear-gradient(135deg, #2c3e50, #3498db) !important;
+    color: white !important;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(44, 62, 80, 0.2);
+}
+
+.game-header h2 {
+    color: white !important;
+    font-weight: 700 !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.game-stats .stat-value {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 1.3rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.game-stats .stat-label {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 600 !important;
+}
+
+/* Tab Navigation Improvements */
+.game-tabs {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tab-btn {
+    color: #495057 !important;
+    font-weight: 600 !important;
+    padding: 12px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+    color: white !important;
+    font-weight: 700 !important;
+}
+
+.tab-btn:hover {
+    background: rgba(0, 123, 255, 0.1) !important;
+    color: #007bff !important;
+}
+
+/* Livestock and Resource Cards */
+.livestock-card, .resource-card {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff) !important;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.livestock-card:hover, .resource-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    border-color: #007bff;
+}
+
+.livestock-card h5, .resource-card h5 {
+    color: #2c3e50 !important;
+    font-weight: 700 !important;
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+}
+
+/* Content Areas */
+.crops-container, .livestock-container, .resources-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 25px;
+    margin: 15px 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.crops-container h4, .livestock-container h4, .resources-container h4 {
+    color: #2c3e50 !important;
+    font-weight: 700 !important;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 3px solid #007bff;
+    padding-bottom: 10px;
+}
+
+/* Decision Panel Improvements */
+.decision-panel {
+    background: linear-gradient(135deg, #ffffff, #f8f9fa) !important;
+    border: 2px solid #007bff;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+}
+
+.decision-panel h3 {
+    color: #2c3e50 !important;
+    font-weight: 700 !important;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Notification Improvements */
+.notification {
+    font-weight: 600 !important;
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 10px 0;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.notification.success {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb) !important;
+    color: #155724 !important;
+    border: 2px solid #28a745;
+}
+
+.notification.error {
+    background: linear-gradient(135deg, #f8d7da, #f1b0b7) !important;
+    color: #721c24 !important;
+    border: 2px solid #dc3545;
+}
+
+/* Farm Stats Cards Enhancement */
+.farm-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.farm-stat-card {
+    background: linear-gradient(135deg, #ffffff, #f8f9fa) !important;
+    border: 2px solid #28a745;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 3px 12px rgba(40, 167, 69, 0.1);
+    transition: all 0.3s ease;
+}
+
+.farm-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.2);
+}
+
+.farm-stat-card h5 {
+    color: #2c3e50 !important;
+    font-weight: 700 !important;
+    margin-bottom: 10px;
+}
+
+.farm-stat-card .stat-value {
+    color: #28a745 !important;
+    font-weight: 800 !important;
+    font-size: 1.8rem;
+}
+

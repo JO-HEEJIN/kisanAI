@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA Farm Navigators - Offline Mode</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .offline-container {
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nasa-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1e3c72;
+            font-size: 18px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .offline-features {
+            text-align: left;
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .offline-features h3 {
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+
+        .offline-features ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .offline-features li {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .offline-features li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+
+        .connection-status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-offline {
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .status-online {
+            border-left: 4px solid #4ecdc4;
+        }
+
+        .retry-button {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 20px 10px;
+        }
+
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .cached-data-info {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        .educational-note {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 193, 7, 0.2);
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .connecting {
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .offline-container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="nasa-logo">NASA</div>
+
+        <h1>Farm Navigators</h1>
+        <p class="subtitle">Offline Mode Active</p>
+
+        <div id="connectionStatus" class="connection-status status-offline">
+            <strong>📡 Connection Status:</strong>
+            <span id="statusText">You're currently offline</span>
+        </div>
+
+        <div class="offline-features">
+            <h3>🚀 Available Offline Features</h3>
+            <ul>
+                <li>Explore cached NASA satellite data</li>
+                <li>Complete educational pixel hunt challenges</li>
+                <li>Practice soil depth analysis scenarios</li>
+                <li>Access previously loaded farm context data</li>
+                <li>View cached satellite imagery comparisons</li>
+                <li>Continue learning modules and assessments</li>
+            </ul>
+        </div>
+
+        <div class="educational-note">
+            <strong>📚 Educational Note:</strong>
+            NASA Farm Navigators is designed to work offline for up to 72 hours using cached satellite data. This demonstrates how space-based agricultural monitoring can continue even in areas with limited connectivity!
+        </div>
+
+        <div class="cached-data-info">
+            <h4>📦 Cached Data Available</h4>
+            <p>Your device has stored:</p>
+            <ul id="cachedDataList">
+                <li>SMAP soil moisture data (L3 & L4)</li>
+                <li>MODIS vegetation indices</li>
+                <li>Landsat imagery and NDVI</li>
+                <li>Educational content and scenarios</li>
+                <li>Farm context and simulation data</li>
+            </ul>
+        </div>
+
+        <button class="retry-button" onclick="retryConnection()">
+            🔄 Try Reconnecting
+        </button>
+
+        <button class="retry-button" onclick="goToApp()">
+            🚀 Continue Offline
+        </button>
+    </div>
+
+    <script>
+        // Check connection status
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+
+            if (navigator.onLine) {
+                statusElement.className = 'connection-status status-online';
+                statusText.textContent = 'Connected! You can access fresh data.';
+            } else {
+                statusElement.className = 'connection-status status-offline';
+                statusText.textContent = 'You\'re currently offline';
+            }
+        }
+
+        // Retry connection
+        function retryConnection() {
+            const button = event.target;
+            button.textContent = '🔄 Checking...';
+            button.classList.add('connecting');
+
+            // Attempt to fetch a small resource to test connectivity
+            fetch('/manifest.json', { cache: 'no-store' })
+                .then(response => {
+                    if (response.ok) {
+                        button.textContent = '✅ Connected!';
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1000);
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .catch(() => {
+                    button.textContent = '❌ Still Offline';
+                    button.classList.remove('connecting');
+                    setTimeout(() => {
+                        button.textContent = '🔄 Try Reconnecting';
+                    }, 2000);
+                });
+        }
+
+        // Continue to app in offline mode
+        function goToApp() {
+            window.location.href = '/';
+        }
+
+        // Check cache storage and update display
+        async function checkCachedData() {
+            try {
+                const cacheNames = await caches.keys();
+                const cachedDataList = document.getElementById('cachedDataList');
+
+                if (cacheNames.length > 0) {
+                    // Add cache info
+                    const cacheInfo = document.createElement('li');
+                    cacheInfo.textContent = `${cacheNames.length} cache storage(s) available`;
+                    cachedDataList.appendChild(cacheInfo);
+                }
+
+                // Check IndexedDB for NASA data
+                if ('indexedDB' in window) {
+                    const request = indexedDB.open('NASAFarmNavigatorsDB', 1);
+                    request.onsuccess = function(event) {
+                        const db = event.target.result;
+                        if (db.objectStoreNames.contains('nasa_data')) {
+                            const transaction = db.transaction(['nasa_data'], 'readonly');
+                            const store = transaction.objectStore('nasa_data');
+                            const countRequest = store.count();
+
+                            countRequest.onsuccess = function() {
+                                if (countRequest.result > 0) {
+                                    const dbInfo = document.createElement('li');
+                                    dbInfo.textContent = `${countRequest.result} cached NASA data entries`;
+                                    cachedDataList.appendChild(dbInfo);
+                                }
+                            };
+                        }
+                    };
+                }
+            } catch (error) {
+                console.log('Cache check failed:', error);
+            }
+        }
+
+        // Event listeners
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+
+        // Initialize
+        updateConnectionStatus();
+        checkCachedData();
+
+        // Automatically check connection every 30 seconds
+        setInterval(updateConnectionStatus, 30000);
+    </script>
+</body>
+</html>

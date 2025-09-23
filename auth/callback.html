@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA Farm Navigators - Authentication</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            max-width: 500px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nasa-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1e3c72;
+            font-size: 18px;
+        }
+
+        .status-message {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .status-loading {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+        }
+
+        .status-success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+        }
+
+        .status-error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-details {
+            font-size: 0.9rem;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        .retry-button {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="nasa-logo">NASA</div>
+        <h1>Farm Navigators</h1>
+        <h2>Authenticating...</h2>
+
+        <div id="statusContainer">
+            <div class="status-message status-loading">
+                <div class="spinner"></div>
+                <div>Processing NASA Earthdata authentication...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { EarthdataAuth } from '../src/data/EarthdataAuth.js';
+
+        class AuthCallbackHandler {
+            constructor() {
+                this.auth = new EarthdataAuth();
+                this.statusContainer = document.getElementById('statusContainer');
+                this.handleCallback();
+            }
+
+            async handleCallback() {
+                try {
+                    // Extract parameters from URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const code = urlParams.get('code');
+                    const state = urlParams.get('state');
+                    const error = urlParams.get('error');
+
+                    // Check for OAuth errors
+                    if (error) {
+                        throw new Error(`OAuth error: ${error} - ${urlParams.get('error_description') || 'Unknown error'}`);
+                    }
+
+                    // Check for required parameters
+                    if (!code || !state) {
+                        throw new Error('Missing required OAuth parameters (code or state)');
+                    }
+
+                    // Update status
+                    this.updateStatus('loading', 'Verifying authentication with NASA Earthdata...');
+
+                    // Handle the callback
+                    const success = await this.auth.handleCallback(code, state);
+
+                    if (success) {
+                        // Get user info for display
+                        const userInfo = this.auth.getUserInfo();
+                        const userName = userInfo?.first_name || userInfo?.uid || 'NASA User';
+
+                        this.updateStatus('success', `Welcome, ${userName}!`, 'Authentication successful. Redirecting to Farm Navigators...');
+
+                        // Redirect to main app after brief delay
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 2000);
+
+                    } else {
+                        throw new Error('Authentication callback processing failed');
+                    }
+
+                } catch (error) {
+                    console.error('Authentication error:', error);
+                    this.updateStatus('error', 'Authentication Failed', error.message);
+                }
+            }
+
+            updateStatus(type, message, details = '') {
+                let icon = '';
+                let className = '';
+
+                switch (type) {
+                    case 'loading':
+                        icon = '<div class="spinner"></div>';
+                        className = 'status-loading';
+                        break;
+                    case 'success':
+                        icon = '✅';
+                        className = 'status-success';
+                        break;
+                    case 'error':
+                        icon = '❌';
+                        className = 'status-error';
+                        break;
+                }
+
+                this.statusContainer.innerHTML = `
+                    <div class="status-message ${className}">
+                        ${icon}
+                        <div>${message}</div>
+                        ${details ? `<div class="error-details">${details}</div>` : ''}
+                        ${type === 'error' ? '<button class="retry-button" onclick="this.retryAuth()">Try Again</button>' : ''}
+                    </div>
+                `;
+            }
+
+            retryAuth() {
+                // Clear any stored auth state and redirect to login
+                this.auth.logout();
+                window.location.href = '/';
+            }
+        }
+
+        // Initialize callback handler when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new AuthCallbackHandler();
+        });
+    </script>
+</body>
+</html>

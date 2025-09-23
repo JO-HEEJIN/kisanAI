@@ -1,0 +1,30 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="192" height="192" fill="#2E7D32" rx="20"/>
+
+  <!-- Earth/Satellite motif -->
+  <circle cx="96" cy="96" r="70" fill="#4CAF50"/>
+  <circle cx="96" cy="96" r="70" fill="none" stroke="#1B5E20" stroke-width="3"/>
+
+  <!-- Continents representation -->
+  <path d="M 60 80 Q 96 70 130 85 Q 125 100 96 110 Q 70 105 60 80" fill="#2E7D32"/>
+  <path d="M 70 120 Q 96 115 120 125 Q 115 140 96 145 Q 80 140 70 120" fill="#2E7D32"/>
+
+  <!-- Satellite orbit lines -->
+  <circle cx="96" cy="96" r="55" fill="none" stroke="#81C784" stroke-width="2" stroke-dasharray="5,5"/>
+  <circle cx="96" cy="96" r="85" fill="none" stroke="#81C784" stroke-width="2" stroke-dasharray="3,7"/>
+
+  <!-- Satellite -->
+  <rect x="135" y="65" width="12" height="8" fill="#FFC107" transform="rotate(30 141 69)"/>
+  <line x1="141" y1="69" x2="155" y2="59" stroke="#FFC107" stroke-width="2"/>
+  <line x1="141" y1="69" x2="155" y2="79" stroke="#FFC107" stroke-width="2"/>
+
+  <!-- Data stream -->
+  <circle cx="96" cy="96" r="3" fill="#FFC107"/>
+  <circle cx="105" cy="88" r="2" fill="#FFC107" opacity="0.8"/>
+  <circle cx="115" cy="78" r="1.5" fill="#FFC107" opacity="0.6"/>
+  <circle cx="125" cy="70" r="1" fill="#FFC107" opacity="0.4"/>
+
+  <!-- Title -->
+  <text x="96" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">TerraData</text>
+</svg>

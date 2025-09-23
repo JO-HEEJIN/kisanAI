@@ -1,0 +1,49 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#2E7D32" rx="50"/>
+
+  <!-- Earth -->
+  <circle cx="256" cy="256" r="180" fill="#4CAF50"/>
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#1B5E20" stroke-width="8"/>
+
+  <!-- Continents -->
+  <path d="M 150 200 Q 256 180 360 220 Q 340 280 256 300 Q 180 280 150 200" fill="#2E7D32"/>
+  <path d="M 180 320 Q 256 310 330 330 Q 310 380 256 390 Q 210 380 180 320" fill="#2E7D32"/>
+  <path d="M 200 140 Q 256 130 310 150 Q 300 180 256 185 Q 220 180 200 140" fill="#2E7D32"/>
+
+  <!-- Agricultural fields pattern -->
+  <rect x="200" y="240" width="30" height="20" fill="#8BC34A" opacity="0.7"/>
+  <rect x="240" y="250" width="25" height="15" fill="#CDDC39" opacity="0.7"/>
+  <rect x="280" y="235" width="20" height="25" fill="#8BC34A" opacity="0.7"/>
+
+  <!-- Satellite orbit lines -->
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#81C784" stroke-width="4" stroke-dasharray="10,10"/>
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#81C784" stroke-width="3" stroke-dasharray="5,15"/>
+  <circle cx="256" cy="256" r="260" fill="none" stroke="#81C784" stroke-width="2" stroke-dasharray="3,20"/>
+
+  <!-- Satellite -->
+  <rect x="370" y="160" width="32" height="20" fill="#FFC107" transform="rotate(25 386 170)"/>
+  <rect x="375" y="165" width="22" height="10" fill="#FF9800" transform="rotate(25 386 170)"/>
+
+  <!-- Solar panels -->
+  <rect x="350" y="163" width="15" height="25" fill="#2196F3" transform="rotate(25 357.5 175.5)"/>
+  <rect x="401" y="157" width="15" height="25" fill="#2196F3" transform="rotate(25 408.5 169.5)"/>
+
+  <!-- Communication beam -->
+  <line x1="386" y1="170" x2="256" y2="256" stroke="#FFC107" stroke-width="3" opacity="0.6"/>
+
+  <!-- Data visualization points -->
+  <circle cx="256" cy="256" r="6" fill="#FFC107"/>
+  <circle cx="280" cy="240" r="4" fill="#FFC107" opacity="0.8"/>
+  <circle cx="305" cy="220" r="3" fill="#FFC107" opacity="0.6"/>
+  <circle cx="330" cy="200" r="2" fill="#FFC107" opacity="0.4"/>
+  <circle cx="355" cy="180" r="1" fill="#FFC107" opacity="0.2"/>
+
+  <!-- NASA badge -->
+  <circle cx="120" cy="400" r="40" fill="#1976D2"/>
+  <text x="120" y="408" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">NASA</text>
+
+  <!-- Title -->
+  <text x="256" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white">TerraData</text>
+  <text x="256" y="495" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#C8E6C9">Sustainable Frontier</text>
+</svg>

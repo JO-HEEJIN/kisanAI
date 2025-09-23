@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farm Game - Direct Access</title>
+    <link rel="stylesheet" href="styles/farm-game.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #666;
+        }
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #c66;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚜 NASA Farm Game - Direct Access</h1>
+        <div id="status" class="loading">Initializing Farm Game...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="farmGameContainer" class="farm-game-wrapper"></div>
+    </div>
+
+    <script type="module">
+        async function initializeFarmGame() {
+            const statusDiv = document.getElementById('status');
+            const errorDiv = document.getElementById('error');
+            const container = document.getElementById('farmGameContainer');
+
+            try {
+                statusDiv.textContent = 'Loading Farm Simulation Engine...';
+
+                // Import FarmSimulationEngine
+                const { FarmSimulationEngine } = await import('./src/game/FarmSimulationEngine.js');
+                const farmSimulation = new FarmSimulationEngine();
+
+                statusDiv.textContent = 'Loading Farm Game UI...';
+
+                // Import FarmGameUI
+                const { FarmGameUI } = await import('./src/game/FarmGameUI.js');
+                const farmGameUI = new FarmGameUI(farmSimulation, container);
+
+                // Make globally accessible for debugging
+                window.farmSimulation = farmSimulation;
+                window.farmGameUI = farmGameUI;
+
+                statusDiv.textContent = 'Farm Game loaded successfully!';
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 2000);
+
+                console.log('✅ Farm Game initialized successfully');
+                console.log('🔍 Available systems:');
+                console.log('  - farmSimulation:', farmSimulation);
+                console.log('  - farmGameUI:', farmGameUI);
+                console.log('  - conservationSystem:', farmGameUI.conservationSystem);
+                console.log('  - environmentalTracker:', farmGameUI.environmentalTracker);
+
+            } catch (error) {
+                console.error('❌ Farm Game initialization failed:', error);
+                statusDiv.textContent = 'Failed to load Farm Game';
+                errorDiv.style.display = 'block';
+                errorDiv.innerHTML = `
+                    <strong>Error:</strong> ${error.message}<br>
+                    <small>Check browser console for details</small>
+                `;
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Starting Farm Game initialization...');
+            initializeFarmGame();
+        });
+    </script>
+</body>
+</html>

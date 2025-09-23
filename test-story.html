@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA 데이터 스토리 테스트</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        #container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            min-height: 80vh;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50vh;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .error {
+            padding: 20px;
+            text-align: center;
+            color: #e74c3c;
+            background: #ffeaea;
+            border-radius: 5px;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div class="loading">NASA 데이터 스토리를 불러오는 중...</div>
+    </div>
+
+    <script type="module">
+        // 간단한 게임 엔진 모킹
+        const mockGameEngine = {
+            getManagers: () => ({
+                data: {
+                    fetchSMAPData: async (type, location) => {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        return {
+                            soilMoisture: 0.3 + Math.random() * 0.4,
+                            temperature: 25 + Math.random() * 10,
+                            coordinates: location
+                        };
+                    },
+                    fetchNDVIData: async (location) => {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        return {
+                            ndvi: 0.4 + Math.random() * 0.4,
+                            coordinates: location
+                        };
+                    },
+                    fetchPrecipitationData: async (location) => {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        return {
+                            forecast: Array.from({length: 7}, (_, i) => ({
+                                date: new Date(Date.now() + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                                precipitation: Math.random() < 0.4 ? Math.random() * 15 : 0,
+                                temperature: 20 + Math.random() * 15,
+                                humidity: 40 + Math.random() * 40
+                            }))
+                        };
+                    }
+                }
+            })
+        };
+
+        // DataStoryInterface 인라인 정의
+        class DataStoryInterface {
+            constructor(gameEngine) {
+                this.gameEngine = gameEngine;
+                this.container = null;
+                this.currentStory = null;
+
+                this.stories = {
+                    water: {
+                        title: "💧 물 관리의 혁신",
+                        subtitle: "SMAP 토양수분 데이터로 물 사용량 30% 절약",
+                        problem: "언제 얼마나 물을 줘야 할지 모르겠어요",
+                        solution: "위성이 땅속 수분을 실시간으로 알려줍니다",
+                        data: "SMAP",
+                        color: "#4A90E2"
+                    },
+                    health: {
+                        title: "🌱 작물 건강 관리",
+                        subtitle: "NDVI 식생지수로 병충해 조기 발견",
+                        problem: "작물이 아픈 걸 늦게 발견해서 수확량이 줄어요",
+                        solution: "위성이 작물의 건강 상태를 미리 알려줍니다",
+                        data: "MODIS NDVI",
+                        color: "#7ED321"
+                    },
+                    weather: {
+                        title: "🌦️ 기후 대응 전략",
+                        subtitle: "GPM 강수량 예측으로 농작업 계획 최적화",
+                        problem: "갑작스런 날씨 변화로 농작업 계획이 엉망이에요",
+                        solution: "위성이 일주일 뒤 날씨까지 정확히 예측합니다",
+                        data: "GPM IMERG",
+                        color: "#F5A623"
+                    }
+                };
+            }
+
+            createInterface(container) {
+                this.container = container;
+
+                container.innerHTML = \`
+                    <div style="padding: 20px;">
+                        <div style="text-align: center; margin-bottom: 40px;">
+                            <h1 style="font-size: 2.5em; color: #2c3e50; margin-bottom: 10px;">
+                                🚀 NASA 데이터로 농업이 바뀌는 이야기
+                            </h1>
+                            <p style="font-size: 1.2em; color: #7f8c8d; max-width: 600px; margin: 0 auto;">
+                                복잡한 위성 데이터를 농업 현장에서 바로 활용하는 방법
+                            </p>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 40px;">
+                            \${Object.entries(this.stories).map(([key, story]) => \`
+                                <div class="story-card" data-story="\${key}" style="
+                                    background: white;
+                                    border-left: 5px solid \${story.color};
+                                    border-radius: 10px;
+                                    padding: 20px;
+                                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                                    cursor: pointer;
+                                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                                " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.2)'"
+                                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'">
+                                    <h3 style="font-size: 1.5em; margin-bottom: 10px;">\${story.title}</h3>
+                                    <p style="color: #7f8c8d; margin-bottom: 15px;">\${story.subtitle}</p>
+                                    <div style="
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: space-between;
+                                        margin: 15px 0;
+                                        padding: 10px;
+                                        background: #f8f9fa;
+                                        border-radius: 5px;
+                                    ">
+                                        <div style="display: flex; align-items: center; gap: 5px; font-size: 0.9em;">
+                                            <span>❌</span>
+                                            <span>전통 방식</span>
+                                        </div>
+                                        <div style="font-size: 1.2em; color: #3498db;">→</div>
+                                        <div style="display: flex; align-items: center; gap: 5px; font-size: 0.9em;">
+                                            <span>✅</span>
+                                            <span>NASA 방식</span>
+                                        </div>
+                                    </div>
+                                    <button style="
+                                        width: 100%;
+                                        padding: 12px;
+                                        border: none;
+                                        border-radius: 5px;
+                                        background: \${story.color};
+                                        color: white;
+                                        font-weight: bold;
+                                        cursor: pointer;
+                                        transition: opacity 0.3s ease;
+                                    " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                                        이야기 보기
+                                    </button>
+                                </div>
+                            \`).join('')}
+                        </div>
+
+                        <div style="
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                            gap: 20px;
+                            margin-top: 40px;
+                        ">
+                            <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                                <h4 style="color: #2c3e50; margin-bottom: 5px;">💰 비용 절감</h4>
+                                <p style="font-size: 1.5em; font-weight: bold; color: #3498db;">평균 25-40%</p>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                                <h4 style="color: #2c3e50; margin-bottom: 5px;">📈 수확량 증가</h4>
+                                <p style="font-size: 1.5em; font-weight: bold; color: #3498db;">평균 15-30%</p>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                                <h4 style="color: #2c3e50; margin-bottom: 5px;">🌍 환경 보호</h4>
+                                <p style="font-size: 1.5em; font-weight: bold; color: #3498db;">물 사용량 30% 감소</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="storyDetail" style="display: none;">
+                        <!-- 개별 스토리 내용이 여기에 들어감 -->
+                    </div>
+                \`;
+
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                this.container.querySelectorAll('.story-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        const storyKey = card.dataset.story;
+                        this.showStoryDetail(storyKey);
+                    });
+                });
+            }
+
+            showStoryDetail(storyKey) {
+                const story = this.stories[storyKey];
+                this.currentStory = storyKey;
+
+                const detailContainer = this.container.querySelector('#storyDetail');
+
+                detailContainer.innerHTML = \`
+                    <div style="padding: 20px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 30px;">
+                            <button id="backButton" style="
+                                background: #3498db;
+                                color: white;
+                                border: none;
+                                padding: 10px 15px;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                margin-right: 20px;
+                            ">← 돌아가기</button>
+                            <h2>\${story.title}</h2>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+                            <div style="padding: 20px; background: #fee; border-left: 5px solid #e74c3c; border-radius: 10px;">
+                                <h3>❌ 전통 방식의 문제</h3>
+                                <p>\${story.problem}</p>
+                                <div style="margin-top: 15px;">
+                                    <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 5px;">
+                                        🌵 경험과 감에만 의존하는 농업
+                                    </div>
+                                    <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 5px;">
+                                        💸 비효율적인 자원 사용
+                                    </div>
+                                    <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 5px;">
+                                        ❓ 언제 어떻게 해야 할지 모름
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="padding: 20px; background: #efe; border-left: 5px solid #27ae60; border-radius: 10px;">
+                                <h3>✅ NASA 데이터 활용</h3>
+                                <p>\${story.solution}</p>
+                                <div style="margin-top: 15px;">
+                                    <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                                        <span style="
+                                            background: #3498db;
+                                            color: white;
+                                            width: 30px;
+                                            height: 30px;
+                                            border-radius: 50%;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            margin-right: 15px;
+                                            flex-shrink: 0;
+                                        ">1</span>
+                                        <div>
+                                            <h4 style="margin: 0 0 5px 0;">실시간 위성 데이터 수집</h4>
+                                            <p style="margin: 0;">\${story.data} 위성으로 정확한 데이터 측정</p>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                                        <span style="
+                                            background: #3498db;
+                                            color: white;
+                                            width: 30px;
+                                            height: 30px;
+                                            border-radius: 50%;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            margin-right: 15px;
+                                            flex-shrink: 0;
+                                        ">2</span>
+                                        <div>
+                                            <h4 style="margin: 0 0 5px 0;">AI 분석으로 최적화</h4>
+                                            <p style="margin: 0;">인공지능이 데이터를 분석하여 최적의 해법 제시</p>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; align-items: flex-start; margin: 15px 0;">
+                                        <span style="
+                                            background: #3498db;
+                                            color: white;
+                                            width: 30px;
+                                            height: 30px;
+                                            border-radius: 50%;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            margin-right: 15px;
+                                            flex-shrink: 0;
+                                        ">3</span>
+                                        <div>
+                                            <h4 style="margin: 0 0 5px 0;">실시간 알림 및 가이드</h4>
+                                            <p style="margin: 0;">언제, 어떻게 해야 할지 정확한 가이드 제공</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="
+                            background: white;
+                            padding: 20px;
+                            border-radius: 10px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            margin-bottom: 30px;
+                        ">
+                            <h3>📊 실제 데이터 체험해보기</h3>
+                            <button id="loadDataBtn" style="
+                                background: \${story.color};
+                                color: white;
+                                border: none;
+                                padding: 12px 20px;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                font-size: 1em;
+                            ">내 농장 위치의 NASA 데이터 불러오기</button>
+                            <div id="dataDisplay" style="margin-top: 20px;"></div>
+                        </div>
+
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                            <h3>🛠️ 실제 농업 현장에서 활용하기</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 15px;">
+                                <div style="background: white; padding: 15px; border-radius: 5px;">
+                                    <h5 style="color: #2c3e50;">📱 필요한 도구</h5>
+                                    <ul style="margin: 0; padding-left: 20px;">
+                                        <li>스마트폰 (NASA 앱)</li>
+                                        <li>GPS 좌표</li>
+                                        <li>인터넷 연결</li>
+                                    </ul>
+                                </div>
+                                <div style="background: white; padding: 15px; border-radius: 5px;">
+                                    <h5 style="color: #2c3e50;">📋 사용 방법</h5>
+                                    <ol style="margin: 0; padding-left: 20px;">
+                                        <li>농장 위치 등록</li>
+                                        <li>데이터 확인</li>
+                                        <li>AI 추천 확인</li>
+                                        <li>농작업 실행</li>
+                                    </ol>
+                                </div>
+                                <div style="background: white; padding: 15px; border-radius: 5px;">
+                                    <h5 style="color: #2c3e50;">💰 경제적 효과</h5>
+                                    <ul style="margin: 0; padding-left: 20px;">
+                                        <li>비용 30% 절감</li>
+                                        <li>수확량 20% 증가</li>
+                                        <li>6개월 내 투자회수</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                \`;
+
+                // 이벤트 리스너 설정
+                detailContainer.querySelector('#backButton').addEventListener('click', () => {
+                    this.showMainScreen();
+                });
+
+                detailContainer.querySelector('#loadDataBtn').addEventListener('click', () => {
+                    this.loadSampleData(storyKey);
+                });
+
+                // 메인 화면 숨기고 상세 화면 보이기
+                this.container.querySelector('div').style.display = 'none';
+                detailContainer.style.display = 'block';
+            }
+
+            showMainScreen() {
+                this.container.querySelector('div').style.display = 'block';
+                this.container.querySelector('#storyDetail').style.display = 'none';
+                this.currentStory = null;
+            }
+
+            async loadSampleData(storyKey) {
+                const dataDisplay = this.container.querySelector('#dataDisplay');
+                const dataManager = this.gameEngine.getManagers().data;
+
+                dataDisplay.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">NASA 위성 데이터를 불러오는 중...</div>';
+
+                try {
+                    // 샘플 위치 (서울)
+                    const location = { latitude: 37.5665, longitude: 126.9780 };
+
+                    if (storyKey === 'water') {
+                        const data = await dataManager.fetchSMAPData('surface', location);
+                        dataDisplay.innerHTML = \`
+                            <div style="background: #e8f4fd; padding: 20px; border-radius: 5px; border-left: 4px solid #3498db;">
+                                <h4 style="margin: 0 0 10px 0;">🌍 서울 지역 토양수분 데이터</h4>
+                                <div style="font-size: 2em; font-weight: bold; color: #3498db;">\${(data.soilMoisture * 100).toFixed(1)}%</div>
+                                <p style="margin: 10px 0 0 0;">현재 토양수분 상태: \${data.soilMoisture > 0.4 ? '충분' : data.soilMoisture > 0.2 ? '보통' : '부족'}</p>
+                                <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #666;">
+                                    추천: \${data.soilMoisture > 0.4 ? '관개 불필요' : '3-5일 후 관개 필요'}
+                                </p>
+                            </div>
+                        \`;
+                    } else if (storyKey === 'health') {
+                        const data = await dataManager.fetchNDVIData(location);
+                        const color = data.ndvi > 0.7 ? '#27ae60' : data.ndvi > 0.4 ? '#f39c12' : '#e74c3c';
+                        dataDisplay.innerHTML = \`
+                            <div style="background: #eef7ee; padding: 20px; border-radius: 5px; border-left: 4px solid #27ae60;">
+                                <h4 style="margin: 0 0 10px 0;">🌱 서울 지역 식생지수 데이터</h4>
+                                <div style="font-size: 2em; font-weight: bold; color: \${color};">\${data.ndvi.toFixed(3)}</div>
+                                <p style="margin: 10px 0 0 0;">작물 건강 상태: \${data.ndvi > 0.7 ? '매우 건강' : data.ndvi > 0.4 ? '보통' : '주의 필요'}</p>
+                                <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #666;">
+                                    \${data.ndvi > 0.7 ? '현재 상태 유지' : data.ndvi > 0.4 ? '관찰 필요' : '즉시 점검 요망'}
+                                </p>
+                            </div>
+                        \`;
+                    } else if (storyKey === 'weather') {
+                        const data = await dataManager.fetchPrecipitationData(location);
+                        const totalRain = data.forecast.slice(0, 7).reduce((sum, day) => sum + day.precipitation, 0);
+                        dataDisplay.innerHTML = \`
+                            <div style="background: #fff9e6; padding: 20px; border-radius: 5px; border-left: 4px solid #f39c12;">
+                                <h4 style="margin: 0 0 10px 0;">🌦️ 서울 지역 7일 강수량 예측</h4>
+                                <div style="font-size: 2em; font-weight: bold; color: #f39c12;">\${totalRain.toFixed(1)}mm</div>
+                                <p style="margin: 10px 0 0 0;">일주일간 예상 강수량</p>
+                                <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #666;">
+                                    추천: \${totalRain > 50 ? '배수로 점검 필요' : totalRain < 5 ? '관개 계획 수립' : '농작업 적합'}
+                                </p>
+                            </div>
+                        \`;
+                    }
+                } catch (error) {
+                    dataDisplay.innerHTML = \`
+                        <div style="background: #ffeaea; padding: 20px; border-radius: 5px; border-left: 4px solid #e74c3c;">
+                            <p style="margin: 0; color: #e74c3c;">❌ 데이터를 불러올 수 없습니다: \${error.message}</p>
+                        </div>
+                    \`;
+                }
+            }
+        }
+
+        // 애플리케이션 초기화
+        try {
+            const container = document.getElementById('container');
+            const storyInterface = new DataStoryInterface(mockGameEngine);
+
+            // 로딩 제거하고 인터페이스 표시
+            setTimeout(() => {
+                storyInterface.createInterface(container);
+            }, 500);
+
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('container').innerHTML = \`
+                <div class="error">
+                    <h3>초기화 오류</h3>
+                    <p>\${error.message}</p>
+                    <button onclick="location.reload()">새로고침</button>
+                </div>
+            \`;
+        }
+    </script>
+</body>
+</html>
