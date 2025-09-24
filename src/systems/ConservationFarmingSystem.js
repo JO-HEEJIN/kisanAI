@@ -688,6 +688,101 @@ class ConservationFarmingSystem {
         });
         return activePractices;
     }
+
+    /**
+     * Generate conservation report for dashboard
+     */
+    generateReport() {
+        // Get current year/season from farm simulation
+        const farmState = this.farmSimulation?.getFarmState();
+        const currentYear = farmState?.currentYear || 1;
+        const currentSeason = farmState?.currentSeason || 'spring';
+
+        // Process practices data
+        const processedPractices = {};
+        Object.entries(this.practices).forEach(([id, practice]) => {
+            processedPractices[id] = {
+                name: practice.name,
+                adopted: practice.adopted || false,
+                requirements: {
+                    initialCost: practice.requirements?.initialCost || 1000,
+                    timeToROI: Math.ceil((practice.requirements?.initialCost || 1000) / 500)
+                },
+                totalBenefits: practice.adopted ? (practice.benefits?.fuelSavings || 0.1) * 2000 : 0,
+                environmentalImpact: practice.adopted ? (practice.benefits?.soilHealth || 0.1) * 10 : 0
+            };
+        });
+
+        // Environmental metrics
+        const environmentalMetrics = {
+            soilHealth: {
+                current: 0.75 + (Object.values(this.practices).filter(p => p.adopted).length * 0.05),
+                trend: 0.02
+            },
+            carbonSequestration: {
+                accumulated: currentYear * 2.5,
+                rate: 2.5
+            },
+            biodiversityIndex: {
+                current: 0.65 + (Object.values(this.practices).filter(p => p.adopted).length * 0.03),
+                trend: 0.015
+            }
+        };
+
+        // Economic summary
+        const adoptedPractices = Object.values(processedPractices).filter(p => p.adopted);
+        const economicSummary = {
+            totalSavings: adoptedPractices.reduce((sum, p) => sum + p.totalBenefits, 0),
+            averageROI: adoptedPractices.length > 0 ? 0.15 : 0,
+            sustainabilityScore: Math.min(10, 6 + adoptedPractices.length * 0.8)
+        };
+
+        return {
+            practices: processedPractices,
+            environmentalMetrics,
+            economicSummary
+        };
+    }
+
+    /**
+     * Adopt a conservation practice
+     */
+    adoptPractice(practiceId) {
+        const practice = this.practices[practiceId];
+        if (!practice) {
+            return { success: false, message: 'Practice not found' };
+        }
+
+        if (practice.adopted) {
+            return { success: false, message: 'Practice already adopted' };
+        }
+
+        const farmState = this.farmSimulation?.getFarmState();
+        const cost = practice.requirements?.initialCost || 1000;
+
+        if (farmState && farmState.resources.money < cost) {
+            return {
+                success: false,
+                message: `Not enough money. Need $${cost}, have $${farmState.resources.money}`
+            };
+        }
+
+        // Adopt the practice
+        practice.adopted = true;
+
+        // Deduct cost if farm simulation is available
+        if (farmState) {
+            farmState.resources.money -= cost;
+        }
+
+        return {
+            success: true,
+            practice: {
+                name: practice.name,
+                cost: cost
+            }
+        };
+    }
 }
 
 // Export for both ES6 modules and global access
@@ -697,5 +792,3 @@ if (typeof module !== 'undefined' && module.exports) {
 if (typeof window !== 'undefined') {
     window.ConservationFarmingSystem = ConservationFarmingSystem;
 }
-
-export default ConservationFarmingSystem;

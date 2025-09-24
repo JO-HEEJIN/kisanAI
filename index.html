@@ -14,16 +14,24 @@
     <link rel="stylesheet" href="styles/demo-scenarios.css">
     <link rel="stylesheet" href="styles/farm-game.css">
     <link rel="stylesheet" href="styles/pixel-hunt.css">
+    <link rel="stylesheet" href="styles/ar-interface.css">
+    <link rel="stylesheet" href="styles/achievements.css">
+    <link rel="stylesheet" href="styles/roi-calculator.css">
+    <link rel="stylesheet" href="styles/climate-risk.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e3c72">
-    <meta name="description" content="Interactive agricultural monitoring using NASA satellite data">
-    <link rel="icon" type="image/svg+xml" href="assets/images/nasa-logo.svg">
+    <meta name="description" content="Interactive agricultural monitoring using NASA satellite data with AR ChatGPT assistant">
+    <link rel="icon" type="image/svg+xml" href="assets/Space_Apps_Logo_Files/(R) Space Apps Small Logo/Colorway=2-Color White.svg">
+    <!-- AR/WebXR Support -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body>
     <!-- Loading Screen -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-container">
-            <img src="assets/data/logo.png" alt="NASA Space Apps Challenge" class="nasa-logo-loading">
+            <img src="assets/Space_Apps_Logo_Files/(R) Space Apps Default Logo/Colorway=2-Color White.svg" alt="NASA Space Apps Challenge" class="nasa-logo-loading">
             <h1>Farm Navigators</h1>
             <div class="loading-spinner"></div>
             <p class="loading-text">Initializing satellite data systems...</p>
@@ -38,7 +46,7 @@
         <!-- Header -->
         <header class="app-header header-section">
             <div class="header-left">
-                <img src="assets/data/logo.png" alt="NASA Space Apps Challenge" class="nasa-logo-img">
+                <img src="assets/Space_Apps_Logo_Files/(R) Space Apps Default Logo/Colorway=2-Color White.svg" alt="NASA Space Apps Challenge" class="nasa-logo-img">
                 <div class="app-title-section">
                     <h1>Farm Navigators</h1>
                     <div class="version-badge">International Space Apps Challenge 2025</div>
@@ -58,6 +66,8 @@
                         <div class="nav-dropdown-content">
                             <button id="navMultiResolution" class="nav-item">Multi-Resolution Visualizer</button>
                             <button id="navRealTimeComparison" class="nav-item">Real-Time Comparison</button>
+                            <button id="navROICalculator" class="nav-item">🎯 ROI Calculator</button>
+                            <button id="navClimateRisk" class="nav-item">🌍 Climate Risk Assessment</button>
                             <button id="navSatelliteOrbit" class="nav-item">Satellite Orbit Viewer</button>
                             <button id="navMissionTimeline" class="nav-item">Mission Timeline & Planner</button>
                             <button id="navTemporalAnalysis" class="nav-item">Temporal Analysis</button>
@@ -69,6 +79,12 @@
             </div>
 
             <div class="header-right">
+                <!-- Achievement Button -->
+                <button id="achievementsBtn" class="achievements-btn" title="View Achievements">
+                    🏆
+                    <span class="achievement-level" id="achievementLevel">Lv1</span>
+                </button>
+
                 <div class="language-selector">
                     <button class="language-button" id="languageButton">
                         <span class="flag">🌐</span>
@@ -132,6 +148,9 @@
                 <button id="testButton" class="test-button" style="display: none;">
                     Run Tests
                 </button>
+                <button id="settingsButton" class="settings-button" title="Settings" style="display: inline-block !important; background: rgba(102, 126, 234, 0.3) !important; border: 2px solid #667eea !important; padding: 8px !important; margin: 0 5px !important; z-index: 99999 !important; position: relative !important;">
+                    ⚙️
+                </button>
             </div>
         </header>
 
@@ -142,6 +161,8 @@
                 <button class="tab" data-tab="pixel-hunt">Pixel Hunt Challenge</button>
                 <button class="tab" data-tab="data">Satellite Data Visualization</button>
                 <button class="tab" data-tab="farm-game">🚜 Farm Game</button>
+                <button class="tab" data-tab="sensor-fusion">🔬 Sensor Fusion</button>
+                <button class="tab" data-tab="ar-chatgpt">🥽 AR ChatGPT</button>
                 <button class="tab" data-tab="soil">Soil Depth Analysis</button>
                 <button class="tab" data-tab="farm">Farm Context</button>
                 <button class="tab" data-tab="achievements">Achievements</button>
@@ -176,6 +197,93 @@
                 <div id="farmGameTab" class="tab-content" data-tab="farm-game">
                     <div id="farmGameContainer" class="farm-game-wrapper">
                         <!-- Farm game will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Sensor Fusion Tab Content -->
+                <div id="sensorFusionTab" class="tab-content" data-tab="sensor-fusion">
+                    <div class="sensor-fusion-wrapper">
+                        <div class="section-header">
+                            <h2>🔬 Multi-Sensor Fusion Analysis</h2>
+                            <p>Combining NASA satellite data for smarter farming decisions</p>
+                        </div>
+                        <div id="sensorFusionTabDashboard"></div>
+                    </div>
+                </div>
+
+                <!-- AR ChatGPT Tab Content -->
+                <div id="arChatGPTTab" class="tab-content" data-tab="ar-chatgpt">
+                    <div class="ar-chatgpt-wrapper">
+                        <div class="section-header">
+                            <h2>🥽 AR ChatGPT Farm Assistant</h2>
+                            <p>AI-powered agricultural guidance with augmented reality</p>
+                        </div>
+
+                        <div class="ar-features-grid">
+                            <div class="ar-feature-card">
+                                <div class="ar-feature-icon">🤖</div>
+                                <h3>Conversational AI</h3>
+                                <p>Chat with AI about your crops using NASA satellite data</p>
+                                <button id="start-chat-btn" class="ar-action-btn">Start Chat</button>
+                            </div>
+
+                            <div class="ar-feature-card">
+                                <div class="ar-feature-icon">📱</div>
+                                <h3>AR Field Analysis</h3>
+                                <p>Point your camera at plants for instant identification</p>
+                                <button id="start-ar-btn" class="ar-action-btn ar-primary">Launch AR</button>
+                            </div>
+
+                            <div class="ar-feature-card">
+                                <div class="ar-feature-icon">🎤</div>
+                                <h3>Voice Commands</h3>
+                                <p>Use voice to ask questions about field conditions</p>
+                                <button id="test-voice-btn" class="ar-action-btn">Test Voice</button>
+                            </div>
+
+                            <div class="ar-feature-card">
+                                <div class="ar-feature-icon">🌱</div>
+                                <h3>Plant Recognition</h3>
+                                <p>AI-powered plant identification with health analysis</p>
+                                <button id="test-plant-id-btn" class="ar-action-btn">Test Recognition</button>
+                            </div>
+                        </div>
+
+                        <div class="ar-status-panel">
+                            <h3>System Status</h3>
+                            <div id="ar-status-grid" class="ar-status-grid">
+                                <div class="ar-status-item">
+                                    <span class="ar-status-label">WebXR Support:</span>
+                                    <span id="webxr-status" class="ar-status-value checking">Checking...</span>
+                                </div>
+                                <div class="ar-status-item">
+                                    <span class="ar-status-label">Camera Access:</span>
+                                    <span id="camera-status" class="ar-status-value checking">Checking...</span>
+                                </div>
+                                <div class="ar-status-item">
+                                    <span class="ar-status-label">Voice Recognition:</span>
+                                    <span id="voice-status" class="ar-status-value checking">Checking...</span>
+                                </div>
+                                <div class="ar-status-item">
+                                    <span class="ar-status-label">AI Model:</span>
+                                    <span id="ai-status" class="ar-status-value checking">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ar-chat-preview">
+                            <h3>Chat Interface Preview</h3>
+                            <div id="chat-preview-container" class="chat-preview-container">
+                                <div class="chat-message assistant">
+                                    👋 Hello! I'm your AI farming assistant. Ask me about your crops, soil conditions, or satellite data!
+                                </div>
+                                <div class="chat-input-container">
+                                    <input type="text" id="chat-preview-input" placeholder="Ask about your crops..." />
+                                    <button id="send-chat-btn" class="chat-send-btn">Send</button>
+                                </div>
+                                <div id="chat-messages" class="chat-messages"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -342,6 +450,18 @@
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
+    <!-- AR/WebXR Framework -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.0.0/dist/tf.min.js"></script>
+
+    <!-- AR ChatGPT Framework -->
+    <script src="src/ar/ARChatGPTCore.js"></script>
+    <script src="src/ar/WebXRFramework.js"></script>
+    <script src="src/ar/ConversationalAI.js"></script>
+    <script src="src/ar/PlantIdentificationAI.js"></script>
+    <script src="src/ar/ARGamification.js"></script>
+
     <!-- Scripts -->
     <script src="src/services/NASADataService.js"></script>
     <script src="src/data/nasaRealTimeService.js"></script>
@@ -465,7 +585,57 @@
                             } else {
                                 console.error('window.app or initializeFarmGame not available');
                             }
-                        }, 200);
+                        }, 500);
+                    } else if (targetTab === 'sensor-fusion') {
+                        console.log('🔬 Sensor Fusion tab activated, initializing dashboard');
+
+                        // Function to check if all dependencies are loaded
+                        const checkDependencies = () => {
+                            return window.AdvancedDataDashboard && window.AdvancedNASAAnalysis;
+                        };
+
+                        // Retry mechanism for loading dependencies
+                        const initWithRetry = async (attempt = 1) => {
+                            const container = document.getElementById('sensorFusionTabDashboard');
+
+                            if (container && checkDependencies()) {
+                                if (!window.sensorFusionTabDashboard || typeof window.sensorFusionTabDashboard.refreshData !== 'function') {
+                                    window.sensorFusionTabDashboard = new AdvancedDataDashboard(container);
+                                    console.log('🔬 Sensor Fusion Dashboard initialized for tab');
+
+                                    // Set default location (Arizona farm)
+                                    const defaultLocation = { lat: 33.43, lon: -111.94 };
+                                    await window.sensorFusionTabDashboard.setLocation(defaultLocation);
+                                } else {
+                                    // Refresh data when tab is switched to
+                                    try {
+                                        console.log('🔄 Refreshing existing sensor fusion dashboard data');
+                                        await window.sensorFusionTabDashboard.refreshData();
+                                    } catch (error) {
+                                        console.error('Error refreshing sensor fusion data:', error);
+                                        // Re-initialize if refresh fails
+                                        window.sensorFusionTabDashboard = new AdvancedDataDashboard(container);
+                                        const defaultLocation = { lat: 33.43, lon: -111.94 };
+                                        await window.sensorFusionTabDashboard.setLocation(defaultLocation);
+                                    }
+                                }
+                            } else {
+                                // Retry if dependencies not loaded and we haven't tried too many times
+                                if (attempt < 5) {
+                                    console.log(`🔄 Sensor Fusion dependencies not ready, retrying (attempt ${attempt + 1}/5)...`);
+                                    setTimeout(() => initWithRetry(attempt + 1), 200);
+                                } else {
+                                    console.error('Sensor Fusion Dashboard initialization failed after 5 attempts:', {
+                                        container: !!container,
+                                        AdvancedDataDashboard: !!window.AdvancedDataDashboard,
+                                        AdvancedNASAAnalysis: !!window.AdvancedNASAAnalysis
+                                    });
+                                }
+                            }
+                        };
+
+                        // Start the initialization with retry
+                        setTimeout(() => initWithRetry(), 200);
                     } else if (targetTab === 'pixel-hunt') {
                         console.log('Pixel Hunt Challenge tab activated, initializing game');
                         setTimeout(() => {
@@ -656,17 +826,18 @@
         .nav-dropdown-content {
             display: none;
             position: absolute;
-            background: rgba(255,255,255,0.95);
-            min-width: 280px;
-            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-            z-index: 1000;
+            background: rgba(255,255,255,0.98);
+            min-width: 320px;
+            box-shadow: 0px 8px 25px rgba(0,0,0,0.25);
+            z-index: 9999;
             border-radius: 12px;
             top: 100%;
             left: 50%;
             transform: translateX(-50%);
             margin-top: 8px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(102,126,234,0.3);
+            padding: 8px 0;
         }
 
         .nav-dropdown:hover .nav-dropdown-content {
@@ -2778,5 +2949,869 @@
             });
         }
     </script>
+
+
+    <!-- Real-time Alerts Container -->
+    <div id="fusionAlerts" style="position: fixed; top: 20px; right: 20px; z-index: 1000; max-width: 350px;"></div>
+
+    <!-- Load Sensor Fusion Scripts -->
+    <script src="src/services/AdvancedNASAAnalysis.js"></script>
+    <script src="src/components/AdvancedDataDashboard.js"></script>
+
+    <!-- AR ChatGPT Integration Script -->
+    <script>
+        // AR ChatGPT Integration
+        let arChatGPTInitialized = false;
+
+        // Initialize AR ChatGPT when tab is activated
+        async function initializeARChatGPT() {
+            if (arChatGPTInitialized) return;
+
+            try {
+                console.log('Initializing AR ChatGPT...');
+
+                // Check AR ChatGPT Core availability
+                if (typeof window.arChatGPTCore === 'undefined') {
+                    console.error('AR ChatGPT Core not available');
+                    updateARStatus('ai-status', 'not-supported', 'Unavailable');
+                    return;
+                }
+
+                // Wait for AR Core to initialize
+                await waitForARCore();
+
+                // Check system capabilities
+                await checkSystemCapabilities();
+
+                // Set up event listeners
+                setupAREventListeners();
+
+                // Set up chat preview
+                setupChatPreview();
+
+                // Initialize gamification
+                if (window.arGamification) {
+                    await window.arGamification.initialize();
+                }
+
+                arChatGPTInitialized = true;
+                console.log('AR ChatGPT initialized successfully');
+
+            } catch (error) {
+                console.error('Failed to initialize AR ChatGPT:', error);
+                updateARStatus('ai-status', 'not-supported', 'Error');
+            }
+        }
+
+        async function waitForARCore() {
+            return new Promise((resolve, reject) => {
+                if (window.arChatGPTCore && window.arChatGPTCore.isReady()) {
+                    resolve();
+                    return;
+                }
+
+                if (window.arChatGPTCore) {
+                    window.arChatGPTCore.on('onInitialized', () => {
+                        resolve();
+                    });
+                } else {
+                    // Wait for AR Core to be available
+                    setTimeout(() => {
+                        if (window.arChatGPTCore) {
+                            resolve();
+                        } else {
+                            reject(new Error('AR Core not available'));
+                        }
+                    }, 1000);
+                }
+
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    reject(new Error('AR Core initialization timeout'));
+                }, 10000);
+            });
+        }
+
+        async function checkSystemCapabilities() {
+            // Check WebXR support
+            try {
+                if (navigator.xr) {
+                    const arSupported = await navigator.xr.isSessionSupported('immersive-ar');
+                    updateARStatus('webxr-status', arSupported ? 'supported' : 'not-supported',
+                                 arSupported ? 'Supported' : 'Not Supported');
+                } else {
+                    updateARStatus('webxr-status', 'not-supported', 'Not Available');
+                }
+            } catch (error) {
+                updateARStatus('webxr-status', 'not-supported', 'Error');
+            }
+
+            // Check Camera access
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    updateARStatus('camera-status', 'supported', 'Available');
+                }
+            } catch (error) {
+                updateARStatus('camera-status', 'not-supported', 'Denied');
+            }
+
+            // Check Voice recognition
+            const speechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            updateARStatus('voice-status', speechRecognition ? 'supported' : 'not-supported',
+                          speechRecognition ? 'Available' : 'Not Supported');
+
+            // Update AI Model status
+            updateARStatus('ai-status', 'supported', 'Ready');
+        }
+
+        function updateARStatus(elementId, status, text) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.className = `ar-status-value ${status}`;
+                element.textContent = text;
+            }
+        }
+
+        function setupAREventListeners() {
+            // Launch AR button
+            const startARBtn = document.getElementById('start-ar-btn');
+            if (startARBtn) {
+                startARBtn.addEventListener('click', async () => {
+                    try {
+                        await window.arChatGPTCore.startARSession();
+
+                        // Track gamification
+                        if (window.arGamification) {
+                            window.arGamification.trackActivity('ar_session_started');
+                        }
+                    } catch (error) {
+                        alert('Failed to start AR session: ' + error.message);
+                    }
+                });
+            }
+
+            // Start Chat button - Show AR Overlay
+            const startChatBtn = document.getElementById('start-chat-btn');
+            if (startChatBtn) {
+                startChatBtn.addEventListener('click', () => {
+                    console.log('Start Chat button clicked - showing AR overlay');
+
+                    // Show AR overlay if WebXRFramework is available
+                    if (window.arChatGPTCore && window.arChatGPTCore.webXRFramework) {
+                        const arOverlay = document.getElementById('ar-overlay');
+                        if (arOverlay) {
+                            arOverlay.style.display = 'flex';
+                            console.log('AR overlay displayed');
+
+                            // Initialize welcome message
+                            const chatMessages = document.getElementById('ar-chat-messages');
+                            if (chatMessages && chatMessages.children.length === 0) {
+                                const welcomeMessage = `🌾 **Welcome to AR ChatGPT Farm Assistant!**
+
+🤖 I'm your AI-powered agricultural expert, integrated with real-time NASA satellite data.
+
+🛰️ **What I can help you with:**
+• Crop health analysis using NDVI data
+• Soil moisture recommendations (SMAP)
+• Irrigation timing and amounts
+• Plant identification and disease diagnosis
+• Growth stage monitoring
+• Weather-based farming advice
+
+💬 **Try asking me:**
+"What's my soil moisture level?"
+"Should I water my crops today?"
+"How is my crop health looking?"
+
+Ready to optimize your farm with space-age technology? Just type your question below! 🚀`;
+
+                                window.arChatGPTCore.webXRFramework.addChatMessage('assistant', welcomeMessage);
+                            }
+                        } else {
+                            console.warn('AR overlay not found, creating one');
+                            // Create AR overlay if it doesn't exist
+                            if (window.arChatGPTCore.webXRFramework) {
+                                window.arChatGPTCore.webXRFramework.createAROverlay();
+                            }
+                        }
+                    } else {
+                        console.warn('AR ChatGPT Core or WebXR Framework not available');
+                        // Fallback: focus on chat input
+                        const chatInput = document.getElementById('chat-preview-input');
+                        if (chatInput) {
+                            chatInput.focus();
+                        }
+                    }
+                });
+            }
+
+            // Voice test button
+            const testVoiceBtn = document.getElementById('test-voice-btn');
+            if (testVoiceBtn) {
+                testVoiceBtn.addEventListener('click', testVoiceRecognition);
+            }
+
+            // Plant identification test button
+            const testPlantBtn = document.getElementById('test-plant-id-btn');
+            if (testPlantBtn) {
+                testPlantBtn.addEventListener('click', testPlantIdentification);
+            }
+
+            // Chat send button
+            const sendChatBtn = document.getElementById('send-chat-btn');
+            if (sendChatBtn) {
+                sendChatBtn.addEventListener('click', sendChatMessage);
+            }
+
+            // Chat input enter key
+            const chatInput = document.getElementById('chat-preview-input');
+            if (chatInput) {
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        sendChatMessage();
+                    }
+                });
+            }
+        }
+
+        function setupChatPreview() {
+            // Add welcome message
+            const welcomeMessage = {
+                text: "👋 Hello! I'm your AI farming assistant. I can help you with crop analysis, satellite data interpretation, and agricultural recommendations. What would you like to know?",
+                type: 'assistant'
+            };
+            addChatMessage(welcomeMessage);
+        }
+
+        async function sendChatMessage() {
+            const chatInput = document.getElementById('chat-preview-input');
+            if (!chatInput || !chatInput.value.trim()) return;
+
+            const message = chatInput.value.trim();
+            chatInput.value = '';
+
+            // Add user message
+            addChatMessage({ text: message, type: 'user' });
+
+            try {
+                // Track gamification
+                if (window.arGamification) {
+                    window.arGamification.trackActivity('question_asked');
+                }
+
+                // Send to AR ChatGPT Core
+                const response = await window.arChatGPTCore.sendMessage(message, { type: 'preview-chat' });
+                addChatMessage({ text: response.text, type: 'assistant' });
+            } catch (error) {
+                console.error('Chat message failed:', error);
+                addChatMessage({
+                    text: 'Sorry, I encountered an error processing your message. Please try again.',
+                    type: 'assistant'
+                });
+            }
+        }
+
+        function addChatMessage(message) {
+            const chatMessages = document.getElementById('chat-messages');
+            if (!chatMessages) return;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${message.type}`;
+            messageDiv.textContent = message.text;
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function testVoiceRecognition() {
+            try {
+                if (!window.arChatGPTCore || !window.arChatGPTCore.conversationalAI) {
+                    alert('Voice recognition not available');
+                    return;
+                }
+
+                const recognition = window.arChatGPTCore.conversationalAI.startListening((result) => {
+                    if (result.error) {
+                        alert('Voice recognition error: ' + result.error);
+                    } else {
+                        const chatInput = document.getElementById('chat-preview-input');
+                        if (chatInput) {
+                            chatInput.value = result.transcript;
+                        }
+
+                        // Track gamification
+                        if (window.arGamification) {
+                            window.arGamification.trackActivity('voice_used');
+                        }
+
+                        alert(`Voice recognized: "${result.transcript}"`);
+                    }
+                });
+
+                alert('Speak now... (Voice recognition started)');
+
+            } catch (error) {
+                alert('Voice recognition test failed: ' + error.message);
+            }
+        }
+
+        async function testPlantIdentification() {
+            try {
+                if (!window.arChatGPTCore || !window.arChatGPTCore.plantIdentificationAI) {
+                    alert('Plant identification not available');
+                    return;
+                }
+
+                // Simulate plant identification
+                const mockImageData = 'data:image/jpeg;base64,mock-data';
+                const result = await window.arChatGPTCore.identifyPlant(mockImageData);
+
+                // Track gamification
+                if (window.arGamification) {
+                    window.arGamification.trackActivity('plant_identified');
+                }
+
+                alert(`Plant identified: ${result.commonName} (${(result.confidence * 100).toFixed(1)}% confidence)`);
+
+                // Add result to chat
+                const message = `🌱 Plant identification test: Found ${result.commonName} with ${(result.confidence * 100).toFixed(1)}% confidence. Health: ${result.health}%`;
+                addChatMessage({ text: message, type: 'assistant' });
+
+            } catch (error) {
+                alert('Plant identification test failed: ' + error.message);
+            }
+        }
+
+        // Initialize AR ChatGPT when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Delay initialization to ensure all scripts are loaded
+            setTimeout(initializeARChatGPT, 3000);
+        });
+
+        // Also initialize when AR ChatGPT tab is activated
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.classList.contains('tab') && e.target.getAttribute('data-tab') === 'ar-chatgpt') {
+                setTimeout(initializeARChatGPT, 100);
+            }
+        });
+    </script>
+
+    <script>
+        // Sensor Fusion Integration
+        let sensorFusionDashboard = null;
+        let fusionAlertSystem = null;
+
+        // Initialize Sensor Fusion
+        async function initializeSensorFusion() {
+            const container = document.getElementById('sensorFusionDashboard');
+            if (container && window.AdvancedDataDashboard) {
+                sensorFusionDashboard = new AdvancedDataDashboard(container);
+                console.log('🔬 Sensor Fusion Dashboard initialized');
+
+                // Set default location (Arizona farm from demo)
+                const defaultLocation = { lat: 33.43, lon: -111.94 };
+                await sensorFusionDashboard.setLocation(defaultLocation);
+
+                // Make globally accessible
+                window.sensorFusionDashboard = sensorFusionDashboard;
+
+                // Initialize alert system
+                initializeFusionAlerts();
+            }
+        }
+
+        // Fusion Alert System
+        function initializeFusionAlerts() {
+            fusionAlertSystem = {
+                checkInterval: 30000, // 30 seconds
+
+                async checkForAlerts() {
+                    if (!sensorFusionDashboard || !sensorFusionDashboard.fusionData) return;
+
+                    const fusionData = sensorFusionDashboard.fusionData;
+
+                    // Check water stress
+                    if (fusionData.waterStressIndex > 75) {
+                        this.showAlert({
+                            type: 'critical',
+                            title: '💧 Critical Water Stress',
+                            message: 'Immediate irrigation needed!',
+                            priority: 'high'
+                        });
+                    }
+
+                    // Check vegetation stress
+                    if (fusionData.vegetationStressIndex > 70) {
+                        this.showAlert({
+                            type: 'warning',
+                            title: '🌱 Vegetation Stress',
+                            message: 'Plant health declining - check for diseases or pests',
+                            priority: 'medium'
+                        });
+                    }
+
+                    // Check for edge cases
+                    const analysis = new AdvancedNASAAnalysis();
+                    const edgeCases = analysis.detectEdgeCases(fusionData);
+                    edgeCases.forEach(edgeCase => {
+                        if (edgeCase.severity === 'critical' || edgeCase.severity === 'high') {
+                            this.showAlert({
+                                type: 'warning',
+                                title: edgeCase.type.replace('_', ' ').toUpperCase(),
+                                message: edgeCase.description,
+                                recommendations: edgeCase.recommendations,
+                                priority: edgeCase.severity
+                            });
+                        }
+                    });
+                },
+
+                showAlert(alert) {
+                    const container = document.getElementById('fusionAlerts');
+                    if (!container) return;
+
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = `fusion-alert ${alert.type}`;
+                    alertDiv.style.cssText = `
+                        background: white;
+                        border-radius: 8px;
+                        padding: 15px;
+                        margin-bottom: 10px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        border-left: 4px solid ${alert.type === 'critical' ? '#f44336' : '#ff9800'};
+                        animation: slideIn 0.3s ease;
+                        max-width: 350px;
+                    `;
+
+                    alertDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <h4 style="margin: 0 0 8px 0; color: #333; font-size: 16px;">${alert.title}</h4>
+                                <p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">${alert.message}</p>
+                                ${alert.recommendations ? `
+                                    <ul style="margin: 8px 0; padding-left: 20px; font-size: 13px;">
+                                        ${alert.recommendations.slice(0, 2).map(r => `<li>${r}</li>`).join('')}
+                                    </ul>
+                                ` : ''}
+                            </div>
+                            <button onclick="this.parentElement.parentElement.remove()"
+                                    style="background: none; border: none; font-size: 18px; cursor: pointer; color: #999;">
+                                ×
+                            </button>
+                        </div>
+                    `;
+
+                    container.appendChild(alertDiv);
+
+                    // Auto-remove after 20 seconds
+                    setTimeout(() => {
+                        if (alertDiv.parentElement) {
+                            alertDiv.remove();
+                        }
+                    }, 20000);
+                },
+
+                startMonitoring() {
+                    // Initial check after 5 seconds
+                    setTimeout(() => this.checkForAlerts(), 5000);
+
+                    // Regular monitoring
+                    setInterval(() => {
+                        this.checkForAlerts();
+                    }, this.checkInterval);
+                }
+            };
+
+            // Start monitoring
+            fusionAlertSystem.startMonitoring();
+            console.log('🚨 Fusion Alert System started');
+        }
+
+        // Advanced Tools Dropdown Handler
+        document.addEventListener('DOMContentLoaded', function() {
+            // Make dropdown clickable on mobile/touch devices
+            const navButton = document.querySelector('.nav-button');
+            const navDropdown = document.querySelector('.nav-dropdown');
+            const navDropdownContent = document.querySelector('.nav-dropdown-content');
+
+            if (navButton && navDropdownContent) {
+                // Toggle dropdown on button click
+                navButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    console.log('📱 Navigation button clicked');
+
+                    if (navDropdownContent.style.display === 'block') {
+                        navDropdownContent.style.display = 'none';
+                        console.log('📱 Dropdown closed');
+                    } else {
+                        navDropdownContent.style.display = 'block';
+                        console.log('📱 Dropdown opened');
+                    }
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!navDropdown.contains(e.target)) {
+                        navDropdownContent.style.display = 'none';
+                    }
+                });
+
+                // Prevent dropdown from closing when clicking inside
+                navDropdownContent.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+
+
+            // Auto-initialize sensor fusion after a short delay
+            setTimeout(async () => {
+                await initializeSensorFusion();
+            }, 2000);
+        });
+
+        // Add slide-in animation and enhanced dropdown styles
+        const style = document.createElement('style');
+        style.textContent = `
+            /* Enhanced dropdown navigation styles */
+            .nav-button {
+                font-size: 16px !important;
+                font-weight: 600 !important;
+                letter-spacing: 0.5px !important;
+                min-width: 200px !important;
+                position: relative !important;
+            }
+
+            .nav-button:after {
+                content: '📡';
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 14px;
+            }
+
+            .nav-item {
+                padding: 15px 25px !important;
+                font-size: 15px !important;
+                margin: 2px 8px !important;
+                border-radius: 8px !important;
+                width: calc(100% - 16px) !important;
+                transition: all 0.3s ease !important;
+            }
+
+            .nav-item:hover {
+                background: linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.15)) !important;
+                transform: translateX(5px) !important;
+                box-shadow: 0 2px 8px rgba(102,126,234,0.2) !important;
+            }
+
+
+            .nav-dropdown-content {
+                animation: slideDown 0.3s ease !important;
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateX(-50%) translateY(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(-50%) translateY(0);
+                }
+            }
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+
+            .fusion-alert {
+                animation: slideIn 0.3s ease;
+            }
+
+            .content-section {
+                padding: 20px;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .section-header {
+                text-align: center;
+                margin-bottom: 30px;
+                padding: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border-radius: 15px;
+            }
+
+            .section-header h2 {
+                margin: 0 0 10px 0;
+                font-size: 28px;
+            }
+
+            .section-header p {
+                margin: 0;
+                opacity: 0.9;
+                font-size: 16px;
+            }
+
+            /* Settings Modal Styles */
+            .settings-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            }
+
+            .settings-modal-content {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 15px;
+                padding: 0;
+                width: 90%;
+                max-width: 600px;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                color: white;
+            }
+
+            .settings-header {
+                padding: 20px 30px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .settings-header h2 {
+                margin: 0;
+                font-size: 24px;
+            }
+
+            .settings-close {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 30px;
+                cursor: pointer;
+                opacity: 0.7;
+                transition: opacity 0.3s;
+            }
+
+            .settings-close:hover {
+                opacity: 1;
+            }
+
+            .settings-body {
+                padding: 30px;
+            }
+
+            .setting-section {
+                margin-bottom: 30px;
+            }
+
+            .setting-section h3 {
+                margin: 0 0 20px 0;
+                font-size: 18px;
+                opacity: 0.9;
+            }
+
+            .setting-item {
+                margin-bottom: 20px;
+            }
+
+            .setting-item label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 500;
+                opacity: 0.9;
+            }
+
+            .api-key-input {
+                width: 100%;
+                padding: 12px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                background: rgba(255, 255, 255, 0.1);
+                color: white;
+                font-size: 14px;
+                box-sizing: border-box;
+            }
+
+            .api-key-input::placeholder {
+                color: rgba(255, 255, 255, 0.5);
+            }
+
+            .api-key-input:focus {
+                outline: none;
+                border-color: rgba(255, 255, 255, 0.6);
+                background: rgba(255, 255, 255, 0.15);
+            }
+
+            .api-key-status, .nasa-token-status {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 10px;
+                font-size: 14px;
+            }
+
+            .setting-description {
+                margin-top: 10px;
+                font-size: 12px;
+                opacity: 0.7;
+                line-height: 1.4;
+            }
+
+            .setting-description a {
+                color: #87CEEB;
+                text-decoration: none;
+            }
+
+            .setting-description a:hover {
+                text-decoration: underline;
+            }
+
+            .settings-footer {
+                padding: 20px 30px;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+                display: flex;
+                gap: 15px;
+                justify-content: flex-end;
+            }
+
+            .save-settings-btn, .reset-settings-btn {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+                transition: all 0.3s;
+            }
+
+            .save-settings-btn {
+                background: #4CAF50;
+                color: white;
+            }
+
+            .save-settings-btn:hover {
+                background: #45a049;
+            }
+
+            .reset-settings-btn {
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+            }
+
+            .reset-settings-btn:hover {
+                background: rgba(255, 255, 255, 0.3);
+            }
+
+            .settings-button {
+                display: inline-block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                background: rgba(102, 126, 234, 0.2) !important;
+                border: 2px solid #667eea !important;
+                font-size: 18px !important;
+                cursor: pointer !important;
+                color: #667eea !important;
+                transition: all 0.3s;
+                padding: 10px !important;
+                border-radius: 50%;
+                margin-left: 10px !important;
+                position: relative !important;
+                z-index: 10000 !important;
+                width: 40px !important;
+                height: 40px !important;
+                min-width: 40px !important;
+                min-height: 40px !important;
+                flex-shrink: 0 !important;
+            }
+
+            .settings-button:hover {
+                background: rgba(102, 126, 234, 0.1);
+                transform: rotate(90deg);
+            }
+        `;
+        document.head.appendChild(style);
+
+    </script>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="settings-modal" style="display: none;">
+        <div class="settings-modal-content">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <button class="settings-close" id="settingsClose">&times;</button>
+            </div>
+            <div class="settings-body">
+                <div class="setting-section">
+                    <h3>🤖 AI Assistant Configuration</h3>
+                    <div class="setting-item">
+                        <label for="openaiApiKey">OpenAI API Key:</label>
+                        <input type="password" id="openaiApiKey" placeholder="Enter your OpenAI API key..." class="api-key-input">
+                        <div class="api-key-status" id="apiKeyStatus">
+                            <span class="status-indicator">🔴</span>
+                            <span class="status-text">Not configured</span>
+                        </div>
+                        <div class="setting-description">
+                            Enter your OpenAI API key to enable advanced AI responses. Without it, the system will use pattern-based fallback responses.
+                            <br><a href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener">Get your API key here →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-section">
+                    <h3>🛰️ NASA Data Configuration</h3>
+                    <div class="setting-item">
+                        <label for="nasaToken">NASA Earthdata Token:</label>
+                        <input type="password" id="nasaTokenInput" placeholder="Enter your NASA Earthdata token..." class="api-key-input">
+                        <div class="nasa-token-status" id="nasaTokenStatus">
+                            <span class="status-indicator">🔴</span>
+                            <span class="status-text">Not configured</span>
+                        </div>
+                        <div class="setting-description">
+                            NASA token enables access to real satellite data instead of sample data.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-footer">
+                <button id="saveSettings" class="save-settings-btn">Save Settings</button>
+                <button id="resetSettings" class="reset-settings-btn">Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gamification System Scripts -->
+    <script src="src/market/USDAMarketData.js"></script>
+    <script src="src/analytics/ROICalculator.js"></script>
+    <script src="src/analytics/ROICalculatorUI.js"></script>
+    <script src="src/climate/ClimateRiskAssessment.js"></script>
+    <script src="src/climate/ClimateRiskUI.js"></script>
+    <script src="src/offline/OfflineManager.js"></script>
+    <script src="src/tutorial/TutorialEnhancements.js"></script>
+    <script src="src/systems/ConservationFarmingSystem.js"></script>
+    <script src="src/gamification/AchievementSystem.js"></script>
+    <script src="src/gamification/AchievementUI.js"></script>
+
 </body>
 </html>

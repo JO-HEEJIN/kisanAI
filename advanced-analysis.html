@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced NASA Data Analysis - Farm Navigators</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .main-header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            color: #333;
+        }
+
+        .location-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .location-input input {
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            width: 120px;
+        }
+
+        .location-input button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .location-input button:hover {
+            background: #764ba2;
+        }
+
+        .dashboard-container {
+            margin-top: 20px;
+        }
+
+        .info-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-section h2 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-item h3 {
+            margin: 0 0 8px 0;
+            color: #333;
+        }
+
+        .feature-item p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .demo-locations {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .demo-location {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+        }
+
+        .demo-location:hover {
+            background: #764ba2;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            background: #4caf50;
+            color: white;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-indicator.loading {
+            background: #ff9800;
+        }
+
+        .status-indicator.error {
+            background: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-header">
+        <div class="header-title">
+            <h1>🛰️ Advanced NASA Data Analysis</h1>
+            <span class="status-indicator" id="statusIndicator">
+                <span>●</span> Ready
+            </span>
+        </div>
+        <div class="location-input">
+            <label>Latitude:</label>
+            <input type="number" id="latInput" placeholder="e.g., 33.43" step="0.01">
+            <label>Longitude:</label>
+            <input type="number" id="lonInput" placeholder="e.g., -111.94" step="0.01">
+            <button onclick="loadLocation()">Analyze Location</button>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2>🚀 Advanced Features from NASA Dataset Analysis</h2>
+        <p>This dashboard implements the sophisticated multi-sensor fusion and edge case detection capabilities identified in the NASA dataset analysis document.</p>
+
+        <div class="feature-list">
+            <div class="feature-item">
+                <h3>📡 SMAP Enhanced</h3>
+                <p>Quality flags, vegetation water content, and surface temperature correlation for irrigation precision.</p>
+            </div>
+            <div class="feature-item">
+                <h3>🌍 MODIS Fusion</h3>
+                <p>NDVI/EVI with land surface temperature for water stress detection and vegetation health monitoring.</p>
+            </div>
+            <div class="feature-item">
+                <h3>🌧️ GPM Intelligence</h3>
+                <p>Precipitation confidence scoring with Kalman filter weights and flood/drought risk assessment.</p>
+            </div>
+            <div class="feature-item">
+                <h3>🔍 Sentinel-2 10m</h3>
+                <p>High-resolution NDVI with SWIR bands for water content and field-level variation detection.</p>
+            </div>
+            <div class="feature-item">
+                <h3>⚠️ Edge Cases</h3>
+                <p>Post-flood recovery, saline soil stress, and desertification boundary detection.</p>
+            </div>
+            <div class="feature-item">
+                <h3>📊 Temporal Analysis</h3>
+                <p>2-3 day SMAP cycles for irrigation windows and 30-day historical anomaly detection.</p>
+            </div>
+        </div>
+
+        <div class="demo-locations">
+            <button class="demo-location" onclick="setLocation(33.43, -111.94)">🌵 Arizona Farm</button>
+            <button class="demo-location" onclick="setLocation(40.71, -74.00)">🏙️ New York</button>
+            <button class="demo-location" onclick="setLocation(-23.55, -46.63)">🌴 São Paulo</button>
+            <button class="demo-location" onclick="setLocation(28.61, 77.20)">🌾 New Delhi</button>
+            <button class="demo-location" onclick="setLocation(-33.87, 151.21)">🦘 Sydney</button>
+            <button class="demo-location" onclick="setLocation(51.51, -0.13)">🌧️ London</button>
+            <button class="demo-location" onclick="setLocation(1.29, 103.85)">🌺 Singapore</button>
+            <button class="demo-location" onclick="setLocation(64.84, -147.72)">❄️ Alaska</button>
+        </div>
+    </div>
+
+    <div class="dashboard-container" id="dashboardContainer">
+        <!-- Advanced Dashboard will be inserted here -->
+    </div>
+
+    <!-- Load required scripts -->
+    <script src="src/services/AdvancedNASAAnalysis.js"></script>
+    <script src="src/components/AdvancedDataDashboard.js"></script>
+
+    <script>
+        let dashboard = null;
+
+        // Initialize dashboard on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('dashboardContainer');
+            dashboard = new AdvancedDataDashboard(container);
+
+            // Set default location (Arizona)
+            setLocation(33.43, -111.94);
+        });
+
+        function setLocation(lat, lon) {
+            document.getElementById('latInput').value = lat;
+            document.getElementById('lonInput').value = lon;
+            loadLocation();
+        }
+
+        async function loadLocation() {
+            const lat = parseFloat(document.getElementById('latInput').value);
+            const lon = parseFloat(document.getElementById('lonInput').value);
+
+            if (isNaN(lat) || isNaN(lon)) {
+                alert('Please enter valid coordinates');
+                return;
+            }
+
+            // Update status
+            const statusIndicator = document.getElementById('statusIndicator');
+            statusIndicator.className = 'status-indicator loading';
+            statusIndicator.innerHTML = '<span>●</span> Loading...';
+
+            try {
+                // Set location in dashboard
+                await dashboard.setLocation({ lat, lon });
+
+                // Update status to success
+                statusIndicator.className = 'status-indicator';
+                statusIndicator.innerHTML = '<span>●</span> Data Loaded';
+            } catch (error) {
+                console.error('Failed to load location data:', error);
+                statusIndicator.className = 'status-indicator error';
+                statusIndicator.innerHTML = '<span>●</span> Error Loading Data';
+            }
+        }
+
+        // Auto-refresh every 60 seconds
+        setInterval(() => {
+            if (dashboard && dashboard.currentLocation) {
+                loadLocation();
+            }
+        }, 60000);
+    </script>
+</body>
+</html>

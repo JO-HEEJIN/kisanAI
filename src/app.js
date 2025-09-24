@@ -13,6 +13,7 @@ class NASAFarmNavigatorsApp {
         this.isInitialized = false;
         this.isOnline = navigator.onLine;
         this.debugMode = this.getDebugMode();
+        this.offlineManager = null;
 
         // UI elements will be populated on DOM ready
         this.ui = {
@@ -43,6 +44,9 @@ class NASAFarmNavigatorsApp {
 
             // Initialize service worker for offline support
             await this.initializeServiceWorker();
+
+            // Initialize offline manager for mobile-first capabilities
+            await this.initializeOfflineManager();
 
             // Initialize game engine
             this.gameEngine = GameEngine.getInstance();
@@ -109,6 +113,141 @@ class NASAFarmNavigatorsApp {
     }
 
     /**
+     * Initialize offline manager for mobile-first capabilities
+     */
+    async initializeOfflineManager() {
+        try {
+            if (typeof OfflineManager !== 'undefined') {
+                this.offlineManager = new OfflineManager();
+                await this.offlineManager.initializeOfflineCapabilities();
+                console.log('📱 Offline Manager initialized for mobile-first experience');
+
+                // Set up data caching hooks
+                this.setupOfflineDataCaching();
+
+                // Enable offline status monitoring
+                this.setupOfflineStatusMonitoring();
+            } else {
+                console.warn('OfflineManager not available - some offline features may be limited');
+            }
+        } catch (error) {
+            console.warn('Offline Manager initialization failed:', error);
+        }
+    }
+
+    /**
+     * Set up offline data caching for NASA data
+     */
+    setupOfflineDataCaching() {
+        if (!this.offlineManager) return;
+
+        // Hook into data fetching to cache NASA data
+        const originalFetch = window.fetch;
+        window.fetch = async (...args) => {
+            try {
+                const response = await originalFetch(...args);
+                const url = args[0];
+
+                // Cache NASA data for offline use
+                if (typeof url === 'string' && url.includes('/api/')) {
+                    const clonedResponse = response.clone();
+                    const data = await clonedResponse.json();
+
+                    // Determine location from URL or use default
+                    const location = this.extractLocationFromURL(url) || { lat: 37.5665, lon: 126.978 };
+
+                    await this.offlineManager.cacheNASAData(location, data, this.getDataTypeFromURL(url));
+                }
+
+                return response;
+            } catch (error) {
+                // If network fails, try offline cache
+                if (!navigator.onLine && this.offlineManager) {
+                    const location = this.extractLocationFromURL(args[0]) || { lat: 37.5665, lon: 126.978 };
+                    const dataType = this.getDataTypeFromURL(args[0]);
+                    const cachedData = await this.offlineManager.getCachedNASAData(location, dataType);
+
+                    if (cachedData) {
+                        return new Response(JSON.stringify(cachedData), {
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    }
+                }
+                throw error;
+            }
+        };
+    }
+
+    /**
+     * Set up offline status monitoring
+     */
+    setupOfflineStatusMonitoring() {
+        if (!this.offlineManager) return;
+
+        // Add offline status indicators to UI
+        const statusDisplay = document.getElementById('statusDisplay');
+        if (statusDisplay) {
+            const offlineIndicator = document.createElement('div');
+            offlineIndicator.id = 'offline-indicator';
+            offlineIndicator.style.cssText = `
+                display: none;
+                background: linear-gradient(90deg, #dc3545, #c82333);
+                color: white;
+                padding: 4px 12px;
+                border-radius: 15px;
+                font-size: 12px;
+                margin-left: 10px;
+            `;
+            offlineIndicator.textContent = '📴 Offline';
+            statusDisplay.appendChild(offlineIndicator);
+
+            // Update indicator based on connection status
+            const updateOfflineIndicator = () => {
+                const status = this.offlineManager.getOfflineStatus();
+                offlineIndicator.style.display = status.isOnline ? 'none' : 'inline-block';
+            };
+
+            window.addEventListener('online', updateOfflineIndicator);
+            window.addEventListener('offline', updateOfflineIndicator);
+            updateOfflineIndicator(); // Initial check
+        }
+    }
+
+    /**
+     * Extract location from URL parameters
+     */
+    extractLocationFromURL(url) {
+        try {
+            const urlObj = new URL(url, window.location.origin);
+            const lat = urlObj.searchParams.get('lat');
+            const lon = urlObj.searchParams.get('lon');
+
+            if (lat && lon) {
+                return { lat: parseFloat(lat), lon: parseFloat(lon) };
+            }
+        } catch (error) {
+            console.warn('Failed to extract location from URL:', error);
+        }
+        return null;
+    }
+
+    /**
+     * Determine data type from URL
+     */
+    getDataTypeFromURL(url) {
+        if (!url || typeof url !== 'string') return 'general';
+
+        if (url.includes('smap') || url.includes('soil-moisture')) return 'smap';
+        if (url.includes('modis') || url.includes('ndvi')) return 'modis';
+        if (url.includes('landsat')) return 'landsat';
+        if (url.includes('power') || url.includes('weather')) return 'weather';
+        if (url.includes('gpm') || url.includes('precipitation')) return 'gpm';
+        if (url.includes('ecostress') || url.includes('thermal')) return 'ecostress';
+
+        return 'general';
+    }
+
+    /**
      * Set up application event listeners
      */
     setupEventListeners() {
@@ -144,6 +283,12 @@ class NASAFarmNavigatorsApp {
 
         // Tab switching event listeners
         this.setupTabSwitching();
+
+        // Settings modal event listeners
+        this.setupSettingsModal();
+
+        // Force show settings button
+        this.forceShowSettingsButton();
 
         // Location input change listeners - connect to Farm Game
         this.setupLocationInputListeners();
@@ -280,6 +425,69 @@ class NASAFarmNavigatorsApp {
                 this.switchTab(tabName);
             });
         });
+    }
+
+    /**
+     * Set up settings modal event listeners
+     */
+    setupSettingsModal() {
+        const settingsButton = document.getElementById('settingsButton');
+        const settingsModal = document.getElementById('settingsModal');
+        const settingsClose = document.getElementById('settingsClose');
+        const saveSettingsBtn = document.getElementById('saveSettings');
+        const resetSettingsBtn = document.getElementById('resetSettings');
+        const openaiApiKeyInput = document.getElementById('openaiApiKey');
+        const nasaTokenInput = document.getElementById('nasaTokenInput');
+
+        // Open settings modal
+        if (settingsButton) {
+            settingsButton.addEventListener('click', () => {
+                this.openSettingsModal();
+            });
+        }
+
+        // Close settings modal
+        if (settingsClose) {
+            settingsClose.addEventListener('click', () => {
+                this.closeSettingsModal();
+            });
+        }
+
+        // Close modal when clicking outside
+        if (settingsModal) {
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    this.closeSettingsModal();
+                }
+            });
+        }
+
+        // Save settings
+        if (saveSettingsBtn) {
+            saveSettingsBtn.addEventListener('click', () => {
+                this.saveSettings();
+            });
+        }
+
+        // Reset settings
+        if (resetSettingsBtn) {
+            resetSettingsBtn.addEventListener('click', () => {
+                this.resetSettings();
+            });
+        }
+
+        // Real-time validation for API keys
+        if (openaiApiKeyInput) {
+            openaiApiKeyInput.addEventListener('input', () => {
+                this.validateApiKey(openaiApiKeyInput.value);
+            });
+        }
+
+        if (nasaTokenInput) {
+            nasaTokenInput.addEventListener('input', () => {
+                this.validateNasaToken(nasaTokenInput.value);
+            });
+        }
     }
 
     /**
@@ -2008,10 +2216,13 @@ class NASAFarmNavigatorsApp {
                 <div class="data-cards-container">
                     <h3>Satellite Data Cards</h3>
                     <div class="data-cards-grid">
-                        <div class="data-card enhanced" id="smapCard">
+                        <div class="data-card enhanced" id="smapCard" data-sensor="smap">
                             <div class="card-header">
                                 <h4>SMAP Soil Moisture</h4>
-                                <div class="card-status" id="smapStatus">📶</div>
+                                <div class="card-badges">
+                                    <div class="fusion-badge" title="Enhanced with Multi-Sensor Fusion">🔬 Fusion</div>
+                                    <div class="card-status" id="smapStatus">📶</div>
+                                </div>
                             </div>
                             <div class="data-content" id="smapContent">
                                 <div class="no-data-message">Click "Fetch Data" to load satellite data</div>
@@ -2021,10 +2232,13 @@ class NASAFarmNavigatorsApp {
                             </div>
                         </div>
 
-                        <div class="data-card enhanced" id="modisCard">
+                        <div class="data-card enhanced" id="modisCard" data-sensor="modis">
                             <div class="card-header">
                                 <h4>MODIS Vegetation</h4>
-                                <div class="card-status" id="modisStatus">📶</div>
+                                <div class="card-badges">
+                                    <div class="fusion-badge" title="Enhanced with Multi-Sensor Fusion">🔬 Fusion</div>
+                                    <div class="card-status" id="modisStatus">📶</div>
+                                </div>
                             </div>
                             <div class="data-content" id="modisContent">
                                 <div class="no-data-message">Click "Fetch Data" to load satellite data</div>
@@ -2034,10 +2248,13 @@ class NASAFarmNavigatorsApp {
                             </div>
                         </div>
 
-                        <div class="data-card enhanced" id="landsatCard">
+                        <div class="data-card enhanced" id="landsatCard" data-sensor="landsat">
                             <div class="card-header">
                                 <h4>Landsat Imagery</h4>
-                                <div class="card-status" id="landsatStatus">📶</div>
+                                <div class="card-badges">
+                                    <div class="fusion-badge" title="Enhanced with Multi-Sensor Fusion">🔬 Fusion</div>
+                                    <div class="card-status" id="landsatStatus">📶</div>
+                                </div>
                             </div>
                             <div class="data-content" id="landsatContent">
                                 <div class="no-data-message">Click "Fetch Data" to load satellite data</div>
@@ -4324,6 +4541,8 @@ class NASAFarmNavigatorsApp {
         const navItems = [
             { id: 'navMultiResolution', component: 'multiResolutionVisualizer', title: 'Multi-Resolution Visualizer' },
             { id: 'navRealTimeComparison', component: 'realTimeComparison', title: 'Real-Time Comparison' },
+            { id: 'navROICalculator', component: 'roiCalculator', title: 'ROI Calculator' },
+            { id: 'navClimateRisk', component: 'climateRisk', title: 'Climate Risk Assessment' },
             { id: 'navSatelliteOrbit', component: 'satelliteOrbitVisualization', title: 'Satellite Orbit Visualization' },
             { id: 'navMissionTimeline', component: 'satelliteMissionTimeline', title: 'Mission Timeline & Data Planner' },
             { id: 'navTemporalAnalysis', component: 'temporalAnalysisTools', title: 'Temporal Analysis Tools' },
@@ -4396,6 +4615,26 @@ class NASAFarmNavigatorsApp {
                 const contentContainer = document.getElementById('componentContent');
                 await component.createDemoInterface(contentContainer);
                 window[componentName] = component;
+            } else if (componentName === 'roiCalculator') {
+                // Handle ROI Calculator
+                const contentContainer = document.getElementById('componentContent');
+                if (typeof ROICalculatorUI !== 'undefined') {
+                    const roiCalculator = new ROICalculatorUI();
+                    await roiCalculator.renderCalculator(contentContainer);
+                    window.roiCalculator = roiCalculator;
+                } else {
+                    throw new Error('ROI Calculator not loaded');
+                }
+            } else if (componentName === 'climateRisk') {
+                // Handle Climate Risk Assessment
+                const contentContainer = document.getElementById('componentContent');
+                if (typeof ClimateRiskUI !== 'undefined') {
+                    const climateRiskUI = new ClimateRiskUI();
+                    await climateRiskUI.renderInterface(contentContainer);
+                    window.climateRiskUI = climateRiskUI;
+                } else {
+                    throw new Error('Climate Risk Assessment not loaded');
+                }
             } else {
                 throw new Error(`Component ${componentName} not available or doesn't have a supported interface method`);
             }
@@ -5104,6 +5343,617 @@ class NASAFarmNavigatorsApp {
         console.log('🏆 Achievement display updated');
     }
 
+    /**
+     * Enhance satellite data cards with fusion capabilities
+     */
+    enhanceSatelliteCards() {
+        // Add fusion badge styles
+        const style = document.createElement('style');
+        style.id = 'fusion-card-styles';
+        style.textContent = `
+            .card-badges {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .fusion-badge {
+                background: linear-gradient(90deg, #667eea, #764ba2);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                position: relative;
+                animation: fusionPulse 2s infinite;
+            }
+
+            .fusion-badge:hover {
+                transform: scale(1.05);
+                box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+            }
+
+            @keyframes fusionPulse {
+                0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
+                70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+            }
+
+            .data-card.fusion-enhanced {
+                border: 2px solid transparent;
+                background: linear-gradient(white, white) padding-box,
+                           linear-gradient(45deg, #667eea, #764ba2) border-box;
+                transition: all 0.3s ease;
+            }
+
+            .data-card.fusion-enhanced:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+            }
+
+            .fusion-tooltip {
+                position: absolute;
+                background: #333;
+                color: white;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                white-space: nowrap;
+                z-index: 1000;
+                top: -40px;
+                left: 50%;
+                transform: translateX(-50%);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s;
+            }
+
+            .fusion-tooltip:after {
+                content: '';
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                margin-left: -5px;
+                border-width: 5px;
+                border-style: solid;
+                border-color: #333 transparent transparent transparent;
+            }
+
+            .fusion-badge:hover .fusion-tooltip {
+                opacity: 1;
+            }
+
+            .fusion-insight-popup {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                border-radius: 15px;
+                padding: 25px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+                z-index: 2000;
+                max-width: 500px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+
+            .fusion-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1999;
+            }
+        `;
+
+        if (!document.getElementById('fusion-card-styles')) {
+            document.head.appendChild(style);
+        }
+
+        // Enhance cards with click handlers
+        const cards = document.querySelectorAll('.data-card[data-sensor]');
+        cards.forEach(card => {
+            // Add fusion enhanced class
+            card.classList.add('fusion-enhanced');
+
+            // Add click handler to fusion badge
+            const fusionBadge = card.querySelector('.fusion-badge');
+            if (fusionBadge) {
+                fusionBadge.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.showFusionInsights(card.dataset.sensor);
+                });
+
+                // Add tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'fusion-tooltip';
+                tooltip.textContent = 'Click to see fusion analysis';
+                fusionBadge.appendChild(tooltip);
+            }
+
+            // Add card click handler
+            card.addEventListener('click', () => {
+                this.showSensorDetails(card.dataset.sensor);
+            });
+        });
+
+        console.log('🔬 Satellite cards enhanced with fusion capabilities');
+    }
+
+    /**
+     * Show fusion insights for a specific sensor
+     */
+    async showFusionInsights(sensorType) {
+        if (!window.sensorFusionDashboard || !window.sensorFusionDashboard.fusionData) {
+            this.showMessage('Sensor fusion data not available. Please navigate to Sensor Fusion Analysis first.', 'warning');
+            return;
+        }
+
+        const fusionData = window.sensorFusionDashboard.fusionData;
+        let insights = {};
+
+        switch(sensorType) {
+            case 'smap':
+                insights = {
+                    title: '🛰️ SMAP Fusion Insights',
+                    data: fusionData.rawData.smap,
+                    metrics: [
+                        { label: 'Soil Moisture', value: `${fusionData.rawData.smap.soilMoisture.toFixed(3)} m³/m³` },
+                        { label: 'Quality Flag', value: fusionData.rawData.smap.qualityFlag },
+                        { label: 'Vegetation Water Content', value: `${fusionData.rawData.smap.vegetationWaterContent.toFixed(2)} kg/m²` },
+                        { label: 'Water Stress Index', value: `${fusionData.waterStressIndex.toFixed(0)}/100` }
+                    ],
+                    edgeCases: fusionData.rawData.smap.edgeCases || []
+                };
+                break;
+
+            case 'modis':
+                insights = {
+                    title: '🌍 MODIS Fusion Insights',
+                    data: fusionData.rawData.modis,
+                    metrics: [
+                        { label: 'NDVI', value: fusionData.rawData.modis.ndvi.toFixed(3) },
+                        { label: 'EVI', value: fusionData.rawData.modis.evi.toFixed(3) },
+                        { label: 'Land Surface Temperature', value: `${fusionData.rawData.modis.landSurfaceTemp.toFixed(1)} K` },
+                        { label: 'Vegetation Stress Index', value: `${fusionData.vegetationStressIndex.toFixed(0)}/100` }
+                    ],
+                    anomalies: fusionData.rawData.modis.anomalies || []
+                };
+                break;
+
+            case 'landsat':
+                insights = {
+                    title: '🛰️ Landsat Integration',
+                    data: { note: 'Landsat data is integrated through high-resolution analysis' },
+                    metrics: [
+                        { label: 'Farm Health Score', value: `${fusionData.farmHealthScore.toFixed(0)}/100` },
+                        { label: 'Overall Confidence', value: `${(fusionData.confidence * 100).toFixed(0)}%` },
+                        { label: 'Data Quality', value: fusionData.confidence > 0.8 ? 'Excellent' : 'Good' }
+                    ],
+                    features: [
+                        'High-resolution field analysis',
+                        'SWIR band water content detection',
+                        'Within-field variation mapping'
+                    ]
+                };
+                break;
+        }
+
+        this.showFusionPopup(insights);
+    }
+
+    /**
+     * Show sensor details (existing functionality)
+     */
+    showSensorDetails(sensorType) {
+        console.log(`📊 Showing details for ${sensorType} sensor`);
+        // Could expand this to show detailed sensor information
+    }
+
+    /**
+     * Show fusion insights popup
+     */
+    showFusionPopup(insights) {
+        // Create backdrop
+        const backdrop = document.createElement('div');
+        backdrop.className = 'fusion-backdrop';
+
+        // Create popup
+        const popup = document.createElement('div');
+        popup.className = 'fusion-insight-popup';
+
+        popup.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #333;">${insights.title}</h3>
+                <button onclick="this.parentElement.parentElement.parentElement.remove(); document.querySelector('.fusion-backdrop').remove();"
+                        style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
+            </div>
+
+            ${insights.metrics ? `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #667eea; margin: 0 0 10px 0;">Key Metrics:</h4>
+                    <div style="display: grid; gap: 8px;">
+                        ${insights.metrics.map(metric => `
+                            <div style="display: flex; justify-content: space-between; padding: 8px; background: #f8f9fa; border-radius: 5px;">
+                                <span style="color: #666;">${metric.label}:</span>
+                                <strong style="color: #333;">${metric.value}</strong>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            ${insights.edgeCases && insights.edgeCases.length > 0 ? `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #ff9800; margin: 0 0 10px 0;">Edge Cases Detected:</h4>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        ${insights.edgeCases.map(edgeCase => `
+                            <div style="padding: 8px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 3px;">
+                                <strong>${edgeCase.replace('_', ' ').toUpperCase()}</strong>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            ${insights.anomalies && insights.anomalies.length > 0 ? `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #f44336; margin: 0 0 10px 0;">Anomalies Detected:</h4>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        ${insights.anomalies.map(anomaly => `
+                            <div style="padding: 8px; background: #ffebee; border-left: 4px solid #f44336; border-radius: 3px;">
+                                <strong>${anomaly.replace('_', ' ').toUpperCase()}</strong>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            ${insights.features ? `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #4caf50; margin: 0 0 10px 0;">Advanced Features:</h4>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        ${insights.features.map(feature => `<li>${feature}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="document.getElementById('navSensorFusion').click(); this.parentElement.parentElement.parentElement.remove(); document.querySelector('.fusion-backdrop').remove();"
+                        style="background: linear-gradient(90deg, #667eea, #764ba2); color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: 600;">
+                    View Full Fusion Dashboard
+                </button>
+            </div>
+        `;
+
+        // Add to DOM
+        document.body.appendChild(backdrop);
+        document.body.appendChild(popup);
+
+        // Close on backdrop click
+        backdrop.addEventListener('click', () => {
+            popup.remove();
+            backdrop.remove();
+        });
+    }
+
+    /**
+     * Show simple message
+     */
+    showMessage(message, type = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'error' ? '#f44336' : type === 'warning' ? '#ff9800' : '#4caf50'};
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 1000;
+            max-width: 300px;
+            animation: slideIn 0.3s ease;
+        `;
+        alertDiv.textContent = message;
+
+        document.body.appendChild(alertDiv);
+
+        setTimeout(() => alertDiv.remove(), 5000);
+    }
+
+    /**
+     * Open settings modal and load current settings
+     */
+    openSettingsModal() {
+        const settingsModal = document.getElementById('settingsModal');
+        const openaiApiKeyInput = document.getElementById('openaiApiKey');
+        const nasaTokenInput = document.getElementById('nasaTokenInput');
+
+        // Load current settings
+        const openaiKey = localStorage.getItem('openai_api_key') || '';
+        const nasaToken = localStorage.getItem('nasa_earthdata_token') || '';
+
+        if (openaiApiKeyInput) {
+            openaiApiKeyInput.value = openaiKey;
+            this.validateApiKey(openaiKey);
+        }
+
+        if (nasaTokenInput) {
+            nasaTokenInput.value = nasaToken;
+            this.validateNasaToken(nasaToken);
+        }
+
+        if (settingsModal) {
+            settingsModal.style.display = 'flex';
+        }
+    }
+
+    /**
+     * Close settings modal
+     */
+    closeSettingsModal() {
+        const settingsModal = document.getElementById('settingsModal');
+        if (settingsModal) {
+            settingsModal.style.display = 'none';
+        }
+    }
+
+    /**
+     * Save settings to localStorage
+     */
+    saveSettings() {
+        const openaiApiKeyInput = document.getElementById('openaiApiKey');
+        const nasaTokenInput = document.getElementById('nasaTokenInput');
+
+        try {
+            // Save OpenAI API key
+            if (openaiApiKeyInput) {
+                const apiKey = openaiApiKeyInput.value.trim();
+                if (apiKey) {
+                    localStorage.setItem('openai_api_key', apiKey);
+                    this.showAlert('✅ OpenAI API key saved successfully!', 'success');
+
+                    // Reinitialize ConversationalAI if it exists
+                    if (window.conversationalAI) {
+                        window.conversationalAI.loadAPIKey();
+                    }
+                } else {
+                    localStorage.removeItem('openai_api_key');
+                }
+            }
+
+            // Save NASA token
+            if (nasaTokenInput) {
+                const nasaToken = nasaTokenInput.value.trim();
+                if (nasaToken) {
+                    localStorage.setItem('nasa_earthdata_token', nasaToken);
+                    this.showAlert('✅ NASA Earthdata token saved successfully!', 'success');
+
+                    // Update token status in header
+                    this.updateAuthenticationStatus();
+                } else {
+                    localStorage.removeItem('nasa_earthdata_token');
+                }
+            }
+
+            this.closeSettingsModal();
+
+        } catch (error) {
+            console.error('Failed to save settings:', error);
+            this.showAlert('❌ Failed to save settings. Please try again.', 'error');
+        }
+    }
+
+    /**
+     * Reset settings to defaults
+     */
+    resetSettings() {
+        if (confirm('Are you sure you want to reset all settings? This will remove your API keys.')) {
+            try {
+                // Clear all stored keys
+                localStorage.removeItem('openai_api_key');
+                localStorage.removeItem('nasa_earthdata_token');
+
+                // Clear input fields
+                const openaiApiKeyInput = document.getElementById('openaiApiKey');
+                const nasaTokenInput = document.getElementById('nasaTokenInput');
+
+                if (openaiApiKeyInput) {
+                    openaiApiKeyInput.value = '';
+                    this.validateApiKey('');
+                }
+
+                if (nasaTokenInput) {
+                    nasaTokenInput.value = '';
+                    this.validateNasaToken('');
+                }
+
+                // Update UI
+                this.updateAuthenticationStatus();
+
+                // Reinitialize ConversationalAI
+                if (window.conversationalAI) {
+                    window.conversationalAI.loadAPIKey();
+                }
+
+                this.showAlert('🔄 Settings reset to defaults', 'info');
+                this.closeSettingsModal();
+
+            } catch (error) {
+                console.error('Failed to reset settings:', error);
+                this.showAlert('❌ Failed to reset settings. Please try again.', 'error');
+            }
+        }
+    }
+
+    /**
+     * Validate OpenAI API key format
+     */
+    validateApiKey(apiKey) {
+        const statusDiv = document.getElementById('apiKeyStatus');
+        const statusIndicator = statusDiv?.querySelector('.status-indicator');
+        const statusText = statusDiv?.querySelector('.status-text');
+
+        if (!statusDiv || !statusIndicator || !statusText) return;
+
+        if (!apiKey.trim()) {
+            statusIndicator.textContent = '🔴';
+            statusText.textContent = 'Not configured';
+        } else if (apiKey.startsWith('sk-') && apiKey.length > 20) {
+            statusIndicator.textContent = '🟢';
+            statusText.textContent = 'Valid format';
+        } else {
+            statusIndicator.textContent = '🟡';
+            statusText.textContent = 'Invalid format';
+        }
+    }
+
+    /**
+     * Validate NASA token format
+     */
+    validateNasaToken(nasaToken) {
+        const statusDiv = document.getElementById('nasaTokenStatus');
+        const statusIndicator = statusDiv?.querySelector('.status-indicator');
+        const statusText = statusDiv?.querySelector('.status-text');
+
+        if (!statusDiv || !statusIndicator || !statusText) return;
+
+        if (!nasaToken.trim()) {
+            statusIndicator.textContent = '🔴';
+            statusText.textContent = 'Not configured';
+        } else if (nasaToken.length > 10) {
+            statusIndicator.textContent = '🟢';
+            statusText.textContent = 'Token provided';
+        } else {
+            statusIndicator.textContent = '🟡';
+            statusText.textContent = 'Token too short';
+        }
+    }
+
+    /**
+     * Show alert message to user
+     */
+    showAlert(message, type = 'info') {
+        // Create alert element
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999999;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            max-width: 350px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        `;
+
+        // Set background color based on type
+        const colors = {
+            success: '#10B981',
+            error: '#EF4444',
+            info: '#3B82F6',
+            warning: '#F59E0B'
+        };
+
+        alertDiv.style.background = colors[type] || colors.info;
+        alertDiv.textContent = message;
+
+        // Add to page
+        document.body.appendChild(alertDiv);
+
+        // Animate in
+        setTimeout(() => {
+            alertDiv.style.transform = 'translateX(0)';
+        }, 100);
+
+        // Remove after delay
+        setTimeout(() => {
+            alertDiv.style.transform = 'translateX(400px)';
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    /**
+     * Force show settings button with JavaScript
+     */
+    forceShowSettingsButton() {
+        setTimeout(() => {
+            const settingsButton = document.getElementById('settingsButton');
+            if (settingsButton) {
+                console.log('Found settings button, forcing visibility');
+
+                // Remove any hidden classes or styles
+                settingsButton.classList.remove('hidden');
+                settingsButton.style.display = 'inline-block';
+                settingsButton.style.visibility = 'visible';
+                settingsButton.style.opacity = '1';
+                settingsButton.style.position = 'relative';
+                settingsButton.style.zIndex = '99999';
+                settingsButton.style.background = 'rgba(102, 126, 234, 0.3)';
+                settingsButton.style.border = '2px solid #667eea';
+                settingsButton.style.borderRadius = '50%';
+                settingsButton.style.padding = '8px';
+                settingsButton.style.margin = '0 10px';
+                settingsButton.style.fontSize = '18px';
+                settingsButton.style.color = '#667eea';
+                settingsButton.style.cursor = 'pointer';
+                settingsButton.style.minWidth = '40px';
+                settingsButton.style.minHeight = '40px';
+
+                console.log('Settings button styles applied:', settingsButton.style.display);
+            } else {
+                console.error('Settings button not found!');
+
+                // Create the button manually if it doesn't exist
+                const headerRight = document.querySelector('.header-right');
+                if (headerRight) {
+                    const newSettingsButton = document.createElement('button');
+                    newSettingsButton.id = 'settingsButton';
+                    newSettingsButton.className = 'settings-button';
+                    newSettingsButton.title = 'Settings';
+                    newSettingsButton.textContent = '⚙️';
+                    newSettingsButton.style.cssText = `
+                        display: inline-block !important;
+                        background: rgba(102, 126, 234, 0.3) !important;
+                        border: 2px solid #667eea !important;
+                        border-radius: 50%;
+                        padding: 8px !important;
+                        margin: 0 10px !important;
+                        font-size: 18px;
+                        color: #667eea;
+                        cursor: pointer;
+                        position: relative;
+                        z-index: 99999;
+                        min-width: 40px;
+                        min-height: 40px;
+                    `;
+
+                    headerRight.appendChild(newSettingsButton);
+                    console.log('Settings button created manually');
+
+                    // Set up event listeners for the new button
+                    this.setupSettingsModal();
+                }
+            }
+        }, 1000); // Wait 1 second to ensure DOM is fully loaded
+    }
+
 }
 
 // Initialize application when DOM is ready
@@ -5114,6 +5964,44 @@ document.addEventListener('DOMContentLoaded', () => {
     app.initialize().catch(error => {
         console.error('Application failed to start:', error);
     });
+
+    // Initialize Achievement System
+    setTimeout(() => {
+        if (window.achievementSystem && window.achievementUI) {
+            console.log('🎮 Initializing Achievement System...');
+            window.achievementUI.init();
+
+            // Setup achievements button
+            const achievementsBtn = document.getElementById('achievementsBtn');
+            if (achievementsBtn) {
+                achievementsBtn.addEventListener('click', () => {
+                    window.achievementUI.showInModal();
+                });
+
+                // Update achievement level display
+                const updateAchievementLevel = () => {
+                    const playerLevel = window.achievementSystem.getPlayerLevel();
+                    const levelSpan = document.getElementById('achievementLevel');
+                    if (levelSpan) {
+                        levelSpan.textContent = `Lv${playerLevel.level}`;
+                    }
+                };
+
+                updateAchievementLevel();
+
+                // Update level when achievements change
+                window.achievementSystem.on('onLevelUp', updateAchievementLevel);
+            }
+
+            // Track initial NASA data usage
+            window.achievementSystem.trackAction('nasa_data_check', 1);
+        }
+    }, 1500);
+
+    // Enhance satellite cards with fusion capabilities after initialization
+    setTimeout(() => {
+        app.enhanceSatelliteCards();
+    }, 2000);
 });
 
 // Export for testing

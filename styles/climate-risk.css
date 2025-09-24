@@ -1,0 +1,605 @@
+/* Climate Risk Assessment Dashboard Styles */
+
+.climate-risk-dashboard {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin: 20px 0;
+    min-height: 80vh;
+}
+
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.dashboard-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.subtitle {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+/* Input Section */
+.risk-input-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    backdrop-filter: blur(10px);
+}
+
+.input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.input-group input,
+.input-group select {
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    font-size: 14px;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.analyze-btn {
+    background: linear-gradient(90deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: block;
+    margin: 0 auto;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.analyze-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+}
+
+.analyze-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Results Container */
+.results-container {
+    animation: slideInUp 0.5s ease;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Risk Summary Cards */
+.assessment-overview {
+    margin-bottom: 30px;
+}
+
+.risk-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.risk-card {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.risk-card:hover {
+    transform: translateY(-5px);
+}
+
+.risk-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+.risk-score {
+    font-size: 48px;
+    font-weight: bold;
+    margin: 10px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.risk-score.large {
+    font-size: 36px;
+}
+
+.risk-label {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 5px 15px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+/* Risk Level Colors */
+.risk-low .risk-score { color: #28a745; }
+.risk-moderate .risk-score { color: #ffc107; }
+.risk-high .risk-score { color: #fd7e14; }
+.risk-critical .risk-score { color: #dc3545; }
+
+.risk-low .risk-label { background: rgba(40, 167, 69, 0.3); }
+.risk-moderate .risk-label { background: rgba(255, 193, 7, 0.3); }
+.risk-high .risk-label { background: rgba(253, 126, 20, 0.3); }
+.risk-critical .risk-label { background: rgba(220, 53, 69, 0.3); }
+
+/* IPCC Scenarios */
+.ipcc-scenarios-section {
+    margin-bottom: 30px;
+}
+
+.ipcc-scenarios-section h3 {
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.scenarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.scenario-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+.scenario-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-3px);
+}
+
+.scenario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.scenario-header h4 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.warming-badge {
+    background: rgba(255, 99, 132, 0.8);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.scenario-content {
+    text-align: center;
+}
+
+.yield-impact {
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.impact-label {
+    opacity: 0.8;
+}
+
+.impact-value {
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.impact-value.negative {
+    color: #ff6b6b;
+}
+
+.impact-value.positive {
+    color: #51cf66;
+}
+
+.scenario-description {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 10px;
+}
+
+/* Charts Section */
+.risk-breakdown-section,
+.yield-impact-section {
+    margin-bottom: 30px;
+}
+
+.risk-breakdown-section h3,
+.yield-impact-section h3 {
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.risk-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.chart-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    backdrop-filter: blur(5px);
+}
+
+.yield-visualization {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    backdrop-filter: blur(5px);
+}
+
+/* Recommendations Section */
+.recommendations-section {
+    margin-bottom: 30px;
+}
+
+.recommendations-section h3 {
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.recommendations-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.tab-btn:hover,
+.tab-btn.active {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.recommendations-content {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.recommendation-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid transparent;
+}
+
+.recommendation-item:last-child {
+    margin-bottom: 0;
+}
+
+.recommendation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.recommendation-header h4 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.priority-badge {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.priority-badge.critical {
+    background: rgba(220, 53, 69, 0.8);
+    color: white;
+}
+
+.priority-badge.high {
+    background: rgba(253, 126, 20, 0.8);
+    color: white;
+}
+
+.priority-badge.moderate {
+    background: rgba(255, 193, 7, 0.8);
+    color: #333;
+}
+
+.recommendation-description {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.timeline,
+.cost {
+    font-size: 12px;
+    opacity: 0.8;
+    margin: 5px 0;
+}
+
+/* Data Sources Section */
+.data-sources-section {
+    margin-bottom: 30px;
+}
+
+.data-sources-section h3 {
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.data-sources {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.source-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    backdrop-filter: blur(5px);
+}
+
+.source-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.source-info h4 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+}
+
+.source-info p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* Export Section */
+.export-section {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.export-btn,
+.share-btn {
+    background: linear-gradient(90deg, #17a2b8, #138496);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+}
+
+.export-btn:hover,
+.share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4);
+}
+
+/* Error Messages */
+.climate-error {
+    margin-bottom: 20px;
+}
+
+.error-message {
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.error-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.error-text {
+    flex: 1;
+}
+
+.error-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.error-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .climate-risk-dashboard {
+        padding: 15px;
+        margin: 10px 0;
+    }
+
+    .dashboard-header h2 {
+        font-size: 24px;
+    }
+
+    .input-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .risk-summary-cards {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .scenarios-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .risk-charts {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .recommendations-tabs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tab-btn {
+        text-align: center;
+    }
+
+    .data-sources {
+        grid-template-columns: 1fr;
+    }
+
+    .export-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .chart-container canvas {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .recommendation-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .source-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .risk-score {
+        font-size: 36px;
+    }
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

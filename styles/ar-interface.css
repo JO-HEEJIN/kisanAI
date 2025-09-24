@@ -1,0 +1,809 @@
+/* AR Interface Styles */
+
+/* AR ChatGPT Tab Styles */
+.ar-chatgpt-wrapper {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.ar-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.ar-feature-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ar-feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.ar-feature-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.ar-feature-card h3 {
+    margin: 15px 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.ar-feature-card p {
+    margin-bottom: 20px;
+    opacity: 0.9;
+    line-height: 1.5;
+}
+
+.ar-action-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 25px;
+    padding: 12px 24px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.ar-action-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+}
+
+.ar-action-btn.ar-primary {
+    background: rgba(52, 199, 89, 0.8);
+    border-color: rgba(52, 199, 89, 1);
+    animation: arPulse 2s infinite;
+}
+
+@keyframes arPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); }
+    50% { box-shadow: 0 0 0 10px rgba(52, 199, 89, 0); }
+}
+
+.ar-status-panel {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 15px;
+    padding: 25px;
+    margin: 30px 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ar-status-panel h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 20px;
+}
+
+.ar-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.ar-status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ar-status-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.ar-status-value {
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+}
+
+.ar-status-value.checking {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+}
+
+.ar-status-value.supported {
+    background: rgba(52, 199, 89, 0.2);
+    color: #34c759;
+}
+
+.ar-status-value.not-supported {
+    background: rgba(255, 59, 48, 0.2);
+    color: #ff3b30;
+}
+
+.ar-chat-preview {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 15px;
+    padding: 25px;
+    margin: 30px 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ar-chat-preview h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 20px;
+}
+
+.chat-preview-container {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    max-height: 250px;
+}
+
+.chat-message {
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    border-radius: 18px;
+    max-width: 80%;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.chat-message.assistant {
+    background: #f0f0f0;
+    color: #333;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+.chat-message.user {
+    background: #007AFF;
+    color: white;
+    align-self: flex-end;
+    margin-left: auto;
+    text-align: right;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#chat-preview-input {
+    flex: 1;
+    border: 2px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 12px 20px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+#chat-preview-input:focus {
+    border-color: #007AFF;
+}
+
+.chat-send-btn {
+    background: #007AFF;
+    border: none;
+    border-radius: 20px;
+    padding: 12px 20px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.chat-send-btn:hover {
+    background: #0056d6;
+    transform: scale(1.05);
+}
+
+/* Mobile Responsive for AR Tab */
+@media (max-width: 768px) {
+    .ar-chatgpt-wrapper {
+        padding: 15px;
+    }
+
+    .ar-features-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    .ar-feature-card {
+        padding: 20px;
+    }
+
+    .ar-feature-icon {
+        font-size: 40px;
+    }
+
+    .ar-status-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ar-status-panel,
+    .ar-chat-preview {
+        padding: 20px;
+        margin: 20px 0;
+    }
+}
+
+/* AR Overlay Container */
+.ar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 10000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: transparent;
+    overflow: hidden;
+}
+
+/* Allow interaction with AR controls */
+.ar-overlay * {
+    pointer-events: auto;
+}
+
+/* AR Controls Container */
+.ar-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Top Bar */
+.ar-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    padding: 10px 20px;
+}
+
+/* Mode Indicator */
+.ar-mode-indicator {
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    padding: 8px 16px;
+    border-radius: 15px;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+    min-width: 100px;
+}
+
+/* AR Buttons */
+.ar-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 25px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    color: #333;
+    min-width: 50px;
+    text-align: center;
+}
+
+.ar-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ar-btn:active {
+    transform: translateY(0);
+}
+
+/* Specialized Button Styles */
+.ar-exit {
+    background: rgba(255, 59, 48, 0.9);
+    color: white;
+}
+
+.ar-exit:hover {
+    background: rgba(255, 59, 48, 1);
+}
+
+.ar-voice {
+    font-size: 20px;
+    padding: 10px;
+    min-width: 50px;
+    border-radius: 50%;
+}
+
+.ar-voice.recording {
+    background: rgba(255, 59, 48, 0.9);
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Chat Interface */
+.ar-chat-interface {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-height: 60vh;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.ar-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    padding-right: 10px;
+}
+
+.ar-chat-message {
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    border-radius: 18px;
+    max-width: 80%;
+    word-wrap: break-word;
+    line-height: 1.4;
+    font-size: 15px;
+}
+
+.ar-chat-user {
+    background: rgba(0, 122, 255, 0.9);
+    color: white;
+    align-self: flex-end;
+    margin-left: auto;
+    text-align: right;
+}
+
+.ar-chat-assistant {
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    align-self: flex-start;
+}
+
+/* Chat Input Container */
+.ar-chat-input-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#ar-chat-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 20px;
+    padding: 12px 20px;
+    font-size: 16px;
+    outline: none;
+}
+
+#ar-chat-input::placeholder {
+    color: #666;
+}
+
+/* Bottom Controls */
+.ar-bottom-controls {
+    display: flex;
+    justify-content: space-around;
+    gap: 15px;
+    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    padding: 15px;
+}
+
+.ar-scan {
+    background: rgba(52, 199, 89, 0.9);
+    color: white;
+}
+
+.ar-scan:hover {
+    background: rgba(52, 199, 89, 1);
+}
+
+.ar-scan.active {
+    animation: scanPulse 2s infinite;
+}
+
+@keyframes scanPulse {
+    0%, 100% { background: rgba(52, 199, 89, 0.9); }
+    50% { background: rgba(52, 199, 89, 1); box-shadow: 0 0 20px rgba(52, 199, 89, 0.5); }
+}
+
+.ar-data {
+    background: rgba(88, 86, 214, 0.9);
+    color: white;
+}
+
+.ar-data:hover {
+    background: rgba(88, 86, 214, 1);
+}
+
+.ar-help {
+    background: rgba(255, 149, 0, 0.9);
+    color: white;
+}
+
+.ar-help:hover {
+    background: rgba(255, 149, 0, 1);
+}
+
+/* Plant Information Display */
+.ar-plant-info {
+    position: absolute;
+    bottom: 150px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 20px;
+    max-width: 350px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    color: #333;
+}
+
+#plant-name {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    font-weight: bold;
+    color: #2d5016;
+}
+
+#plant-details {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #666;
+}
+
+#plant-recommendations {
+    font-size: 14px;
+    text-align: left;
+}
+
+#plant-recommendations ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+#plant-recommendations li {
+    margin: 8px 0;
+    line-height: 1.3;
+}
+
+/* NASA Data Overlay */
+.ar-nasa-overlay {
+    position: absolute;
+    top: 120px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 15px;
+    padding: 15px;
+    max-width: 250px;
+    font-size: 14px;
+}
+
+.ar-nasa-overlay h4 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #4CAF50;
+}
+
+.ar-nasa-data-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ar-nasa-data-item:last-child {
+    border-bottom: none;
+}
+
+/* Loading States */
+.ar-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    min-width: 200px;
+}
+
+.ar-loading-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error States */
+.ar-error {
+    background: rgba(255, 59, 48, 0.9);
+    color: white;
+    padding: 15px;
+    border-radius: 15px;
+    text-align: center;
+    margin: 10px 0;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .ar-controls {
+        padding: 15px;
+    }
+
+    .ar-top-bar {
+        padding: 8px 15px;
+        margin-bottom: 15px;
+    }
+
+    .ar-btn {
+        padding: 10px 15px;
+        font-size: 14px;
+        min-width: 40px;
+    }
+
+    .ar-chat-interface {
+        max-height: 50vh;
+        padding: 15px;
+    }
+
+    .ar-chat-message {
+        font-size: 14px;
+        padding: 10px 14px;
+        max-width: 90%;
+    }
+
+    .ar-bottom-controls {
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .ar-plant-info {
+        max-width: 300px;
+        padding: 15px;
+        bottom: 130px;
+    }
+
+    #plant-name {
+        font-size: 18px;
+    }
+
+    #plant-details {
+        font-size: 14px;
+    }
+
+    #plant-recommendations {
+        font-size: 13px;
+    }
+}
+
+/* Landscape Orientation */
+@media (orientation: landscape) and (max-height: 600px) {
+    .ar-chat-interface {
+        max-height: 40vh;
+    }
+
+    .ar-plant-info {
+        bottom: 100px;
+        max-width: 280px;
+    }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2) {
+    .ar-overlay {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* AR Active State */
+body.ar-active {
+    overflow: hidden;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .ar-btn,
+    .ar-loading-spinner {
+        animation: none;
+    }
+
+    .ar-btn:hover {
+        transform: none;
+    }
+}
+
+/* Focus States for Keyboard Navigation */
+.ar-btn:focus {
+    outline: 2px solid #007AFF;
+    outline-offset: 2px;
+}
+
+#ar-chat-input:focus {
+    outline: 2px solid #007AFF;
+    outline-offset: 2px;
+}
+
+/* Screen Reader Support */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Reticle/Crosshair for AR targeting */
+.ar-reticle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10001;
+}
+
+.ar-reticle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+}
+
+/* AR Button Animations */
+.ar-btn-animate {
+    animation: buttonPop 0.3s ease-out;
+}
+
+@keyframes buttonPop {
+    0% { transform: scale(0.95); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Voice Recognition Visual Feedback */
+.ar-voice-wave {
+    position: absolute;
+    bottom: 200px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 40px;
+}
+
+.ar-voice-bar {
+    width: 4px;
+    background: rgba(52, 199, 89, 0.8);
+    border-radius: 2px;
+    animation: voiceWave 1.5s ease-in-out infinite;
+}
+
+.ar-voice-bar:nth-child(1) { animation-delay: 0s; }
+.ar-voice-bar:nth-child(2) { animation-delay: 0.1s; }
+.ar-voice-bar:nth-child(3) { animation-delay: 0.2s; }
+.ar-voice-bar:nth-child(4) { animation-delay: 0.3s; }
+.ar-voice-bar:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes voiceWave {
+    0%, 100% { height: 10px; }
+    50% { height: 30px; }
+}
+
+/* Connection Status Indicator */
+.ar-connection-status {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ar-connection-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #52C954;
+}
+
+.ar-connection-dot.disconnected {
+    background: #FF453A;
+}
+
+.ar-connection-dot.connecting {
+    background: #FF9F0A;
+    animation: pulse 1s infinite;
+}

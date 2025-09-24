@@ -33,6 +33,9 @@ class FarmGameUI {
         // Make this instance globally available for satellite data integration
         if (typeof window !== 'undefined') {
             window.farmGameUI = this;
+
+            // Connect to sensor fusion if available
+            this.connectToSensorFusion();
         }
 
         // Initialize NASA Data Tutorial System
@@ -60,6 +63,190 @@ class FarmGameUI {
             console.log('⏳ GameEngine not ready yet for Farm Game registration');
             return false;
         }
+    }
+
+    /**
+     * Connect to Sensor Fusion system
+     */
+    connectToSensorFusion() {
+        // Set up interval to check for fusion insights
+        this.fusionCheckInterval = setInterval(() => {
+            this.applyFusionInsights();
+        }, 30000); // Check every 30 seconds
+
+        // Apply insights immediately if available
+        setTimeout(() => this.applyFusionInsights(), 5000);
+    }
+
+    /**
+     * Apply sensor fusion insights to farm simulation
+     */
+    async applyFusionInsights() {
+        if (!window.sensorFusionDashboard || !window.sensorFusionDashboard.fusionData) {
+            return; // No fusion data available
+        }
+
+        const fusionData = window.sensorFusionDashboard.fusionData;
+        console.log('🔬 Applying sensor fusion insights to farm:', fusionData);
+
+        // Update environmental multipliers based on fusion data
+        this.farmSimulation.farmState.environmentalData = {
+            ...this.farmSimulation.farmState.environmentalData,
+            waterConsumptionMultiplier: this.calculateWaterMultiplier(fusionData),
+            nutrientConsumptionMultiplier: this.calculateNutrientMultiplier(fusionData),
+            cropGrowthMultiplier: this.calculateGrowthMultiplier(fusionData),
+            lastFusionUpdate: Date.now(),
+            fusionConfidence: fusionData.confidence
+        };
+
+        // Show specific alerts based on fusion insights
+        this.showFusionAlerts(fusionData);
+
+        // Apply edge case recommendations
+        this.handleEdgeCases(fusionData);
+
+        // Update UI to reflect changes
+        this.updateResourcesDisplay();
+        this.updateCropDisplay();
+
+        // Emit event for other components
+        this.farmSimulation.emit('fusionInsightsApplied', {
+            fusionData,
+            appliedAt: Date.now()
+        });
+    }
+
+    /**
+     * Calculate water consumption multiplier based on fusion data
+     */
+    calculateWaterMultiplier(fusionData) {
+        // Higher water stress = more water needed
+        const stressMultiplier = 1 + (fusionData.waterStressIndex / 100);
+
+        // Edge case adjustments
+        const edgeCases = fusionData.edgeCases || [];
+        let edgeMultiplier = 1;
+
+        if (edgeCases.includes('severe_drought')) {
+            edgeMultiplier = 2.0; // Double water consumption in drought
+        } else if (edgeCases.includes('flood_conditions')) {
+            edgeMultiplier = 0.3; // Reduce watering during floods
+        }
+
+        return Math.max(0.2, Math.min(3.0, stressMultiplier * edgeMultiplier));
+    }
+
+    /**
+     * Calculate nutrient consumption multiplier
+     */
+    calculateNutrientMultiplier(fusionData) {
+        // Poor vegetation health needs more nutrients
+        const vegStress = fusionData.vegetationStressIndex / 100;
+        return 1 + (vegStress * 0.5);
+    }
+
+    /**
+     * Calculate crop growth multiplier
+     */
+    calculateGrowthMultiplier(fusionData) {
+        // Farm health directly affects growth rate
+        return fusionData.farmHealthScore / 100;
+    }
+
+    /**
+     * Show fusion-based alerts
+     */
+    showFusionAlerts(fusionData) {
+        // Water stress alerts
+        if (fusionData.waterStressIndex > 75) {
+            this.showNotification(
+                '💧 Critical water stress detected! Increase irrigation immediately.',
+                'error'
+            );
+        } else if (fusionData.waterStressIndex > 50) {
+            this.showNotification(
+                '⚠️ Moderate water stress detected. Consider additional watering.',
+                'warning'
+            );
+        }
+
+        // Vegetation health alerts
+        if (fusionData.vegetationStressIndex > 70) {
+            this.showNotification(
+                '🌱 Poor vegetation health detected. Check for diseases or pests.',
+                'warning'
+            );
+        }
+
+        // Farm health alerts
+        if (fusionData.farmHealthScore < 40) {
+            this.showNotification(
+                '🚨 Critical farm health! Multiple issues detected. Review all systems.',
+                'error'
+            );
+        }
+
+        // Confidence warnings
+        if (fusionData.confidence < 0.4) {
+            this.showNotification(
+                '📡 Low data confidence. Satellite data may be unreliable.',
+                'info'
+            );
+        }
+    }
+
+    /**
+     * Handle edge cases from sensor fusion
+     */
+    handleEdgeCases(fusionData) {
+        if (!window.AdvancedNASAAnalysis) return;
+
+        const analysis = new window.AdvancedNASAAnalysis();
+        const edgeCases = analysis.detectEdgeCases(fusionData);
+
+        edgeCases.forEach(edgeCase => {
+            switch(edgeCase.type) {
+                case 'post_flood':
+                    this.showNotification(
+                        '🌊 Post-flood conditions detected. Delay planting and improve drainage.',
+                        'warning'
+                    );
+                    // Reduce planting success rate temporarily
+                    this.farmSimulation.farmState.plantingSuccessModifier = 0.5;
+                    break;
+
+                case 'salinity_stress':
+                    this.showNotification(
+                        '🧂 Soil salinity detected. Consider salt-tolerant crop varieties.',
+                        'warning'
+                    );
+                    // Increase fertilizer needs
+                    this.farmSimulation.farmState.environmentalData.nutrientConsumptionMultiplier *= 1.3;
+                    break;
+
+                case 'desertification_risk':
+                    this.showNotification(
+                        '🏜️ Severe desertification risk! Immediate soil conservation needed.',
+                        'error'
+                    );
+                    // Dramatically increase water and fertilizer needs
+                    this.farmSimulation.farmState.environmentalData.waterConsumptionMultiplier *= 1.8;
+                    break;
+
+                case 'thermal_stress':
+                    this.showNotification(
+                        '🌡️ Temperature anomaly detected. Monitor crops closely.',
+                        'info'
+                    );
+                    break;
+            }
+
+            // Show recommendations
+            if (edgeCase.recommendations && edgeCase.recommendations.length > 0) {
+                const recommendation = edgeCase.recommendations[0];
+                this.showNotification(`💡 Recommendation: ${recommendation}`, 'info');
+            }
+        });
     }
 
     setupEventListeners() {
@@ -116,23 +303,27 @@ class FarmGameUI {
             <div class="farm-game-container">
                 <!-- Game Header -->
                 <div class="game-header">
-                    <div class="time-display">
-                        <div class="current-time">
-                            <span class="week">Week <span id="currentWeek">1</span></span>
-                            <span class="season" id="currentSeason">Spring</span>
-                            <span class="year">Year <span id="currentYear">1</span></span>
+                    <!-- Top row: Time info and controls -->
+                    <div class="header-top">
+                        <div class="time-section">
+                            <div class="current-time">
+                                <span class="week">Week <span id="currentWeek">1</span></span>
+                                <span class="season" id="currentSeason">Spring</span>
+                                <span class="year">Year <span id="currentYear">1</span></span>
+                            </div>
+                            <button id="helpBtn" class="game-btn secondary help-btn" onclick="farmGameUI.showQuickHelp()">Help</button>
                         </div>
                         ${this.satelliteDataLoaded ? `
                         <div class="satellite-location-info">
-                            <span class="location-badge">📡 ${this.currentLocation ? `${this.currentLocation.lat.toFixed(2)}°, ${this.currentLocation.lon.toFixed(2)}°` : 'Loading...'}</span>
+                            <span class="location-badge">${this.currentLocation ? `${this.currentLocation.lat.toFixed(2)}°, ${this.currentLocation.lon.toFixed(2)}°` : 'Loading...'}</span>
                         </div>` : ''}
                         <div class="game-controls">
-                            <button id="pauseBtn" class="game-btn secondary">⏸️ Pause</button>
-                            <button id="speedBtn" class="game-btn secondary">⏩ Speed</button>
-                            <button id="helpBtn" class="game-btn secondary" onclick="farmGameUI.showQuickHelp()">❓ Help</button>
+                            <button id="pauseBtn" class="game-btn secondary">Pause</button>
+                            <button id="speedBtn" class="game-btn secondary">Speed</button>
                         </div>
                     </div>
 
+                    <!-- Stats section -->
                     <div class="farm-stats">
                         <div class="stat-item">
                             <span class="stat-label">Score</span>
@@ -148,19 +339,17 @@ class FarmGameUI {
                         </div>
                     </div>
 
+                    <!-- NASA data section -->
                     <div class="nasa-live-data">
                         <div class="nasa-stat">
-                            <span class="nasa-icon">💧</span>
                             <span class="nasa-label">Soil</span>
                             <span class="nasa-value" id="soilMoistureValue">--</span>
                         </div>
                         <div class="nasa-stat">
-                            <span class="nasa-icon">🌿</span>
                             <span class="nasa-label">NDVI</span>
                             <span class="nasa-value" id="ndviValue">--</span>
                         </div>
                         <div class="nasa-stat">
-                            <span class="nasa-icon">🌡️</span>
                             <span class="nasa-label">Temp</span>
                             <span class="nasa-value" id="tempValue">--</span>
                         </div>
@@ -929,6 +1118,46 @@ class FarmGameUI {
                 </div>
             `).join('');
         }
+    }
+
+    updateLivestockView(farmState) {
+        const livestockContainer = document.getElementById('livestockGrid');
+        if (livestockContainer) {
+            const livestock = farmState.livestock || [];
+            if (livestock.length === 0) {
+                livestockContainer.innerHTML = `
+                    <div class="no-livestock">
+                        <h4>🐄 No Livestock Yet</h4>
+                        <p>Purchase livestock from the Buy Supplies section to start animal farming!</p>
+                    </div>
+                `;
+            } else {
+                livestockContainer.innerHTML = livestock.map(animal => `
+                    <div class="livestock-card">
+                        <div class="livestock-icon">${this.getLivestockIcon(animal.type)}</div>
+                        <div class="livestock-info">
+                            <h5>${animal.type.charAt(0).toUpperCase() + animal.type.slice(1)}</h5>
+                            <span class="livestock-count">Count: ${animal.count}</span>
+                            <span class="livestock-health">Health: ${animal.health}%</span>
+                        </div>
+                        <div class="livestock-status ${animal.health > 80 ? 'good' : animal.health > 50 ? 'medium' : 'low'}">
+                            ${animal.health > 80 ? 'Healthy' : animal.health > 50 ? 'Fair' : 'Needs Care'}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+    }
+
+    getLivestockIcon(type) {
+        const icons = {
+            cattle: '🐄',
+            sheep: '🐑',
+            chicken: '🐓',
+            pig: '🐷',
+            goat: '🐐'
+        };
+        return icons[type] || '🐄';
     }
 
     updateAchievementsView(farmState) {
@@ -4318,11 +4547,19 @@ class FarmGameUI {
         try {
             console.log(`🛰️ Fetching real NASA data for Farm Game: lat=${lat}, lon=${lon}`);
 
+            // Get user token from localStorage
+            const token = localStorage.getItem('nasa_earthdata_token');
+
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             // Fetch real NASA data from our proxy server
             const [smapResponse, modisResponse, landsatResponse] = await Promise.all([
-                fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`),
-                fetch(`http://localhost:3001/api/modis/ndvi?lat=${lat}&lon=${lon}`),
-                fetch(`http://localhost:3001/api/landsat/imagery?lat=${lat}&lon=${lon}`)
+                fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`, { headers }),
+                fetch(`http://localhost:3001/api/modis/ndvi?lat=${lat}&lon=${lon}`, { headers }),
+                fetch(`http://localhost:3001/api/landsat/imagery?lat=${lat}&lon=${lon}`, { headers })
             ]);
 
             const smapData = await smapResponse.json();
@@ -5007,14 +5244,9 @@ class FarmGameUI {
     showFarmContextIntroduction(contextType) {
         const introductions = {
             smallholder: {
-                title: "Welcome to Your Family Farm! 👨‍🌾",
-                message: "You've chosen to manage a smallholder farm. Your success depends on careful resource management, sustainable practices, and making the most of NASA satellite data to navigate weather challenges. Every decision matters for your family's livelihood and community resilience.",
-                tips: [
-                    "Focus on crop diversity to reduce risk",
-                    "NASA data is crucial for survival decisions",
-                    "Community and sustainability matter",
-                    "Weather events have major impact"
-                ]
+                title: "",
+                message: "",
+                tips: []
             },
             industrial: {
                 title: "Welcome to Your Agricultural Enterprise! 🏭",
@@ -6559,6 +6791,15 @@ class FarmGameUI {
                 unit: 'per bag',
                 icon: '🌾',
                 currentAmount: farmState.resources.feed || 0
+            },
+            {
+                id: 'fuel',
+                name: '⛽ Fuel',
+                description: 'Diesel fuel for tractors and farm equipment',
+                price: 80,
+                unit: 'per 50 liters',
+                icon: '⛽',
+                currentAmount: farmState.resources.fuel || 0
             }
         ];
 
@@ -6655,6 +6896,10 @@ class FarmGameUI {
             case 'feed':
                 supplyAmount = quantity * 75; // 75 units per bag
                 supplyName = 'Animal Feed';
+                break;
+            case 'fuel':
+                supplyAmount = quantity * 50; // 50 liters per purchase
+                supplyName = 'Fuel';
                 break;
         }
 
@@ -7022,80 +7267,142 @@ class FarmGameUI {
                     max-height: 80vh;
                     overflow-y: auto;
                     padding: 20px;
+                    color: #07173F;
+                    background: linear-gradient(135deg, #F8FBFF, #E8F4FD);
+                    border-radius: 12px;
+                }
+
+                .conservation-dashboard h2 {
+                    color: #07173F;
+                    text-align: center;
+                    margin-bottom: 30px;
+                    font-family: 'Overpass', sans-serif;
+                }
+
+                .conservation-dashboard h3 {
+                    color: #0042A6;
+                    border-bottom: 2px solid #2E96F5;
+                    padding-bottom: 8px;
+                    margin: 25px 0 15px 0;
                 }
 
                 .practices-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                    gap: 15px;
-                    margin: 15px 0;
+                    gap: 20px;
+                    margin: 20px 0;
                 }
 
                 .practice-card {
-                    border: 2px solid #ddd;
-                    border-radius: 8px;
-                    padding: 15px;
-                    background: #f9f9f9;
+                    border: 2px solid #2E96F5;
+                    border-radius: 12px;
+                    padding: 20px;
+                    background: white;
+                    box-shadow: 0 4px 12px rgba(46, 150, 245, 0.1);
+                    transition: all 0.3s ease;
+                }
+
+                .practice-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 25px rgba(46, 150, 245, 0.2);
+                }
+
+                .practice-card h4 {
+                    color: #07173F;
+                    margin-bottom: 10px;
+                    font-weight: 600;
                 }
 
                 .practice-card.adopted {
-                    border-color: #27ae60;
-                    background: #e8f5e8;
+                    border-color: #EAFE07;
+                    background: linear-gradient(135deg, #FAFFFE, #F8FFF0);
                 }
 
                 .practice-card.available {
-                    border-color: #3498db;
-                    background: #e3f2fd;
+                    border-color: #0042A6;
+                    background: linear-gradient(135deg, #F0F8FF, #E8F4FD);
+                }
+
+                .practice-status {
+                    font-weight: bold;
+                    margin-bottom: 15px;
+                }
+
+                .adopt-practice-btn {
+                    background: linear-gradient(45deg, #0042A6, #2E96F5);
+                    color: white;
+                    border: none;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    transition: all 0.2s ease;
+                    font-family: 'Overpass', sans-serif;
+                }
+
+                .adopt-practice-btn:hover {
+                    background: linear-gradient(45deg, #07173F, #0042A6);
+                    transform: translateY(-1px);
                 }
 
                 .metrics-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 15px;
-                    margin: 15px 0;
+                    gap: 20px;
+                    margin: 20px 0;
                 }
 
                 .metric-card {
-                    background: #f0f8ff;
-                    border-radius: 8px;
-                    padding: 20px;
+                    background: linear-gradient(135deg, #0042A6, #2E96F5);
+                    color: white;
+                    border-radius: 12px;
+                    padding: 25px;
                     text-align: center;
+                    box-shadow: 0 6px 20px rgba(0, 66, 166, 0.3);
+                }
+
+                .metric-card h4 {
+                    color: white;
+                    margin-bottom: 15px;
+                    font-size: 1rem;
+                    font-weight: 500;
                 }
 
                 .metric-value {
-                    font-size: 2em;
+                    font-size: 2.2em;
                     font-weight: bold;
-                    color: #2c3e50;
+                    color: #EAFE07;
                     margin: 10px 0;
                 }
 
                 .metric-trend.positive {
-                    color: #27ae60;
+                    color: #EAFE07;
+                    font-weight: bold;
                 }
 
                 .metric-trend.negative {
-                    color: #e74c3c;
-                }
-
-                .adopt-practice-btn {
-                    background: #3498db;
-                    color: white;
-                    border: none;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    margin-top: 10px;
-                }
-
-                .adopt-practice-btn:hover {
-                    background: #2980b9;
+                    color: #E43700;
+                    font-weight: bold;
                 }
 
                 .economic-stats {
-                    background: #fff8e1;
-                    border-radius: 8px;
-                    padding: 20px;
-                    margin: 15px 0;
+                    background: linear-gradient(135deg, #EAFE07, #F5FF8A);
+                    border-radius: 12px;
+                    padding: 25px;
+                    margin: 20px 0;
+                    color: #07173F;
+                    box-shadow: 0 4px 15px rgba(234, 254, 7, 0.3);
+                }
+
+                .economic-stats .stat {
+                    margin-bottom: 12px;
+                    font-size: 1.1rem;
+                }
+
+                .economic-stats strong {
+                    color: #07173F;
+                    font-weight: 600;
+                }
                 }
 
                 .stat {
@@ -7106,9 +7413,7 @@ class FarmGameUI {
             </style>
         `;
 
-        this.showDialog('Conservation Farming Dashboard', content, [
-            { text: 'Close', onclick: 'farmGameUI.hideDialog()' }
-        ]);
+        this.showModal(content);
     }
 
     /**
@@ -7333,9 +7638,7 @@ class FarmGameUI {
             </style>
         `;
 
-        this.showDialog('Environmental Impact Dashboard', content, [
-            { text: 'Close', onclick: 'farmGameUI.hideDialog()' }
-        ]);
+        this.showModal(content);
     }
 
     /**

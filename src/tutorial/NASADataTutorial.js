@@ -12,26 +12,26 @@ class NASADataTutorial {
         this.modules = [
             {
                 id: 'smap-basics',
-                title: '🛰️ SMAP: 토양수분을 우주에서 측정하기',
-                description: 'NASA SMAP 위성이 어떻게 땅속 수분을 측정하는지 배워보세요',
+                title: 'SMAP: Measuring Soil Moisture from Space',
+                description: 'Learn how NASA SMAP satellite measures soil moisture deep in the ground',
                 difficulty: 'beginner'
             },
             {
                 id: 'ndvi-vegetation',
-                title: '🌱 NDVI: 작물의 건강상태 읽기',
-                description: '식생지수로 작물이 스트레스를 받는지 미리 알아내는 방법',
+                title: 'NDVI: Reading Crop Health Status',
+                description: 'How to detect crop stress early using vegetation indices',
                 difficulty: 'beginner'
             },
             {
                 id: 'data-limitations',
-                title: '⚠️ 데이터의 한계와 올바른 해석',
-                description: '위성 데이터가 완벽하지 않은 이유와 현명하게 사용하는 방법',
+                title: 'Data Limitations and Proper Interpretation',
+                description: 'Why satellite data isn\'t perfect and how to use it wisely',
                 difficulty: 'intermediate'
             },
             {
                 id: 'conservation-applications',
-                title: '🌿 보존 농업에 데이터 활용하기',
-                description: '환경을 보호하면서 생산성을 높이는 지속가능한 농법',
+                title: 'Applying Data to Conservation Agriculture',
+                description: 'Sustainable farming methods that protect environment while increasing productivity',
                 difficulty: 'advanced'
             }
         ];
@@ -60,19 +60,22 @@ class NASADataTutorial {
      * Show main tutorial interface
      */
     showTutorialInterface() {
+        const overlay = document.createElement('div');
+        overlay.className = 'tutorial-modal-overlay';
+
         const modal = document.createElement('div');
         modal.className = 'tutorial-modal';
         modal.innerHTML = `
             <div class="tutorial-content">
                 <div class="tutorial-header">
-                    <h2>🎓 NASA 데이터 아카데미</h2>
-                    <button class="close-btn" onclick="nasaDataTutorial.closeTutorial()">✕</button>
+                    <h2>NASA Data Academy</h2>
+                    <button class="close-btn" onclick="nasaDataTutorial.closeTutorial()">×</button>
                 </div>
 
                 <div class="tutorial-intro">
-                    <p>농업에서 NASA 위성 데이터를 효과적으로 활용하는 방법을 배워보세요!</p>
+                    <p>Learn how to effectively use NASA satellite data in agriculture!</p>
                     <div class="progress-indicator">
-                        <span>완료: ${this.completedModules.size}/${this.modules.length}</span>
+                        <span>Completed: ${this.completedModules.size}/${this.modules.length}</span>
                         <div class="progress-bar">
                             <div class="progress-fill" style="width: ${(this.completedModules.size/this.modules.length)*100}%"></div>
                         </div>
@@ -95,13 +98,63 @@ class NASADataTutorial {
 
                 <div class="tutorial-footer">
                     <button onclick="nasaDataTutorial.startModule('${this.currentModule.id}')" class="start-btn">
-                        ${this.completedModules.has(this.currentModule.id) ? '다시 학습하기' : '시작하기'}
+                        ${this.completedModules.has(this.currentModule.id) ? 'Study Again' : 'Start Learning'}
                     </button>
                 </div>
             </div>
         `;
 
-        document.body.appendChild(modal);
+        // 기존 모달이 있다면 제거
+        const existingOverlay = document.querySelector('.tutorial-modal-overlay');
+        if (existingOverlay) {
+            existingOverlay.remove();
+        }
+
+        // 모달을 오버레이에 추가하고 body에 오버레이 추가
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // 강제로 중앙 정렬 스타일 적용 (즉시 + 지연)
+        const applyModalStyles = () => {
+            overlay.style.cssText = `
+                position: fixed !important;
+                inset: 0 !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                z-index: 99999 !important;
+                background: rgba(7, 23, 63, 0.85) !important;
+                backdrop-filter: blur(8px) !important;
+            `;
+
+            modal.style.cssText = `
+                position: static !important;
+                transform: none !important;
+                margin: auto !important;
+                background: linear-gradient(135deg, #07173F, #0960E1) !important;
+                border: 2px solid #0042A6 !important;
+                border-radius: 16px !important;
+                max-width: 800px !important;
+                max-height: 90vh !important;
+                width: 90vw !important;
+                overflow: hidden !important;
+                box-shadow: 0 25px 80px rgba(4, 66, 166, 0.4) !important;
+                display: flex !important;
+                flex-direction: column !important;
+                color: #FFFFFF !important;
+            `;
+        };
+
+        // 즉시 적용
+        applyModalStyles();
+
+        // 지연 후 재적용 (다른 스크립트가 덮어쓰는 경우 대비)
+        setTimeout(applyModalStyles, 10);
+        setTimeout(applyModalStyles, 100);
+        setTimeout(applyModalStyles, 500);
+
+        // Observer는 제거 (무한 루프 방지)
+
         window.nasaDataTutorial = this; // Global access for buttons
     }
 
@@ -132,41 +185,41 @@ class NASADataTutorial {
      */
     showSMAPTutorial() {
         this.showInteractiveLesson({
-            title: '🛰️ SMAP: 토양수분 측정 위성',
+            title: 'SMAP: Soil Moisture Measurement Satellite',
             steps: [
                 {
                     type: 'explanation',
-                    title: 'SMAP이 뭔가요?',
+                    title: 'What is SMAP?',
                     content: `
                         <div class="concept-visual">
                             <div class="satellite-demo">
-                                <div class="satellite">🛰️</div>
-                                <div class="signal-waves">📡</div>
-                                <div class="earth">🌍</div>
+                                <div class="satellite">SATELLITE</div>
+                                <div class="signal-waves">SIGNALS</div>
+                                <div class="earth">EARTH</div>
                             </div>
-                            <p><strong>SMAP (Soil Moisture Active Passive)</strong>는 NASA의 토양수분 측정 위성입니다.</p>
+                            <p><strong>SMAP (Soil Moisture Active Passive)</strong> is NASA's soil moisture measurement satellite.</p>
                             <ul>
-                                <li>🔬 <strong>원리:</strong> L-band 마이크로파로 토양 수분 측정</li>
-                                <li>📏 <strong>해상도:</strong> 9km × 9km (큰 농장에 적합)</li>
-                                <li>⏰ <strong>주기:</strong> 2-3일마다 같은 지역 재방문</li>
-                                <li>📊 <strong>깊이:</strong> 지표면 5cm 토양수분</li>
+                                <li><strong>Principle:</strong> Measures soil moisture using L-band microwaves</li>
+                                <li><strong>Resolution:</strong> 9km × 9km (suitable for large farms)</li>
+                                <li><strong>Cycle:</strong> Revisits same area every 2-3 days</li>
+                                <li><strong>Depth:</strong> Soil moisture at 5cm surface depth</li>
                             </ul>
                         </div>
                     `
                 },
                 {
                     type: 'interactive',
-                    title: '토양수분 값 해석하기',
+                    title: 'Interpreting Soil Moisture Values',
                     content: `
                         <div class="data-interpretation-game">
-                            <h4>다음 SMAP 데이터를 해석해보세요:</h4>
+                            <h4>Try interpreting this SMAP data:</h4>
                             <div class="soil-moisture-slider">
                                 <input type="range" min="0" max="50" value="25" id="moistureSlider"
                                        oninput="nasaDataTutorial.updateMoistureInterpretation(this.value)">
                                 <div class="moisture-scale">
-                                    <span>0% (건조)</span>
-                                    <span>25% (보통)</span>
-                                    <span>50% (포화)</span>
+                                    <span>0% (Dry)</span>
+                                    <span>25% (Normal)</span>
+                                    <span>50% (Saturated)</span>
                                 </div>
                             </div>
                             <div id="moistureResult" class="interpretation-result">
@@ -178,33 +231,33 @@ class NASADataTutorial {
                 },
                 {
                     type: 'practical',
-                    title: '실제 농업 의사결정',
+                    title: 'Real Agricultural Decision Making',
                     content: `
                         <div class="decision-scenario">
-                            <h4>🌾 시나리오: 옥수수 농장 관개 결정</h4>
+                            <h4>Scenario: Corn Farm Irrigation Decision</h4>
                             <div class="scenario-data">
                                 <div class="data-box">
-                                    <span class="data-label">SMAP 토양수분:</span>
+                                    <span class="data-label">SMAP Soil Moisture:</span>
                                     <span class="data-value">15%</span>
                                 </div>
                                 <div class="data-box">
-                                    <span class="data-label">날씨 예보:</span>
-                                    <span class="data-value">3일간 맑음</span>
+                                    <span class="data-label">Weather Forecast:</span>
+                                    <span class="data-value">3 days sunny</span>
                                 </div>
                                 <div class="data-box">
-                                    <span class="data-label">작물 성장 단계:</span>
-                                    <span class="data-value">결실기</span>
+                                    <span class="data-label">Crop Growth Stage:</span>
+                                    <span class="data-value">Grain filling</span>
                                 </div>
                             </div>
                             <div class="decision-options">
                                 <button onclick="nasaDataTutorial.makeDecision('irrigate')" class="decision-btn">
-                                    💧 즉시 관개하기
+                                    Irrigate immediately
                                 </button>
                                 <button onclick="nasaDataTutorial.makeDecision('wait')" class="decision-btn">
-                                    ⏰ 1-2일 더 기다리기
+                                    Wait 1-2 more days
                                 </button>
                                 <button onclick="nasaDataTutorial.makeDecision('light')" class="decision-btn">
-                                    🌊 가벼운 관개만
+                                    Light irrigation only
                                 </button>
                             </div>
                             <div id="decisionResult" class="decision-feedback"></div>
@@ -220,35 +273,35 @@ class NASADataTutorial {
      */
     showNDVITutorial() {
         this.showInteractiveLesson({
-            title: '🌱 NDVI: 식생지수로 작물 건강 파악하기',
+            title: 'NDVI: Understanding Crop Health with Vegetation Index',
             steps: [
                 {
                     type: 'explanation',
-                    title: 'NDVI가 무엇인가요?',
+                    title: 'What is NDVI?',
                     content: `
                         <div class="ndvi-explanation">
                             <div class="ndvi-formula">
                                 <h4>NDVI = (NIR - Red) / (NIR + Red)</h4>
                                 <div class="formula-breakdown">
                                     <div class="wavelength near-infrared">
-                                        <span>NIR (근적외선)</span>
+                                        <span>NIR (Near Infrared)</span>
                                         <div class="wavelength-bar nir"></div>
-                                        <small>건강한 식물이 많이 반사</small>
+                                        <small>Healthy plants reflect more</small>
                                     </div>
                                     <div class="wavelength red">
-                                        <span>Red (적색광)</span>
+                                        <span>Red (Red Light)</span>
                                         <div class="wavelength-bar red"></div>
-                                        <small>엽록소가 많이 흡수</small>
+                                        <small>Chlorophyll absorbs more</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="ndvi-scale">
-                                <h4>NDVI 값의 의미:</h4>
+                                <h4>NDVI Value Meanings:</h4>
                                 <div class="scale-bar">
-                                    <div class="scale-segment water" data-range="-1 ~ 0">물/토양</div>
-                                    <div class="scale-segment sparse" data-range="0 ~ 0.3">스트레스</div>
-                                    <div class="scale-segment moderate" data-range="0.3 ~ 0.7">보통</div>
-                                    <div class="scale-segment healthy" data-range="0.7 ~ 1">건강</div>
+                                    <div class="scale-segment water" data-range="-1 ~ 0">Water/Soil</div>
+                                    <div class="scale-segment sparse" data-range="0 ~ 0.3">Stressed</div>
+                                    <div class="scale-segment moderate" data-range="0.3 ~ 0.7">Moderate</div>
+                                    <div class="scale-segment healthy" data-range="0.7 ~ 1">Healthy</div>
                                 </div>
                             </div>
                         </div>
@@ -256,14 +309,14 @@ class NASADataTutorial {
                 },
                 {
                     type: 'interactive',
-                    title: '작물별 NDVI 패턴 학습',
+                    title: 'Learning NDVI Patterns by Crop Type',
                     content: `
                         <div class="crop-ndvi-game">
-                            <h4>각 작물의 NDVI 변화를 관찰하세요:</h4>
+                            <h4>Observe NDVI changes for each crop:</h4>
                             <div class="crop-selector">
-                                <button onclick="nasaDataTutorial.showCropNDVI('corn')" class="crop-btn">🌽 옥수수</button>
-                                <button onclick="nasaDataTutorial.showCropNDVI('wheat')" class="crop-btn">🌾 밀</button>
-                                <button onclick="nasaDataTutorial.showCropNDVI('soybean')" class="crop-btn">🫛 콩</button>
+                                <button onclick="nasaDataTutorial.showCropNDVI('corn')" class="crop-btn">🌽 Corn</button>
+                                <button onclick="nasaDataTutorial.showCropNDVI('wheat')" class="crop-btn">🌾 Wheat</button>
+                                <button onclick="nasaDataTutorial.showCropNDVI('soybean')" class="crop-btn">🫛 Soybean</button>
                             </div>
                             <div id="cropNDVIChart" class="ndvi-chart">
                                 <!-- Dynamic chart content -->
@@ -276,10 +329,10 @@ class NASADataTutorial {
                 },
                 {
                     type: 'challenge',
-                    title: '문제 상황 진단하기',
+                    title: 'Diagnosing Problem Areas',
                     content: `
                         <div class="diagnostic-challenge">
-                            <h4>🚨 이상 상황 발견!</h4>
+                            <h4>Anomaly Detected!</h4>
                             <div class="satellite-image-sim">
                                 <div class="field-grid">
                                     ${Array.from({length: 25}, (_, i) => {
@@ -289,11 +342,11 @@ class NASADataTutorial {
                                 </div>
                             </div>
                             <div class="diagnostic-question">
-                                <p>위 NDVI 맵에서 문제가 있는 구역은 어디인가요?</p>
+                                <p>Where are the problem areas in this NDVI map?</p>
                                 <div class="diagnostic-options">
-                                    <button onclick="nasaDataTutorial.diagnose('edges')" class="diagnostic-btn">가장자리 구역</button>
-                                    <button onclick="nasaDataTutorial.diagnose('center')" class="diagnostic-btn">중앙 구역</button>
-                                    <button onclick="nasaDataTutorial.diagnose('random')" class="diagnostic-btn">무작위 분포</button>
+                                    <button onclick="nasaDataTutorial.diagnose('edges')" class="diagnostic-btn">Edge areas</button>
+                                    <button onclick="nasaDataTutorial.diagnose('center')" class="diagnostic-btn">Center areas</button>
+                                    <button onclick="nasaDataTutorial.diagnose('random')" class="diagnostic-btn">Random distribution</button>
                                 </div>
                             </div>
                         </div>
@@ -308,43 +361,43 @@ class NASADataTutorial {
      */
     showDataLimitationsTutorial() {
         this.showInteractiveLesson({
-            title: '⚠️ 위성 데이터의 한계와 올바른 해석',
+            title: 'Satellite Data Limitations and Proper Interpretation',
             steps: [
                 {
                     type: 'explanation',
-                    title: '해상도의 중요성',
+                    title: 'Importance of Resolution',
                     content: `
                         <div class="resolution-demo">
-                            <h4>농장 크기에 따른 데이터 정확도</h4>
+                            <h4>Data Accuracy by Farm Size</h4>
                             <div class="farm-size-comparison">
                                 <div class="farm-demo small">
                                     <div class="farm-boundary"></div>
                                     <div class="pixel-overlay smap"></div>
-                                    <h5>소규모 농장 (1km²)</h5>
-                                    <p class="accuracy low">SMAP 정확도: ⭐⭐☆☆☆</p>
-                                    <small>9km 픽셀 하나에 농장 9개가 들어감</small>
+                                    <h5>Small Farm (1km²)</h5>
+                                    <p class="accuracy low">SMAP Accuracy: ⭐⭐☆☆☆</p>
+                                    <small>One 9km pixel contains 9 farms</small>
                                 </div>
                                 <div class="farm-demo large">
                                     <div class="farm-boundary large"></div>
                                     <div class="pixel-overlay smap"></div>
-                                    <h5>대규모 농장 (100km²)</h5>
-                                    <p class="accuracy high">SMAP 정확도: ⭐⭐⭐⭐⭐</p>
-                                    <small>농장에 SMAP 픽셀 여러 개가 포함</small>
+                                    <h5>Large Farm (100km²)</h5>
+                                    <p class="accuracy high">SMAP Accuracy: ⭐⭐⭐⭐⭐</p>
+                                    <small>Farm contains multiple SMAP pixels</small>
                                 </div>
                             </div>
                             <div class="key-lesson">
-                                <h5>🎯 핵심 교훈:</h5>
-                                <p>SMAP은 대규모 농장에 적합하고, 소규모 농장은 지상 센서와 함께 사용해야 합니다.</p>
+                                <h5>🎯 Key Lesson:</h5>
+                                <p>SMAP is suitable for large farms, while small farms should use it with ground sensors.</p>
                             </div>
                         </div>
                     `
                 },
                 {
                     type: 'interactive',
-                    title: '구름의 영향 이해하기',
+                    title: 'Understanding Cloud Effects',
                     content: `
                         <div class="cloud-effect-demo">
-                            <h4>☁️ 구름이 NDVI 데이터에 미치는 영향</h4>
+                            <h4>☁️ How Clouds Affect NDVI Data</h4>
                             <div class="cloud-scenario">
                                 <div class="satellite-view">
                                     <div class="field-image clear" id="fieldView">
@@ -353,49 +406,49 @@ class NASADataTutorial {
                                     <div class="cloud-layer" id="cloudLayer" style="opacity: 0;"></div>
                                 </div>
                                 <div class="cloud-controls">
-                                    <label>구름 양:</label>
+                                    <label>Cloud Coverage:</label>
                                     <input type="range" min="0" max="100" value="0"
                                            oninput="nasaDataTutorial.adjustCloudCover(this.value)">
                                     <span id="cloudPercent">0%</span>
                                 </div>
                                 <div class="ndvi-reading">
-                                    <span>측정된 NDVI: </span>
+                                    <span>Measured NDVI: </span>
                                     <span id="cloudAffectedNDVI">0.75</span>
                                 </div>
                             </div>
                             <div class="lesson-explanation" id="cloudLesson">
-                                구름이 없을 때는 정확한 NDVI 값을 얻을 수 있습니다.
+                                When there are no clouds, accurate NDVI values can be obtained.
                             </div>
                         </div>
                     `
                 },
                 {
                     type: 'practical',
-                    title: '불완전한 데이터로 현명한 결정하기',
+                    title: 'Making Smart Decisions with Incomplete Data',
                     content: `
                         <div class="incomplete-data-scenario">
-                            <h4>🤔 실제 상황: 데이터가 완벽하지 않을 때</h4>
+                            <h4>Real Situation: When Data Isn't Perfect</h4>
                             <div class="data-status">
                                 <div class="data-item">
-                                    <span class="data-source">SMAP 토양수분:</span>
-                                    <span class="data-value missing">❌ 3일 전 데이터 (구름)</span>
+                                    <span class="data-source">SMAP Soil Moisture:</span>
+                                    <span class="data-value missing">❌ 3-day-old data (clouds)</span>
                                 </div>
                                 <div class="data-item">
                                     <span class="data-source">MODIS NDVI:</span>
-                                    <span class="data-value partial">⚠️ 부분 데이터 (구름 50%)</span>
+                                    <span class="data-value partial">⚠️ Partial data (50% clouds)</span>
                                 </div>
                                 <div class="data-item">
-                                    <span class="data-source">지상 센서:</span>
-                                    <span class="data-value good">✅ 실시간 데이터</span>
+                                    <span class="data-source">Ground Sensors:</span>
+                                    <span class="data-value good">✅ Real-time data</span>
                                 </div>
                             </div>
                             <div class="decision-framework">
-                                <h5>올바른 접근법:</h5>
+                                <h5>Proper Approach:</h5>
                                 <ol>
-                                    <li>✅ 가용한 데이터의 신뢰도 평가</li>
-                                    <li>✅ 지상 센서 데이터 우선 활용</li>
-                                    <li>✅ 과거 패턴과 트렌드 참고</li>
-                                    <li>✅ 보수적인 의사결정</li>
+                                    <li>✅ Assess reliability of available data</li>
+                                    <li>✅ Prioritize ground sensor data</li>
+                                    <li>✅ Reference historical patterns and trends</li>
+                                    <li>✅ Make conservative decisions</li>
                                 </ol>
                             </div>
                         </div>
@@ -410,35 +463,35 @@ class NASADataTutorial {
      */
     showConservationTutorial() {
         this.showInteractiveLesson({
-            title: '🌿 보존 농업과 NASA 데이터 활용',
+            title: 'Conservation Agriculture and NASA Data Applications',
             steps: [
                 {
                     type: 'explanation',
-                    title: '보존 농업의 3대 원칙',
+                    title: 'Three Principles of Conservation Agriculture',
                     content: `
                         <div class="conservation-principles">
                             <div class="principle">
-                                <div class="principle-icon">🌾</div>
-                                <h4>최소 토양 교란</h4>
-                                <p>무경운 또는 최소경운으로 토양 구조 보존</p>
+                                <div class="principle-icon">SOIL</div>
+                                <h4>Minimum Soil Disturbance</h4>
+                                <p>Preserve soil structure with no-till or minimum tillage</p>
                                 <div class="nasa-connection">
-                                    <strong>NASA 데이터 활용:</strong> SMAP으로 토양수분 패턴 모니터링
+                                    <strong>NASA Data Use:</strong> Monitor soil moisture patterns with SMAP
                                 </div>
                             </div>
                             <div class="principle">
-                                <div class="principle-icon">🛡️</div>
-                                <h4>영구 토양 피복</h4>
-                                <p>작물 잔여물이나 피복작물로 토양 보호</p>
+                                <div class="principle-icon">COVER</div>
+                                <h4>Permanent Soil Cover</h4>
+                                <p>Protect soil with crop residue or cover crops</p>
                                 <div class="nasa-connection">
-                                    <strong>NASA 데이터 활용:</strong> NDVI로 피복 정도 모니터링
+                                    <strong>NASA Data Use:</strong> Monitor coverage levels with NDVI
                                 </div>
                             </div>
                             <div class="principle">
-                                <div class="principle-icon">🔄</div>
-                                <h4>작물 다양화</h4>
-                                <p>윤작과 혼작으로 생물다양성 증진</p>
+                                <div class="principle-icon">ROTATE</div>
+                                <h4>Crop Diversification</h4>
+                                <p>Enhance biodiversity through rotation and intercropping</p>
                                 <div class="nasa-connection">
-                                    <strong>NASA 데이터 활용:</strong> 장기 NDVI 트렌드로 토양 건강 추적
+                                    <strong>NASA Data Use:</strong> Track soil health with long-term NDVI trends
                                 </div>
                             </div>
                         </div>
@@ -446,14 +499,14 @@ class NASADataTutorial {
                 },
                 {
                     type: 'simulation',
-                    title: '10년간 농법 비교 시뮬레이션',
+                    title: '10-Year Farming Method Comparison Simulation',
                     content: `
                         <div class="farming-simulation">
-                            <h4>관행농업 vs 보존농업 장기 비교</h4>
+                            <h4>Conventional vs Conservation Agriculture Long-term Comparison</h4>
                             <div class="simulation-controls">
-                                <button onclick="nasaDataTutorial.runSimulation('conventional')" class="sim-btn">관행농업 실행</button>
-                                <button onclick="nasaDataTutorial.runSimulation('conservation')" class="sim-btn">보존농업 실행</button>
-                                <button onclick="nasaDataTutorial.runSimulation('both')" class="sim-btn">동시 비교</button>
+                                <button onclick="nasaDataTutorial.runSimulation('conventional')" class="sim-btn">Run Conventional</button>
+                                <button onclick="nasaDataTutorial.runSimulation('conservation')" class="sim-btn">Run Conservation</button>
+                                <button onclick="nasaDataTutorial.runSimulation('both')" class="sim-btn">Compare Both</button>
                             </div>
                             <div id="simulationResults" class="simulation-results">
                                 <!-- Dynamic simulation results -->
@@ -463,33 +516,33 @@ class NASADataTutorial {
                 },
                 {
                     type: 'planning',
-                    title: '나만의 보존농업 계획 세우기',
+                    title: 'Create Your Conservation Agriculture Plan',
                     content: `
                         <div class="conservation-planner">
-                            <h4>🎯 당신의 농장에 맞는 보존농업 전략</h4>
+                            <h4>🎯 Conservation Agriculture Strategy for Your Farm</h4>
                             <div class="farm-assessment">
                                 <div class="input-group">
-                                    <label>농장 크기:</label>
+                                    <label>Farm Size:</label>
                                     <select onchange="nasaDataTutorial.updateStrategy()">
-                                        <option value="small">소규모 (1-10 헥타르)</option>
-                                        <option value="medium">중규모 (10-100 헥타르)</option>
-                                        <option value="large">대규모 (100+ 헥타르)</option>
+                                        <option value="small">Small (1-10 hectares)</option>
+                                        <option value="medium">Medium (10-100 hectares)</option>
+                                        <option value="large">Large (100+ hectares)</option>
                                     </select>
                                 </div>
                                 <div class="input-group">
-                                    <label>주요 작물:</label>
+                                    <label>Main Crops:</label>
                                     <select onchange="nasaDataTutorial.updateStrategy()">
-                                        <option value="grains">곡물류</option>
-                                        <option value="vegetables">채소류</option>
-                                        <option value="mixed">혼합 재배</option>
+                                        <option value="grains">Grains</option>
+                                        <option value="vegetables">Vegetables</option>
+                                        <option value="mixed">Mixed cultivation</option>
                                     </select>
                                 </div>
                                 <div class="input-group">
-                                    <label>기후 조건:</label>
+                                    <label>Climate:</label>
                                     <select onchange="nasaDataTutorial.updateStrategy()">
-                                        <option value="temperate">온대</option>
-                                        <option value="arid">건조</option>
-                                        <option value="tropical">열대</option>
+                                        <option value="temperate">Temperate</option>
+                                        <option value="arid">Arid</option>
+                                        <option value="tropical">Tropical</option>
                                     </select>
                                 </div>
                             </div>
@@ -509,6 +562,9 @@ class NASADataTutorial {
     showInteractiveLesson(lesson) {
         // Close existing modal
         this.closeTutorial();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'tutorial-lesson-modal-overlay';
 
         const modal = document.createElement('div');
         modal.className = 'tutorial-lesson-modal';
@@ -530,14 +586,60 @@ class NASADataTutorial {
                 </div>
 
                 <div class="lesson-footer">
-                    <button id="prevBtn" onclick="nasaDataTutorial.previousStep()" style="display: none;">이전</button>
-                    <button id="nextBtn" onclick="nasaDataTutorial.nextStep()">다음</button>
-                    <button id="completeBtn" onclick="nasaDataTutorial.completeModule()" style="display: none;">완료</button>
+                    <button id="prevBtn" onclick="nasaDataTutorial.previousStep()" style="display: none;">Previous</button>
+                    <button id="nextBtn" onclick="nasaDataTutorial.nextStep()">Next</button>
+                    <button id="completeBtn" onclick="nasaDataTutorial.completeModule()" style="display: none;">Complete</button>
                 </div>
             </div>
         `;
 
-        document.body.appendChild(modal);
+        // 기존 모달이 있다면 제거
+        const existingOverlay = document.querySelector('.tutorial-lesson-modal-overlay');
+        if (existingOverlay) {
+            existingOverlay.remove();
+        }
+
+        // 모달을 오버레이에 추가하고 body에 오버레이 추가
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // 강제로 중앙 정렬 스타일 적용 (즉시 + 지연)
+        const applyLessonModalStyles = () => {
+            overlay.style.cssText = `
+                position: fixed !important;
+                inset: 0 !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                z-index: 99999 !important;
+                background: rgba(7, 23, 63, 0.85) !important;
+                backdrop-filter: blur(8px) !important;
+            `;
+
+            modal.style.cssText = `
+                position: static !important;
+                transform: none !important;
+                margin: auto !important;
+                background: white !important;
+                color: #333 !important;
+                border-radius: 16px !important;
+                padding: 0 !important;
+                max-width: 900px !important;
+                width: 90vw !important;
+                max-height: 85vh !important;
+                overflow: hidden !important;
+                box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4) !important;
+            `;
+        };
+
+        // 즉시 적용
+        applyLessonModalStyles();
+
+        // 지연 후 재적용 (다른 스크립트가 덮어쓰는 경우 대비)
+        setTimeout(applyLessonModalStyles, 10);
+        setTimeout(applyLessonModalStyles, 100);
+        setTimeout(applyLessonModalStyles, 500);
+
         this.currentLesson = lesson;
         this.currentStepIndex = 0;
     }
@@ -598,28 +700,28 @@ class NASADataTutorial {
         let interpretation, recommendation, color;
 
         if (moisture < 10) {
-            interpretation = '매우 건조';
-            recommendation = '즉시 관개 필요';
+            interpretation = 'Very Dry';
+            recommendation = 'Immediate irrigation needed';
             color = '#e74c3c';
         } else if (moisture < 20) {
-            interpretation = '건조';
-            recommendation = '1-2일 내 관개 권장';
+            interpretation = 'Dry';
+            recommendation = 'Irrigation recommended within 1-2 days';
             color = '#f39c12';
         } else if (moisture < 35) {
-            interpretation = '적정';
-            recommendation = '현재 상태 유지';
+            interpretation = 'Adequate';
+            recommendation = 'Maintain current status';
             color = '#27ae60';
         } else {
-            interpretation = '과습';
-            recommendation = '배수 점검 필요';
+            interpretation = 'Excess';
+            recommendation = 'Check drainage system';
             color = '#3498db';
         }
 
         result.innerHTML = `
             <div class="interpretation" style="border-left: 4px solid ${color};">
-                <h5>토양수분 ${moisture}%</h5>
-                <p><strong>상태:</strong> ${interpretation}</p>
-                <p><strong>권장사항:</strong> ${recommendation}</p>
+                <h5>Soil Moisture ${moisture}%</h5>
+                <p><strong>Status:</strong> ${interpretation}</p>
+                <p><strong>Recommendation:</strong> ${recommendation}</p>
             </div>
         `;
     }
@@ -628,21 +730,21 @@ class NASADataTutorial {
         const result = document.getElementById('decisionResult');
         const decisions = {
             irrigate: {
-                title: '✅ 올바른 선택!',
-                explanation: '토양수분 15%는 옥수수 결실기에 너무 낮습니다. 즉시 관개로 수확량 손실을 방지할 수 있습니다.',
-                outcome: '수확량 95% 달성',
+                title: 'Correct Choice!',
+                explanation: '15% soil moisture is too low for corn during grain filling. Immediate irrigation can prevent yield loss.',
+                outcome: 'Yield achieved: 95%',
                 color: '#27ae60'
             },
             wait: {
-                title: '⚠️ 위험한 선택',
-                explanation: '결실기 옥수수는 충분한 수분이 필요합니다. 더 기다리면 알갱이 형성에 문제가 생길 수 있습니다.',
-                outcome: '수확량 70% 예상',
+                title: 'Risky Choice',
+                explanation: 'Corn during grain filling needs sufficient water. Waiting longer could cause problems with kernel formation.',
+                outcome: 'Expected yield: 70%',
                 color: '#f39c12'
             },
             light: {
-                title: '❌ 부족한 조치',
-                explanation: '토양수분 15%는 심각한 수준입니다. 가벼운 관개로는 부족하며 충분한 양이 필요합니다.',
-                outcome: '수확량 80% 예상',
+                title: 'Insufficient Action',
+                explanation: '15% soil moisture is a serious level. Light irrigation is insufficient; adequate amount is needed.',
+                outcome: 'Expected yield: 80%',
                 color: '#e67e22'
             }
         };
@@ -665,8 +767,8 @@ class NASADataTutorial {
     }
 
     closeTutorial() {
-        const modals = document.querySelectorAll('.tutorial-modal, .tutorial-lesson-modal');
-        modals.forEach(modal => modal.remove());
+        const overlays = document.querySelectorAll('.tutorial-modal-overlay, .tutorial-lesson-modal-overlay');
+        overlays.forEach(overlay => overlay.remove());
         this.isActive = false;
     }
 
@@ -683,7 +785,7 @@ class NASADataTutorial {
 
     showCompletionCelebration() {
         // Simple completion notification
-        alert(`🎉 "${this.currentModule.title}" 모듈을 완료했습니다!`);
+        alert(`🎉 "${this.currentModule.title}" module completed!`);
     }
 
     saveProgress() {
@@ -705,36 +807,61 @@ class NASADataTutorial {
 // CSS Styles for Tutorial
 const tutorialStyles = `
 <style>
-.tutorial-modal, .tutorial-lesson-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
+.tutorial-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(7, 23, 63, 0.9) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 99999 !important;
+    backdrop-filter: blur(8px);
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.tutorial-lesson-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 99999 !important;
+    backdrop-filter: blur(3px);
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .tutorial-content, .lesson-content {
-    background: white;
-    border-radius: 15px;
-    max-width: 900px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    background: linear-gradient(135deg, #F8FBFF, #E8F4FD) !important;
+    border-radius: 15px !important;
+    max-width: 900px !important;
+    width: 90% !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    box-shadow: 0 20px 60px rgba(0, 66, 166, 0.4) !important;
+    border: 3px solid #0042A6 !important;
+    position: relative !important;
+    margin: 0 !important;
+    transform: translateY(0) !important;
 }
 
 .tutorial-header, .lesson-header {
-    background: linear-gradient(135deg, #2C3E50, #3498DB);
+    background: linear-gradient(45deg, #0042A6, #2E96F5);
     color: white;
     padding: 20px 30px;
-    border-radius: 15px 15px 0 0;
+    border-radius: 12px 12px 0 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-family: 'Overpass', sans-serif;
 }
 
 .close-btn {
@@ -753,6 +880,14 @@ const tutorialStyles = `
 .tutorial-intro {
     padding: 20px 30px;
     text-align: center;
+    font-family: 'Overpass', sans-serif;
+    color: #07173F;
+}
+
+.tutorial-intro p {
+    color: #333;
+    font-size: 1.1em;
+    font-weight: 500;
 }
 
 .progress-indicator {
@@ -770,7 +905,7 @@ const tutorialStyles = `
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #3498DB, #2ECC71);
+    background: linear-gradient(45deg, #0042A6, #2E96F5);
     transition: width 0.3s ease;
 }
 
@@ -779,18 +914,31 @@ const tutorialStyles = `
 }
 
 .module-card {
-    border: 2px solid #ECF0F1;
+    border: 2px solid #E8F4FD;
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 15px;
     cursor: pointer;
     transition: all 0.3s ease;
+    font-family: 'Overpass', sans-serif;
+    background: #FAFBFC;
+}
+
+.module-card h3 {
+    color: #07173F;
+    margin-bottom: 8px;
+}
+
+.module-card p {
+    color: #4A5568;
+    margin: 0;
 }
 
 .module-card:hover {
-    border-color: #3498DB;
+    border-color: #0042A6;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(52,152,219,0.2);
+    box-shadow: 0 5px 15px rgba(0, 66, 166, 0.2);
+    background: white;
 }
 
 .module-card.completed {
@@ -828,26 +976,43 @@ const tutorialStyles = `
 }
 
 .start-btn {
-    background: linear-gradient(135deg, #3498DB, #2ECC71);
+    background: linear-gradient(45deg, #0042A6, #2E96F5);
     color: white;
     border: none;
     padding: 12px 30px;
     border-radius: 6px;
     font-size: 16px;
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: all 0.3s ease;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
 }
 
 .start-btn:hover {
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 66, 166, 0.3);
 }
 
 /* Interactive Elements */
 .concept-visual {
-    background: #F8F9FA;
+    background: linear-gradient(135deg, #0042A6, #2E96F5) !important;
+    color: white !important;
     padding: 20px;
     border-radius: 8px;
     margin: 15px 0;
+    border: 2px solid #07173F;
+    box-shadow: 0 4px 12px rgba(0, 66, 166, 0.3);
+}
+
+.concept-visual p, .concept-visual li {
+    color: white !important;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 500;
+}
+
+.concept-visual strong {
+    color: #EAFE07 !important;
+    font-weight: 700;
 }
 
 .satellite-demo {
@@ -907,7 +1072,8 @@ const tutorialStyles = `
 .data-value {
     font-size: 18px;
     font-weight: bold;
-    color: #2C3E50;
+    color: #07173F;
+    font-family: 'Overpass', sans-serif;
 }
 
 .decision-options {
@@ -918,17 +1084,22 @@ const tutorialStyles = `
 }
 
 .decision-btn {
-    background: white;
-    border: 2px solid #3498DB;
+    background: linear-gradient(45deg, #0042A6, #2E96F5);
+    border: 2px solid #07173F;
     padding: 15px;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 500;
+    color: white !important;
 }
 
 .decision-btn:hover {
-    background: #3498DB;
-    color: white;
+    background: linear-gradient(45deg, #2E96F5, #EAFE07);
+    color: #07173F !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 66, 166, 0.3);
 }
 
 .lesson-footer {
@@ -953,8 +1124,38 @@ const tutorialStyles = `
 }
 
 #nextBtn, #completeBtn {
-    background: #3498DB;
+    background: linear-gradient(45deg, #0042A6, #2E96F5);
     color: white;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+#nextBtn:hover, #completeBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 66, 166, 0.3);
+}
+
+.lesson-body {
+    padding: 25px;
+    font-family: 'Overpass', sans-serif;
+    line-height: 1.6;
+    color: #07173F !important;
+    background: white;
+}
+
+.lesson-body h3, .lesson-body h4, .lesson-body h5 {
+    color: #0042A6 !important;
+    font-family: 'Overpass', sans-serif;
+}
+
+.lesson-body p {
+    color: #333 !important;
+    font-weight: 500;
+}
+
+.lesson-body strong {
+    color: #07173F !important;
 }
 
 @media (max-width: 768px) {

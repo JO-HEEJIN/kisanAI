@@ -587,20 +587,20 @@
 
 .stat-item {
     text-align: center;
-    background: rgba(255, 255, 255, 0.05);
+    background: white !important;
     padding: 10px;
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
 .stat-value {
     display: block;
-    color: white;
+    color: var(--deep-blue) !important;
     font-size: 1.2em;
     font-weight: bold;
 }
 
 .stat-label {
-    color: #ccc;
+    color: var(--deep-blue) !important;
     font-size: 0.8em;
     display: block;
     margin-top: 4px;
