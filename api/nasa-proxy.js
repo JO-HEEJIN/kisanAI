@@ -1,5 +1,4 @@
 // Vercel Serverless Function for NASA API Proxy
-const axios = require('axios');
 
 // Helper function to get simulated data
 function getSimulatedData(type, lat, lon) {

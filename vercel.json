@@ -1,12 +1,14 @@
 {
   "version": 2,
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/nasa-proxy.js"
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 10
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/nasa-proxy"
+    }
+  ]
 }
