@@ -1,3 +1,14 @@
+1. First think through the problem, read the codebase for relevant files, and write a plan to tasks/todo.md.
+2. The plan should have a list of todo items that you can check off as you complete them
+3. Before you begin working, check in with me and I will verify the plan.
+4. Then, begin working on the todo items, marking them as complete as you go.
+5. Please every step of the way just give me a high level explanation of what changes you made
+6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity.
+7. Finally, add a review section to the todo.md file with a summary of the changes you made and any other relevant information.
+8. DO NOT BE LAZY. NEVER BE LAZY. IF THERE IS A BUG FIND THE ROOT CAUSE AND FIX IT. NO TEMPORARY FIXES. YOU ARE A SENIOR DEVELOPER. NEVER BE LAZY
+9. MAKE ALL FIXES AND CODE CHANGES AS SIMPLE AS HUMANLY POSSIBLE. THEY SHOULD ONLY IMPACT NECESSARY CODE RELEVANT TO THE TASK AND NOTHING ELSE. IT SHOULD IMPACT AS LITTLE CODE AS POSSIBLE. YOUR GOAL IS TO NOT INTRODUCE ANY BUGS. IT'S ALL ABOUT SIMPLICITY
+
+
 # NASA Farm Navigators - Working Configuration
 
 ## 공식 Space Apps Challenge 브랜드 색상 팔레트
@@ -34,6 +45,53 @@ node server/nasa-proxy.js
 ### 3. 토큰 설정
 - NASA Earthdata 토큰이 localStorage에 저장되어 있어야 함
 - 토큰 없으면 샘플 데이터 표시
+
+#### Cesium Ion 토큰 (2025-09-25 업데이트)
+- **유효한 Cesium Ion 토큰**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyMjc4MTc5ZS01YWZkLTRjNDItOGRlOS03MjZlMzdmZTIxNDkiLCJpZCI6MzQ0MjkwLCJpYXQiOjE3NTg3MzAyNzN9.Mdc10qR7VyMAyLzfrWtP83dnL25fcE-WfGLpRbuYoZ4`
+
+#### 토큰 설정 방법:
+브라우저 콘솔에서 실행:
+```javascript
+// 새 토큰 설정
+localStorage.setItem('cesium_access_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyMjc4MTc5ZS01YWZkLTRjNDItOGRlOS03MjZlMzdmZTIxNDkiLCJpZCI6MzQ0MjkwLCJpYXQiOjE3NTg3MzAyNzN9.Mdc10qR7VyMAyLzfrWtP83dnL25fcE-WfGLpRbuYoZ4');
+
+// 설정 확인
+console.log('Cesium token:', localStorage.getItem('cesium_access_token'));
+
+// 페이지 새로고침 후 적용됨
+location.reload();
+```
+
+#### Ion 서비스 활성화 시 사용 가능한 기능:
+✅ **Cesium World Terrain**: Asset ID 1 - 고품질 3D 지형 (물과 법선 벡터 포함)
+✅ **Bing Maps Aerial with Labels**: Asset ID 3 - 레이블 포함 위성 이미지
+✅ **Cesium OSM Buildings**: Asset ID 96188 - 전세계 3D 건물 자동 추가
+✅ **Google Photorealistic 3D Tiles**: Asset ID 2275207 - 실사형 3D 모델 (선택적)
+✅ **Base Layer Picker**: 다양한 이미지 레이어 선택
+✅ **Geocoder**: 주소 검색 기능
+✅ **Lighting & Shadows**: 향상된 조명 효과
+
+#### 사용 가능한 Asset ID 목록:
+- **1**: Cesium World Terrain (지형)
+- **2**: Bing Maps Aerial (위성 이미지)
+- **3**: Bing Maps Aerial with Labels (레이블 포함)
+- **4**: Bing Maps Road (도로 지도)
+- **3812**: Earth at Night (야간 위성 이미지)
+- **3813**: Natural Earth II (자연 지구 이미지)
+- **3956**: ArcticDEM Release 4 (북극 지형)
+- **96188**: Cesium OSM Buildings (3D 건물)
+- **2275207**: Google Photorealistic 3D Tiles (구글 실사 3D)
+
+#### 고급 기능 사용 방법:
+```javascript
+// 브라우저 콘솔에서 Google 3D Tiles 활성화
+window.addGoogleTiles();
+
+// 다른 이미지 레이어로 변경 (Base Layer Picker 사용)
+// 또는 프로그래밍으로:
+viewer.imageryLayers.removeAll();
+viewer.imageryLayers.addImageryProvider(new Cesium.IonImageryProvider({assetId: 3812})); // Earth at Night
+```
 
 ### 4. Farm Game 위성 데이터 연동
 #### 구현된 기능:
@@ -317,10 +375,130 @@ setTimeout(applyModalStyles, 500);
 
 이 방법은 **다른 프로젝트의 모달 중앙 정렬 문제**에도 범용적으로 사용 가능!
 
-## 마지막 업데이트: 2025-09-24 - 🥽 AR ChatGPT 농업 어시스턴트 완료!
-### ✅ Phase 1 완료: AR 프레임워크 + 대화형 AI + 식물 인식 + 게임화
-### ✅ Phase 2 완료: 모달 중앙 정렬 완벽 해결
-### 🎯 다음 단계: 실제 ChatGPT API 연동, 고급 식물 인식 모델 훈련
+## 🚨 Git 커밋 규칙
+
+### Claude Code 서명 금지:
+```
+❌ 사용 금지:
+🤖 Generated with [Claude Code](https://claude.ai/code)
+Co-Authored-By: Claude <noreply@anthropic.com>
+
+✅ 올바른 커밋 메시지:
+git commit -m "feat: implement Conservation Dashboard
+- Added Space Apps branding
+- Fixed modal centering issues"
+```
+
+이 서명을 **절대 커밋 메시지에 포함하지 말 것!**
+
+---
+
+## 📁 대용량 파일 처리 방법 (Claude Code 한계 해결)
+
+### ❌ 문제 상황:
+```
+Error: File content (35647 tokens) exceeds maximum allowed tokens (25000).
+Please use offset and limit parameters to read specific portions of the file,
+or use the GrepTool to search for specific content.
+```
+
+### ✅ 해결 방법:
+
+#### 1. Read Tool로 파일을 청크 단위로 읽기
+```javascript
+// 첫 번째 청크 (0-10,000 토큰)
+Read({ file_path: "/path/to/file.js", offset: 0, limit: 10000 })
+
+// 두 번째 청크 (10,000-20,000 토큰)
+Read({ file_path: "/path/to/file.js", offset: 10000, limit: 10000 })
+
+// 마지막 청크 (20,000-25,000 토큰)
+Read({ file_path: "/path/to/file.js", offset: 20000, limit: 5000 })
+```
+
+#### 2. Grep Tool로 특정 내용 검색
+```javascript
+// 특정 함수나 클래스 검색
+Grep({ pattern: "function_name|class ClassName", path: "/path/to/file.js", output_mode: "content", "-n": true, "-C": 5 })
+
+// 변수나 메서드 검색
+Grep({ pattern: "showAdvancedComponent|showDefaultLayout", path: "/path/to/file.js", output_mode: "content", "-n": true, "-C": 3 })
+
+// 에러 관련 코드 검색
+Grep({ pattern: "error|Error|exception", path: "/path/to/file.js", output_mode: "content", "-n": true })
+```
+
+#### 3. Bash Tool로 파일 분할
+```bash
+# 라인 수로 분할 (500라인씩)
+split -l 500 large_file.js output_prefix_
+
+# 바이트 크기로 분할 (100KB씩)
+split -b 100k large_file.js output_prefix_
+
+# 특정 섹션만 추출
+sed -n '1,500p' large_file.js > part1.js
+sed -n '501,1000p' large_file.js > part2.js
+```
+
+#### 4. 파일 구조 먼저 파악
+```bash
+# 파일 크기와 라인 수 확인
+wc -l large_file.js
+ls -la large_file.js
+
+# 파일 헤더 확인
+head -20 large_file.js
+
+# 파일 마지막 확인
+tail -20 large_file.js
+
+# 함수/클래스 목록 확인
+grep -n "^function\|^class\|^const.*=.*function" large_file.js
+```
+
+### 🎯 실제 사용 예시:
+
+#### JavaScript 파일 분석 시:
+```javascript
+// 1단계: 파일 구조 파악
+Grep({ pattern: "^function|^class|^const.*=", path: "/Users/momo/kisanAI/src/app.js", output_mode: "content", "-n": true })
+
+// 2단계: 특정 함수 상세 확인
+Grep({ pattern: "showAdvancedComponent", path: "/Users/momo/kisanAI/src/app.js", output_mode: "content", "-n": true, "-C": 10 })
+
+// 3단계: 해당 라인 주변 읽기
+Read({ file_path: "/Users/momo/kisanAI/src/app.js", offset: 4570, limit: 30 })
+```
+
+#### HTML 파일 분석 시:
+```javascript
+// 특정 ID나 클래스 검색
+Grep({ pattern: "advancedComponentsContainer|defaultLayout", path: "/Users/momo/kisanAI/index.html", output_mode: "content", "-n": true })
+
+// script 태그들 찾기
+Grep({ pattern: "<script", path: "/Users/momo/kisanAI/index.html", output_mode: "content", "-n": true, "-C": 2 })
+```
+
+### 📋 베스트 프랙티스:
+
+1. **항상 Grep부터 시작**: 파일 구조와 위치 파악
+2. **청크 단위 처리**: 25,000 토큰 이하로 나눠서 읽기
+3. **맥락 유지**: `-C` 옵션으로 앞뒤 라인 포함
+4. **라인 번호 표시**: `-n` 옵션으로 정확한 위치 확인
+5. **단계적 접근**: 개요 → 상세 → 수정 순서
+
+### 🚨 주의사항:
+- **절대 전체 파일을 한번에 읽으려고 하지 말 것**
+- **Grep으로 먼저 위치를 파악한 후 Read 사용**
+- **offset/limit은 라인 수가 아닌 토큰 수 기준**
+
+## 마지막 업데이트: 2025-09-25 - 🐛 JavaScript 에러 수정 완료!
+### ✅ Three.js ES 모듈 업데이트 완료
+### ✅ Reserved word 에러 수정 (yield → cropYield, default 인용부호)
+### ✅ 누락된 crop 데이터 JSON 파일 생성
+### ✅ app.js null reference 에러 수정 (defaultLayout → tabContent)
+### ✅ 대용량 파일 처리 방법 문서화
 
 ---
 

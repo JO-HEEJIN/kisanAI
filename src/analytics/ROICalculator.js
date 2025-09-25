@@ -74,15 +74,15 @@ class ROICalculator {
             soybeans: 55,
             rice: 150,
             cotton: 850,
-            default: 100
+            'default': 100
         };
 
-        const yield = typicalYields[cropType.toLowerCase()] || typicalYields.default;
-        const totalProduction = farmSize * yield;
+        const cropYield = typicalYields[cropType.toLowerCase()] || typicalYields.default;
+        const totalProduction = farmSize * cropYield;
         const grossRevenue = totalProduction * price;
 
         return {
-            expectedYield: yield,
+            expectedYield: cropYield,
             totalProduction,
             grossRevenue: Math.round(grossRevenue),
             revenuePerAcre: Math.round(grossRevenue / farmSize)

@@ -1,0 +1,59 @@
+{
+  "name": "Wheat",
+  "scientificName": "Triticum aestivum",
+  "family": "Poaceae",
+  "type": "cereal grain",
+  "growingRegions": [
+    "Great Plains",
+    "Pacific Northwest",
+    "Midwest"
+  ],
+  "climate": {
+    "temperature": {
+      "optimal": "15-20°C",
+      "minimum": "-5°C",
+      "maximum": "35°C"
+    },
+    "rainfall": "350-750mm annually",
+    "humidity": "moderate to low"
+  },
+  "soil": {
+    "type": "well-drained loamy soil",
+    "pH": "6.0-7.5",
+    "fertility": "high nitrogen requirements"
+  },
+  "lifecycle": {
+    "plantingPeriod": "fall (winter wheat) or spring",
+    "growingPeriod": "120-150 days (spring), 220-250 days (winter)",
+    "harvestPeriod": "late summer"
+  },
+  "yield": {
+    "average": "50 bushels per acre",
+    "optimal": "80-100 bushels per acre"
+  },
+  "nutritionalValue": {
+    "protein": "12-15%",
+    "carbohydrates": "70-75%",
+    "fiber": "10-15%"
+  },
+  "uses": [
+    "bread making",
+    "pasta production",
+    "animal feed",
+    "biofuel"
+  ],
+  "marketPrice": {
+    "current": "$6.50 per bushel",
+    "trend": "stable"
+  },
+  "diseases": [
+    "wheat rust",
+    "powdery mildew",
+    "Fusarium head blight"
+  ],
+  "pests": [
+    "aphids",
+    "wheat midge",
+    "Hessian fly"
+  ]
+}

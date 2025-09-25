@@ -1,0 +1,61 @@
+{
+  "name": "Corn",
+  "scientificName": "Zea mays",
+  "family": "Poaceae",
+  "type": "cereal grain",
+  "growingRegions": [
+    "Corn Belt",
+    "Great Plains",
+    "Midwest",
+    "Southeast"
+  ],
+  "climate": {
+    "temperature": {
+      "optimal": "21-27°C",
+      "minimum": "10°C",
+      "maximum": "35°C"
+    },
+    "rainfall": "500-800mm during growing season",
+    "humidity": "moderate (60-70%)"
+  },
+  "soil": {
+    "type": "well-drained fertile soil",
+    "pH": "6.0-6.8",
+    "fertility": "high nitrogen and phosphorus"
+  },
+  "lifecycle": {
+    "plantingPeriod": "late spring (May)",
+    "growingPeriod": "100-120 days",
+    "harvestPeriod": "late summer to early fall"
+  },
+  "yield": {
+    "average": "175 bushels per acre",
+    "optimal": "200-300 bushels per acre"
+  },
+  "nutritionalValue": {
+    "protein": "9-12%",
+    "carbohydrates": "72-75%",
+    "fiber": "2-3%",
+    "oil": "3-5%"
+  },
+  "uses": [
+    "animal feed",
+    "ethanol production",
+    "food processing",
+    "industrial uses"
+  ],
+  "marketPrice": {
+    "current": "$4.25 per bushel",
+    "trend": "stable"
+  },
+  "diseases": [
+    "corn smut",
+    "gray leaf spot",
+    "northern corn leaf blight"
+  ],
+  "pests": [
+    "corn borer",
+    "corn rootworm",
+    "armyworm"
+  ]
+}

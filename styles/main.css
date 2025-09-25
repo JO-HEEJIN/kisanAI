@@ -26,6 +26,212 @@ body {
     min-height: 100vh;
 }
 
+/* Farm Globe 3D Panel Styles */
+.farm-globe-control-panel {
+    position: absolute;
+    top: 60px;  /* Moved down to avoid Cesium toolbar */
+    left: 20px;
+    width: 280px;  /* Slightly narrower */
+    background: rgba(26, 26, 26, 0.95);
+    border-radius: 10px;
+    padding: 15px;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.control-section {
+    margin-bottom: 15px;  /* Reduced spacing */
+}
+
+.control-section h3 {
+    color: white;
+    font-size: 14px;  /* Smaller font */
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.layer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;  /* Tighter spacing */
+    padding: 6px 8px;  /* Smaller padding */
+    background: rgba(255,255,255,0.05);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.layer-toggle:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.layer-toggle label {
+    color: #ccc;
+    font-size: 13px;  /* Smaller text */
+    cursor: pointer;
+    flex: 1;
+}
+
+.view-mode-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+.mode-btn:hover {
+    background: rgba(46, 150, 245, 0.2);
+    border-color: rgba(46, 150, 245, 0.5);
+}
+
+.mode-btn.active {
+    background: linear-gradient(135deg, #2E96F5 0%, #0042A6 100%);
+    border-color: #2E96F5;
+}
+
+/* Statistics Panel */
+.farm-globe-stats-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 30px;
+    background: rgba(26, 26, 26, 0.95);
+    padding: 15px 30px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    color: #999;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    display: block;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* Farm Info Panel */
+.farm-globe-info-panel {
+    position: absolute;
+    top: 60px;  /* Moved down to avoid Cesium toolbar */
+    right: 20px;
+    width: 320px;  /* Slightly narrower */
+    background: rgba(26, 26, 26, 0.95);
+    border-radius: 10px;
+    padding: 15px;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+}
+
+.farm-globe-info-panel.show {
+    transform: translateX(0);
+}
+
+.farm-globe-info-panel h2 {
+    color: white;
+    font-size: 20px;
+    margin: 0 0 15px 0;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.info-card {
+    background: rgba(255,255,255,0.05);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.info-card .label {
+    color: #999;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.info-card .value {
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.nasa-data-section {
+    background: rgba(46, 150, 245, 0.1);
+    border: 1px solid rgba(46, 150, 245, 0.3);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.nasa-data-section h3 {
+    color: #2E96F5;
+    font-size: 16px;
+    margin: 0 0 10px 0;
+}
+
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    color: white;
+}
+
+.data-label {
+    color: #ccc;
+}
+
+.data-value {
+    font-weight: bold;
+}
+
+.detail-btn {
+    background: linear-gradient(135deg, #2E96F5 0%, #0042A6 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+
+.detail-btn:hover {
+    transform: translateY(-2px);
+}
+
 #game-container {
     display: flex;
     flex-direction: column;
@@ -1690,7 +1896,7 @@ body {
 
 /* Enhanced Data Visualization Styles */
 .data-controls {
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    background: linear-gradient(135deg, #2c3e50, #667eea);
     border-radius: 16px;
     padding: 15px;
     margin-bottom: 24px;
@@ -1735,7 +1941,7 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+    background: var(--rocket-red);
     color: white;
     border: none;
     padding: 6px 12px;

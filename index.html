@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="styles/achievements.css">
     <link rel="stylesheet" href="styles/roi-calculator.css">
     <link rel="stylesheet" href="styles/climate-risk.css">
+    <link rel="stylesheet" href="styles/ai-copilot.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e3c72">
     <meta name="description" content="Interactive agricultural monitoring using NASA satellite data with AR ChatGPT assistant">
@@ -64,6 +65,8 @@
                     <div class="nav-dropdown">
                         <button class="nav-button">Advanced Tools ▼</button>
                         <div class="nav-dropdown-content">
+                            <button id="navAICopilot" class="nav-item">🤖 AI Farm Navigator</button>
+                            <button id="navFarmGlobe3D" class="nav-item">🌍 3D Farm Globe</button>
                             <button id="navMultiResolution" class="nav-item">Multi-Resolution Visualizer</button>
                             <button id="navRealTimeComparison" class="nav-item">Real-Time Comparison</button>
                             <button id="navROICalculator" class="nav-item">🎯 ROI Calculator</button>
@@ -157,9 +160,11 @@
         <!-- Tab Bar -->
         <div class="tab-bar">
             <div class="tab-container">
-                <button class="tab active" data-tab="education">Understanding Satellite Pixels</button>
+                <button class="tab active" data-tab="farm-globe-3d">🌍 3D Farm Globe</button>
+                <button class="tab" data-tab="education">Understanding Satellite Pixels</button>
                 <button class="tab" data-tab="pixel-hunt">Pixel Hunt Challenge</button>
                 <button class="tab" data-tab="data">Satellite Data Visualization</button>
+                <button class="tab" data-tab="ai-copilot">🤖 AI Farm Navigator</button>
                 <button class="tab" data-tab="farm-game">🚜 Farm Game</button>
                 <button class="tab" data-tab="sensor-fusion">🔬 Sensor Fusion</button>
                 <button class="tab" data-tab="ar-chatgpt">🥽 AR ChatGPT</button>
@@ -180,7 +185,7 @@
             <div id="tabContent" class="tab-content-container">
 
                 <!-- Education Tab Content -->
-                <div id="educationTab" class="tab-content active" data-tab="education">
+                <div id="educationTab" class="tab-content" data-tab="education">
                     <div id="educationPanel" class="education-panel">
                         <!-- Dynamic education content -->
                     </div>
@@ -190,6 +195,105 @@
                 <div id="dataTab" class="tab-content" data-tab="data">
                     <div id="dataDisplay" class="data-display">
                         <!-- Dynamic data visualization -->
+                    </div>
+                </div>
+
+                <!-- AI Copilot Tab Content -->
+                <div id="aiCopilotTab" class="tab-content" data-tab="ai-copilot">
+                    <div id="ai-copilot-interface" style="width: 100%; height: calc(100vh - 160px); overflow-y: auto;">
+                        <!-- AI Copilot UI will be initialized here -->
+                    </div>
+                </div>
+
+                <!-- 3D Farm Globe Tab Content -->
+                <div id="farmGlobe3DTab" class="tab-content active" data-tab="farm-globe-3d">
+                    <div class="farm-globe-container" style="height: calc(100vh - 160px); position: relative;">
+                        <!-- Main Globe Container -->
+                        <div id="farm-globe-container" style="width: 100%; height: 100%;"></div>
+
+                        <!-- Control Panel (Left) -->
+                        <div class="farm-globe-control-panel">
+                            <div class="control-section">
+                                <h3>📡 NASA Data Layers</h3>
+
+                                <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('modis', this.querySelector('input').checked)">
+                                    <input type="checkbox" id="modis-layer" checked>
+                                    <label for="modis-layer">MODIS Satellite Imagery</label>
+                                </div>
+
+                                <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('smap', this.querySelector('input').checked)">
+                                    <input type="checkbox" id="smap-layer">
+                                    <label for="smap-layer">SMAP Soil Moisture</label>
+                                </div>
+
+                                <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('precipitation', this.querySelector('input').checked)">
+                                    <input type="checkbox" id="precipitation-layer">
+                                    <label for="precipitation-layer">GPM Precipitation</label>
+                                </div>
+
+                                <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('boundaries', this.querySelector('input').checked)">
+                                    <input type="checkbox" id="boundaries-layer">
+                                    <label for="boundaries-layer">Property Boundaries</label>
+                                </div>
+                            </div>
+
+                            <div class="control-section">
+                                <h3>🗺️ View Mode</h3>
+                                <div class="view-mode-buttons">
+                                    <button class="mode-btn active" onclick="farmGlobe3D?.setViewMode('3D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">3D Globe</button>
+                                    <button class="mode-btn" onclick="farmGlobe3D?.setViewMode('2D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">2D Map</button>
+                                </div>
+                            </div>
+
+                            <div class="control-section">
+                                <h3>🎯 Quick Navigation</h3>
+                                <div class="view-mode-buttons">
+                                    <button class="mode-btn" onclick="farmGlobe3D?.flyToLocation([-93.5, 41.9], 500000)">Iowa Overview</button>
+                                    <button class="mode-btn" onclick="farmGlobe3D?.flyToLocation([-93.0, 41.8], 200000)">All Farms</button>
+                                </div>
+                            </div>
+
+                            <div class="control-section">
+                                <h3>🌙 Special Imagery</h3>
+                                <div class="view-mode-buttons">
+                                    <button class="mode-btn" onclick="window.switchToEarthAtNight?.()">Earth at Night</button>
+                                    <button class="mode-btn" onclick="window.switchToBingAerial?.()">Satellite View</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Panel (Bottom) -->
+                        <div class="farm-globe-stats-panel">
+                            <div class="stat-item">
+                                <span class="stat-label">Properties</span>
+                                <span class="stat-value" id="total-properties">4</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Avg Price/Acre</span>
+                                <span class="stat-value" id="avg-price">$3,812</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Avg ROI</span>
+                                <span class="stat-value" id="avg-roi">16.2%</span>
+                            </div>
+                        </div>
+
+                        <!-- Farm Info Panel (Right) -->
+                        <div class="farm-globe-info-panel" id="farm-info-panel">
+                            <h2 id="farm-name">Select a Farm</h2>
+                            <div id="farm-info-grid" class="info-grid"></div>
+
+                            <div class="nasa-data-section">
+                                <h3>🛰️ NASA Satellite Data</h3>
+                                <div id="nasa-data-content"></div>
+                            </div>
+
+                            <div style="text-align: center; margin-top: 20px;">
+                                <button class="detail-btn" onclick="farmGlobe3D?.viewDetailedAnalysis?.(window.currentSelectedFarmId)">
+                                    🔍 Detailed Investment Analysis
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -451,8 +555,20 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
     <!-- AR/WebXR Framework -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.155.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        window.THREE = THREE;
+        window.OrbitControls = OrbitControls;
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.0.0/dist/tf.min.js"></script>
 
     <!-- AR ChatGPT Framework -->
@@ -466,6 +582,10 @@
     <script src="src/services/NASADataService.js"></script>
     <script src="src/data/nasaRealTimeService.js"></script>
     <script src="src/games/PixelHuntChallenge.js"></script>
+    <script src="src/services/FarmDataService.js"></script>
+    <script src="src/components/FarmGlobe3D.js"></script>
+    <script src="src/services/AICopilotService.js"></script>
+    <script src="src/components/AICopilotUI.js"></script>
     <script type="module" src="src/app.js"></script>
 
     <!-- Service Worker Registration -->

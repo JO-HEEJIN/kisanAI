@@ -11,6 +11,21 @@ class AchievementSystem {
         this.callbacks = {};
 
         console.log('🏆 Achievement System initialized with', Object.keys(this.achievements).length, 'achievements');
+        console.log('🎮 User progress loaded:', {
+            totalPoints: this.userProgress.totalPoints,
+            playerLevel: this.getPlayerLevel()
+        });
+
+        // Debug current achievements state
+        Object.values(this.achievements).forEach(achievement => {
+            if (achievement.progress > 0 || achievement.currentLevel > 0) {
+                console.log(`🔍 Achievement "${achievement.name}":`, {
+                    progress: achievement.progress,
+                    currentLevel: achievement.currentLevel,
+                    nextRequirement: achievement.levels[achievement.currentLevel]?.requirement
+                });
+            }
+        });
     }
 
     initializeAchievements() {
@@ -129,29 +144,49 @@ class AchievementSystem {
         };
 
         const relevantAchievements = actionMappings[actionType] || [];
+        console.log(`🎯 Action "${actionType}" maps to achievements:`, relevantAchievements);
+
+        if (relevantAchievements.length === 0) {
+            console.warn(`⚠️ No achievements mapped for action: ${actionType}`);
+        }
 
         relevantAchievements.forEach(achievementId => {
+            console.log(`📈 Updating progress for ${achievementId}`);
             this.updateProgress(achievementId, value, context);
         });
     }
 
     updateProgress(achievementId, value, context = {}) {
         const achievement = this.achievements[achievementId];
-        if (!achievement) return;
+        if (!achievement) {
+            console.error(`❌ Achievement "${achievementId}" not found in updateProgress`);
+            return;
+        }
 
         const oldProgress = achievement.progress;
         const oldLevel = achievement.currentLevel;
 
         achievement.progress += value;
 
+        console.log(`📊 ${achievement.name} progress: ${oldProgress} → ${achievement.progress} (+${value})`);
+
         // Check for level up
         const levels = achievement.levels;
         for (let i = levels.length - 1; i >= 0; i--) {
             if (achievement.progress >= levels[i].requirement && achievement.currentLevel < i + 1) {
                 achievement.currentLevel = i + 1;
+                console.log(`🎉 LEVEL UP! ${achievement.name} reached level ${i + 1}: ${levels[i].title}`);
                 this.onLevelUp(achievementId, i + 1, context);
                 break;
             }
+        }
+
+        // Show current status
+        const nextLevel = achievement.levels[achievement.currentLevel];
+        if (nextLevel) {
+            console.log(`🎯 Next target: ${achievement.progress}/${nextLevel.requirement} for level ${achievement.currentLevel + 1}`);
+        } else {
+            console.log(`🏆 ${achievement.name} is MAXED OUT!`);
         }
 
         // Save progress
@@ -323,6 +358,50 @@ class AchievementSystem {
     unlockMasterRewards(achievementId) {
         console.log(`🌟 Master rewards unlocked for ${achievementId}!`);
         // Could unlock special features, advanced analytics, etc.
+    }
+
+    // Debug and reset functions
+    resetAllProgress() {
+        console.log('🔄 Resetting all achievement progress...');
+
+        // Reset user progress
+        this.userProgress = { totalPoints: 0 };
+
+        // Reset all achievement progress
+        Object.values(this.achievements).forEach(achievement => {
+            achievement.progress = 0;
+            achievement.currentLevel = 0;
+        });
+
+        // Clear localStorage
+        try {
+            localStorage.removeItem('nasa_farm_achievements');
+            console.log('✅ Achievement progress reset complete');
+        } catch (error) {
+            console.warn('Could not clear localStorage:', error);
+        }
+
+        this.saveUserProgress();
+    }
+
+    debugAchievementStatus(achievementId) {
+        const achievement = this.achievements[achievementId];
+        if (!achievement) {
+            console.error(`❌ Achievement "${achievementId}" not found`);
+            return;
+        }
+
+        console.log(`🔍 Debug: ${achievement.name}`, {
+            id: achievementId,
+            progress: achievement.progress,
+            currentLevel: achievement.currentLevel,
+            levels: achievement.levels.map((level, index) => ({
+                level: level.level,
+                requirement: level.requirement,
+                completed: achievement.progress >= level.requirement,
+                isCurrent: achievement.currentLevel === index + 1
+            }))
+        });
     }
 
     // Event callbacks

@@ -323,6 +323,15 @@ class TutorialEnhancements {
      * Set up individual farming simulation element
      */
     setupFarmingSimulationElement(element) {
+        // Skip if this is a Conservation Agriculture simulation (has simulation controls)
+        if (element.querySelector('.simulation-controls') ||
+            element.innerHTML.includes('runSimulation') ||
+            element.innerHTML.includes('Run Conventional') ||
+            element.innerHTML.includes('simulationResults')) {
+            console.log('🔄 Skipping TutorialEnhancements override for Conservation Agriculture simulation');
+            return; // Don't override the Conservation Agriculture content
+        }
+
         const currentSeason = this.getCurrentSeason();
         const cropData = this.generateCropSimulationData(currentSeason);
 

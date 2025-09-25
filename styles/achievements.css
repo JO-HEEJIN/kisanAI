@@ -93,6 +93,8 @@
 #achievements-container {
     flex: 1;
     overflow-y: auto;
+    background: transparent !important;
+    padding: 20px;
 }
 
 /* Contextual Tips */
@@ -466,8 +468,10 @@
 
 .achievements-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 25px;
+    padding: 20px 0;
+    align-items: stretch;
 }
 
 .achievement-card {
@@ -477,6 +481,12 @@
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    overflow: visible;
+    min-height: 200px;
 }
 
 .achievement-card:hover {
@@ -512,7 +522,9 @@
 }
 
 .achievement-progress {
-    margin-top: 15px;
+    margin-top: auto;
+    margin-bottom: 10px;
+    width: 100%;
 }
 
 .progress-bar {
@@ -539,9 +551,13 @@
 
 .achievement-levels {
     display: flex;
-    gap: 10px;
-    margin-top: 10px;
+    gap: 8px;
+    margin-top: 15px;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .level-badge {
@@ -550,6 +566,11 @@
     padding: 4px 12px;
     font-size: 12px;
     border: 2px solid transparent;
+    position: relative;
+    z-index: 10;
+    display: inline-block;
+    margin: 5px 5px 5px 0;
+    backdrop-filter: blur(5px);
 }
 
 .level-badge.completed {
@@ -616,6 +637,33 @@
         text-align: center;
         gap: 10px;
     }
+}
+
+/* Quick fixes for UI improvements */
+.achievements-modal-content {
+    background: transparent !important;
+}
+
+.achievements-modal-content > div {
+    background: transparent !important;
+}
+
+.level-badge {
+    white-space: nowrap !important;
+    font-weight: 500 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.achievement-details h3 {
+    margin-bottom: 8px !important;
+    z-index: 1;
+    position: relative;
+}
+
+.achievement-details p {
+    margin-bottom: 12px !important;
+    z-index: 1;
+    position: relative;
 }
 
 /* NASA Theme Integration */

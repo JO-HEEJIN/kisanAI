@@ -26,6 +26,10 @@ class NASAFarmNavigatorsApp {
             educationPanel: null
         };
 
+        // Default location (fallback)
+        this.defaultLocation = { lat: 37.5665, lon: 126.978 }; // Seoul
+        this.userLocation = null;
+
         // Bind methods
         this.handleAuthClick = this.handleAuthClick.bind(this);
         this.handleResolutionChange = this.handleResolutionChange.bind(this);
@@ -73,6 +77,12 @@ class NASAFarmNavigatorsApp {
 
             // Initialize authentication status
             this.updateAuthenticationStatus();
+
+            // Initialize user location
+            await this.initializeUserLocation();
+
+            // Check for initial setup and show welcome popup if needed
+            this.checkInitialSetup();
 
             // Make app globally accessible for tab switching
             window.app = this;
@@ -153,8 +163,8 @@ class NASAFarmNavigatorsApp {
                     const clonedResponse = response.clone();
                     const data = await clonedResponse.json();
 
-                    // Determine location from URL or use default
-                    const location = this.extractLocationFromURL(url) || { lat: 37.5665, lon: 126.978 };
+                    // Determine location from URL or use user/default location
+                    const location = this.extractLocationFromURL(url) || this.userLocation || this.defaultLocation;
 
                     await this.offlineManager.cacheNASAData(location, data, this.getDataTypeFromURL(url));
                 }
@@ -163,7 +173,7 @@ class NASAFarmNavigatorsApp {
             } catch (error) {
                 // If network fails, try offline cache
                 if (!navigator.onLine && this.offlineManager) {
-                    const location = this.extractLocationFromURL(args[0]) || { lat: 37.5665, lon: 126.978 };
+                    const location = this.extractLocationFromURL(args[0]) || this.userLocation || this.defaultLocation;
                     const dataType = this.getDataTypeFromURL(args[0]);
                     const cachedData = await this.offlineManager.getCachedNASAData(location, dataType);
 
@@ -292,6 +302,319 @@ class NASAFarmNavigatorsApp {
 
         // Location input change listeners - connect to Farm Game
         this.setupLocationInputListeners();
+    }
+
+    /**
+     * Initialize user location using Geolocation API
+     */
+    async initializeUserLocation() {
+        console.log('🌍 Initializing user location...');
+
+        try {
+            // Check if geolocation is supported
+            if (!navigator.geolocation) {
+                console.warn('Geolocation not supported, using default location');
+                this.setLocationInputs(this.defaultLocation);
+                return;
+            }
+
+            // Get current position with timeout
+            const position = await this.getCurrentPosition();
+            this.userLocation = {
+                lat: position.coords.latitude,
+                lon: position.coords.longitude
+            };
+
+            console.log(`📍 User location detected: ${this.userLocation.lat.toFixed(4)}, ${this.userLocation.lon.toFixed(4)}`);
+
+            // Update location inputs with user's location
+            this.setLocationInputs(this.userLocation);
+
+            // Show notification
+            this.showNotification(
+                `📍 Location auto-detected: ${this.userLocation.lat.toFixed(2)}°, ${this.userLocation.lon.toFixed(2)}°`,
+                'success'
+            );
+
+        } catch (error) {
+            console.warn('Failed to get user location:', error.message);
+
+            // Use default location as fallback
+            this.setLocationInputs(this.defaultLocation);
+
+            // Show notification about fallback
+            this.showNotification(
+                'Using default location (Seoul). You can change coordinates manually.',
+                'info'
+            );
+        }
+    }
+
+    /**
+     * Get current position using Promise-based API
+     */
+    getCurrentPosition() {
+        return new Promise((resolve, reject) => {
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000, // 10 seconds timeout
+                maximumAge: 300000 // Accept cached position up to 5 minutes old
+            };
+
+            navigator.geolocation.getCurrentPosition(resolve, reject, options);
+        });
+    }
+
+    /**
+     * Set location input values
+     */
+    setLocationInputs(location) {
+        // Set location inputs when they become available
+        const setInputs = () => {
+            const latInput = document.getElementById('latInput');
+            const lonInput = document.getElementById('lonInput');
+
+            if (latInput && lonInput) {
+                latInput.value = location.lat.toFixed(4);
+                lonInput.value = location.lon.toFixed(4);
+                console.log(`🔧 Location inputs set to: ${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`);
+            } else {
+                // Retry after a short delay if inputs aren't ready yet
+                setTimeout(setInputs, 500);
+            }
+        };
+
+        setInputs();
+    }
+
+    /**
+     * Check if initial setup is needed and show welcome popup
+     */
+    checkInitialSetup() {
+        const hasNASAToken = localStorage.getItem('nasa_earthdata_token');
+        const hasOpenAIKey = localStorage.getItem('openai_api_key');
+        const hasSeenWelcome = localStorage.getItem('welcome_shown');
+
+        // Show welcome popup if user hasn't seen it or missing essential tokens
+        if (!hasSeenWelcome || !hasNASAToken) {
+            setTimeout(() => {
+                this.showWelcomeSetupModal();
+            }, 2000); // Show after 2 seconds to let the app fully load
+        }
+    }
+
+    /**
+     * Show welcome setup modal with token configuration
+     */
+    showWelcomeSetupModal() {
+        const modal = document.createElement('div');
+        modal.className = 'setup-modal-overlay';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(7, 23, 63, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        `;
+
+        const modalContent = document.createElement('div');
+        modalContent.className = 'setup-modal-content';
+        modalContent.style.cssText = `
+            background: linear-gradient(135deg, #2c3e50, #667eea);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: white;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        `;
+
+        const hasNASAToken = localStorage.getItem('nasa_earthdata_token');
+        const hasOpenAIKey = localStorage.getItem('openai_api_key');
+
+        // Default NASA token for easy setup
+        const defaultNASAToken = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImphbmdfYW1lcnkiLCJleHAiOjE3NjMwNzgzOTksImlhdCI6MTc1NzgyNzAwMCwiaXNzIjoiaHR0cHM6Ly91cnMuZWFydGhkYXRhLm5hc2EuZ292IiwiaWRlbnRpdHlfcHJvdmlkZXIiOiJlZGxfb3BzIiwiYWNyIjoiZWRsIiwiYXNzdXJhbmNlX2xldmVsIjozfQ.sExaSzrCShT33AHjikx2nCGWAX9bqkoUgO2s09EToZ9yzZrA7dwK_2J8216VwZbdTesbwVYg2ysOV3eNqtxzlU2ALWbrmjSh06xaLSET_xiOICKnjeSgfn_VR6Ew4Dedg6uyDknW1WExZNgJ1lNO6L2a41W5B9plAJqxXeV5rdle-rRCzR51VAAj0vzA5mtFXCLDNgb2or7dOxvJpRjv12_x57Az1i7Y3SQhVQmqgfiP9Hdan-wVu5eR6JCs2ewqJYtKPlec4WGmn2nQ1IHDbabiKVPZhtZqb8nzeDVBkf-4zLTWRRBzt8ZquBWl3l-0P9p0-6A_msif53I-F4pNIw';
+
+        modalContent.innerHTML = `
+            <div class="setup-header">
+                <h1 style="color: #EAFE07; font-size: 28px; margin-bottom: 10px; text-align: center;">
+                    🚀 Welcome to NASA Farm Navigators!
+                </h1>
+                <p style="text-align: center; font-size: 16px; margin-bottom: 30px; opacity: 0.9; color: white !important;">
+                    Get started with real NASA satellite data and AI-powered agricultural insights
+                </p>
+            </div>
+
+            <div class="setup-sections">
+                <div class="setup-section" style="margin-bottom: 30px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 12px;">
+                    <h3 style="color: #EAFE07; margin-bottom: 15px; display: flex; align-items: center;">
+                        <span style="margin-right: 10px;">${hasNASAToken ? '✅' : '📡'}</span>
+                        NASA Earthdata Token ${hasNASAToken ? '(Configured)' : '(Required)'}
+                    </h3>
+                    <p style="margin-bottom: 15px; line-height: 1.6; color: white !important;">
+                        Access real satellite data from SMAP, MODIS, and Landsat missions.
+                        <br><strong style="color: #EAFE07;">A demo token is pre-filled for quick start!</strong>
+                    </p>
+                    <div class="token-instructions" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; color: white;">
+                        <p style="color: #EAFE07; margin: 0 0 10px 0;"><strong>🚀 Ready to go!</strong> A demo token is already provided below.</p>
+                        <details style="color: white;">
+                            <summary style="cursor: pointer; color: white; margin-bottom: 10px;">Want your own token? Click to expand...</summary>
+                            <ol style="margin: 10px 0 0 20px; line-height: 1.6; color: white !important;">
+                                <li style="color: white !important;">Visit <a href="https://urs.earthdata.nasa.gov/profile" target="_blank" style="color: #EAFE07;">NASA Earthdata URS</a></li>
+                                <li style="color: white !important;">Create a free account or sign in</li>
+                                <li style="color: white !important;">Go to "Applications" → "Authorized Apps"</li>
+                                <li style="color: white !important;">Generate new application token</li>
+                                <li style="color: white !important;">Replace the token below</li>
+                            </ol>
+                        </details>
+                    </div>
+                    <input type="password" id="setupNasaToken" placeholder="Paste your NASA Earthdata token here..."
+                           value="${hasNASAToken || defaultNASAToken}"
+                           style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: rgba(255,255,255,0.9); color: #333;">
+                </div>
+
+                <div class="setup-section" style="margin-bottom: 30px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 12px;">
+                    <h3 style="color: #EAFE07; margin-bottom: 15px; display: flex; align-items: center;">
+                        <span style="margin-right: 10px;">${hasOpenAIKey ? '✅' : '🤖'}</span>
+                        OpenAI API Key ${hasOpenAIKey ? '(Configured)' : '(Optional)'}
+                    </h3>
+                    <p style="margin-bottom: 15px; line-height: 1.6; color: white !important;">
+                        Enable AI-powered agricultural insights and conversational assistance.
+                    </p>
+                    <div class="token-instructions" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; color: white;">
+                        <strong style="color: white;">How to get your OpenAI API key:</strong>
+                        <ol style="margin: 10px 0 0 20px; line-height: 1.8; color: white !important;">
+                            <li style="color: white !important;">Visit <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #EAFE07;">OpenAI API Keys</a></li>
+                            <li style="color: white !important;">Sign in to your OpenAI account</li>
+                            <li style="color: white !important;">Click "Create new secret key"</li>
+                            <li style="color: white !important;">Copy the key (you won't see it again!)</li>
+                            <li style="color: white !important;">Paste it below</li>
+                        </ol>
+                    </div>
+                    <input type="password" id="setupOpenaiKey" placeholder="Paste your OpenAI API key here (optional)..."
+                           value="${hasOpenAIKey || ''}"
+                           style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: rgba(255,255,255,0.9); color: #333;">
+                </div>
+
+                <div class="setup-features" style="margin-bottom: 30px; padding: 20px; background: rgba(228, 55, 0, 0.1); border-radius: 12px; border: 1px solid rgba(228, 55, 0, 0.3);">
+                    <h3 style="color: #E43700; margin-bottom: 15px;">🌟 What you'll get:</h3>
+                    <ul style="margin-left: 20px; line-height: 1.8; color: white !important;">
+                        <li style="color: white !important;">Real-time soil moisture data from NASA SMAP satellite</li>
+                        <li style="color: white !important;">Vegetation health insights from MODIS</li>
+                        <li style="color: white !important;">High-resolution crop analysis from Landsat</li>
+                        <li style="color: white !important;">AI-powered farming recommendations</li>
+                        <li style="color: white !important;">Interactive 3D globe visualization</li>
+                        <li style="color: white !important;">ROI calculator for farm investments</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="setup-actions" style="display: flex; gap: 15px; justify-content: center;">
+                <button id="setupSave" style="
+                    background: linear-gradient(45deg, #E43700, #8E1100);
+                    color: white;
+                    border: none;
+                    padding: 15px 30px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 15px rgba(228, 55, 0, 0.3);
+                ">
+                    🚀 Start Exploring
+                </button>
+                <button id="setupLater" style="
+                    background: rgba(255,255,255,0.1);
+                    color: white;
+                    border: 1px solid rgba(255,255,255,0.3);
+                    padding: 15px 30px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">
+                    Skip for Now
+                </button>
+            </div>
+
+            <p style="text-align: center; margin-top: 20px; font-size: 14px; opacity: 0.7;">
+                You can always change these settings later in the Settings panel ⚙️
+            </p>
+        `;
+
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+        // Add event listeners
+        const saveBtn = modal.querySelector('#setupSave');
+        const laterBtn = modal.querySelector('#setupLater');
+        const nasaTokenInput = modal.querySelector('#setupNasaToken');
+        const openaiKeyInput = modal.querySelector('#setupOpenaiKey');
+
+        saveBtn.addEventListener('click', () => {
+            const nasaToken = nasaTokenInput.value.trim();
+            const openaiKey = openaiKeyInput.value.trim();
+
+            if (nasaToken) {
+                localStorage.setItem('nasa_earthdata_token', nasaToken);
+                this.updateAuthenticationStatus();
+            }
+
+            if (openaiKey) {
+                localStorage.setItem('openai_api_key', openaiKey);
+                // Reinitialize ConversationalAI if it exists
+                if (window.conversationalAI) {
+                    window.conversationalAI.loadAPIKey();
+                }
+            }
+
+            localStorage.setItem('welcome_shown', 'true');
+
+            this.showNotification('🚀 Setup complete! Ready to explore NASA satellite data!', 'success');
+            document.body.removeChild(modal);
+        });
+
+        laterBtn.addEventListener('click', () => {
+            localStorage.setItem('welcome_shown', 'true');
+            this.showNotification('You can configure tokens anytime in Settings ⚙️', 'info');
+            document.body.removeChild(modal);
+        });
+
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                laterBtn.click();
+            }
+        });
+
+        // Add hover effects
+        saveBtn.addEventListener('mouseenter', () => {
+            saveBtn.style.transform = 'translateY(-2px)';
+            saveBtn.style.boxShadow = '0 6px 20px rgba(228, 55, 0, 0.4)';
+        });
+
+        saveBtn.addEventListener('mouseleave', () => {
+            saveBtn.style.transform = 'translateY(0)';
+            saveBtn.style.boxShadow = '0 4px 15px rgba(228, 55, 0, 0.3)';
+        });
+
+        laterBtn.addEventListener('mouseenter', () => {
+            laterBtn.style.background = 'rgba(255,255,255,0.2)';
+        });
+
+        laterBtn.addEventListener('mouseleave', () => {
+            laterBtn.style.background = 'rgba(255,255,255,0.1)';
+        });
     }
 
     /**
@@ -520,6 +843,12 @@ class NASAFarmNavigatorsApp {
             case 'farm-game':
                 this.initializeFarmGame();
                 break;
+            case 'ai-copilot':
+                this.initializeAICopilot();
+                break;
+            case 'farm-globe-3d':
+                this.initializeFarmGlobe3D();
+                break;
             case 'data':
                 // Data tab is already initialized
                 break;
@@ -527,7 +856,7 @@ class NASAFarmNavigatorsApp {
                 // Education panel is already initialized
                 break;
             case 'achievements':
-                this.displayPixelHuntAchievements();
+                this.displayNASAAchievements();
                 break;
             // Add other tab cases as needed
         }
@@ -2164,8 +2493,8 @@ class NASAFarmNavigatorsApp {
                         <div class="location-section">
                             <label>Location:</label>
                             <div class="location-inputs">
-                                <input type="number" id="latInput" placeholder="Latitude" value="43.2220" step="0.0001" style="width: 130px; padding: 7px; font-size: 13px;">
-                                <input type="number" id="lonInput" placeholder="Longitude" value="106.9057" step="0.0001" style="width: 130px; padding: 7px; font-size: 13px;">
+                                <input type="number" id="latInput" placeholder="Latitude" value="" step="0.0001" style="width: 130px; padding: 7px; font-size: 13px;">
+                                <input type="number" id="lonInput" placeholder="Longitude" value="" step="0.0001" style="width: 130px; padding: 7px; font-size: 13px;">
                             </div>
                             <label>Resolution:</label>
                             <select id="resolutionSelect" style="width: 100%; padding: 8px; font-size: 14px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 4px;">
@@ -4539,6 +4868,8 @@ class NASAFarmNavigatorsApp {
      */
     setupAdvancedNavigation() {
         const navItems = [
+            { id: 'navAICopilot', component: 'aiCopilot', title: 'AI Farm Navigator' },
+            { id: 'navFarmGlobe3D', component: 'farmGlobe3D', title: '3D Farm Globe' },
             { id: 'navMultiResolution', component: 'multiResolutionVisualizer', title: 'Multi-Resolution Visualizer' },
             { id: 'navRealTimeComparison', component: 'realTimeComparison', title: 'Real-Time Comparison' },
             { id: 'navROICalculator', component: 'roiCalculator', title: 'ROI Calculator' },
@@ -4569,11 +4900,15 @@ class NASAFarmNavigatorsApp {
     async showAdvancedComponent(componentName, title) {
         try {
             const advancedContainer = document.getElementById('advancedComponentsContainer');
-            const defaultLayout = document.getElementById('defaultLayout');
+            const tabContent = document.getElementById('tabContent');
 
-            // Hide default layout and show advanced container
-            defaultLayout.style.display = 'none';
-            advancedContainer.style.display = 'block';
+            // Hide tab content and show advanced container
+            if (tabContent) {
+                tabContent.style.display = 'none';
+            }
+            if (advancedContainer) {
+                advancedContainer.style.display = 'block';
+            }
 
             // Clear previous content
             advancedContainer.innerHTML = `
@@ -4619,9 +4954,18 @@ class NASAFarmNavigatorsApp {
                 // Handle ROI Calculator
                 const contentContainer = document.getElementById('componentContent');
                 if (typeof ROICalculatorUI !== 'undefined') {
-                    const roiCalculator = new ROICalculatorUI();
-                    await roiCalculator.renderCalculator(contentContainer);
-                    window.roiCalculator = roiCalculator;
+                    const roiCalculatorUI = new ROICalculatorUI(window.roiCalculator);
+                    await roiCalculatorUI.renderCalculator(contentContainer);
+                    window.roiCalculatorUI = roiCalculatorUI;
+
+                    // Create global function to show ROI Calculator with farm data
+                    window.showROICalculator = (farm) => {
+                        // First navigate to ROI Calculator tab
+                        this.showAdvancedComponent('roiCalculator', 'ROI Calculator').then(() => {
+                            // Pre-populate form with farm data
+                            this.populateROICalculatorWithFarmData(farm);
+                        });
+                    };
                 } else {
                     throw new Error('ROI Calculator not loaded');
                 }
@@ -4634,6 +4978,34 @@ class NASAFarmNavigatorsApp {
                     window.climateRiskUI = climateRiskUI;
                 } else {
                     throw new Error('Climate Risk Assessment not loaded');
+                }
+            } else if (componentName === 'aiCopilot') {
+                // Handle AI Copilot
+                const contentContainer = document.getElementById('componentContent');
+                if (typeof AICopilotUI !== 'undefined') {
+                    const aiCopilot = new AICopilotUI('componentContent');
+                    window.aiCopilot = aiCopilot;
+                } else {
+                    throw new Error('AI Copilot not loaded');
+                }
+            } else if (componentName === 'farmGlobe3D') {
+                // Handle 3D Farm Globe
+                const contentContainer = document.getElementById('componentContent');
+                if (typeof FarmGlobe3D !== 'undefined') {
+                    // Create a container div for the 3D globe
+                    const globeContainer = document.createElement('div');
+                    globeContainer.id = 'farm-globe-container-advanced';
+                    globeContainer.style.width = '100%';
+                    globeContainer.style.height = '600px';
+                    contentContainer.innerHTML = '';
+                    contentContainer.appendChild(globeContainer);
+
+                    // Initialize the 3D Farm Globe
+                    const farmGlobe = new FarmGlobe3D('farm-globe-container-advanced');
+                    await farmGlobe.initialize();
+                    window.farmGlobe3D = farmGlobe;
+                } else {
+                    throw new Error('3D Farm Globe not loaded');
                 }
             } else {
                 throw new Error(`Component ${componentName} not available or doesn't have a supported interface method`);
@@ -4652,10 +5024,84 @@ class NASAFarmNavigatorsApp {
      */
     showDefaultLayout() {
         const advancedContainer = document.getElementById('advancedComponentsContainer');
-        const defaultLayout = document.getElementById('defaultLayout');
+        const tabContent = document.getElementById('tabContent');
 
-        advancedContainer.style.display = 'none';
-        defaultLayout.style.display = 'grid';
+        if (advancedContainer) {
+            advancedContainer.style.display = 'none';
+        }
+        if (tabContent) {
+            tabContent.style.display = 'block';
+        }
+    }
+
+    /**
+     * Populate ROI Calculator with farm data from Farm Globe
+     */
+    populateROICalculatorWithFarmData(farm) {
+        setTimeout(() => {
+            // Map farm data to ROI Calculator fields
+            const farmAcres = document.getElementById('farmAcres');
+            const currentYield = document.getElementById('currentYield');
+            const inputCosts = document.getElementById('inputCosts');
+            const location = document.getElementById('location');
+            const cropType = document.getElementById('cropType');
+
+            if (farmAcres) {
+                farmAcres.value = farm.acres || 100;
+            }
+            if (currentYield) {
+                // Estimate yield based on NDVI and soil quality
+                const estimatedYield = Math.round(150 * (farm.ndvi || 0.7) * (farm.soilQuality || 80) / 80);
+                currentYield.value = estimatedYield;
+            }
+            if (inputCosts) {
+                // Base input costs on farm size and type
+                const baseCost = farm.acres > 300 ? 400 : 450;
+                inputCosts.value = baseCost;
+            }
+            if (location) {
+                location.value = 'default';
+            }
+            if (cropType) {
+                // Map crop type from farm data
+                const cropMapping = {
+                    'corn': 'corn',
+                    'corn/soybean': 'corn',
+                    'corn/soybean rotation': 'corn',
+                    'soybeans': 'soybeans',
+                    'wheat': 'wheat',
+                    'organic vegetables': 'vegetables',
+                    'vegetables': 'vegetables',
+                    'cotton': 'cotton',
+                    'rice': 'rice'
+                };
+                const mappedCrop = cropMapping[farm.cropType?.toLowerCase()] || 'corn';
+                cropType.value = mappedCrop;
+            }
+
+            // Set NASA data checkboxes (all enabled by default with farm data)
+            const smapCheckbox = document.getElementById('useSMAP');
+            const modisCheckbox = document.getElementById('useMODIS');
+            const gpmCheckbox = document.getElementById('useGPM');
+            const ecostressCheckbox = document.getElementById('useECOSTRESS');
+            const powerCheckbox = document.getElementById('usePOWER');
+
+            if (smapCheckbox) smapCheckbox.checked = true;
+            if (modisCheckbox) modisCheckbox.checked = true;
+            if (gpmCheckbox) gpmCheckbox.checked = true;
+            if (ecostressCheckbox) ecostressCheckbox.checked = true;
+            if (powerCheckbox) powerCheckbox.checked = true;
+
+            // Auto-calculate ROI after populating
+            if (window.roiCalculatorUI) {
+                setTimeout(() => {
+                    window.roiCalculatorUI.calculateROI();
+                }, 500);
+            }
+
+            // Show a toast notification
+            this.showInfoMessage(`📊 ROI Calculator loaded with ${farm.name} data`);
+        }, 300); // Give time for UI to render
     }
 
     /**
@@ -4927,6 +5373,14 @@ class NASAFarmNavigatorsApp {
             if (!toolContainer) return;
 
             switch (toolId) {
+                case 'aiCopilot':
+                    // Switch to the AI Copilot tab
+                    this.switchTab('ai-copilot');
+                    break;
+                case 'farmGlobe3D':
+                    // Switch to the 3D Farm Globe tab
+                    this.switchTab('farm-globe-3d');
+                    break;
                 case 'multiResolution':
                     if (advancedComponents.multiResolutionVisualizer) {
                         await advancedComponents.multiResolutionVisualizer.createInterface(toolContainer);
@@ -4991,6 +5445,132 @@ class NASAFarmNavigatorsApp {
             if (farmGameContainer) {
                 farmGameContainer.innerHTML = '<div class="error-message">Farm game failed to load. Please refresh the page.</div>';
             }
+        }
+    }
+
+    /**
+     * Initialize AI Copilot when tab is activated
+     */
+    async initializeAICopilot() {
+        try {
+            const aiCopilotContainer = document.getElementById('ai-copilot-interface');
+
+            if (!aiCopilotContainer) {
+                console.error('AI Copilot container not found');
+                return;
+            }
+
+            // Check if already initialized
+            if (this.aiCopilotUI) {
+                console.log('🤖 AI Copilot already initialized');
+                return;
+            }
+
+            // Initialize AI Copilot UI
+            if (typeof AICopilotUI !== 'undefined') {
+                this.aiCopilotUI = new AICopilotUI('ai-copilot-interface');
+                console.log('🤖 AI Copilot initialized successfully');
+
+                // Make globally accessible
+                window.aiCopilotUI = this.aiCopilotUI;
+            } else {
+                console.error('AICopilotUI class not available');
+                aiCopilotContainer.innerHTML = `
+                    <div class="error-message">
+                        <h3>AI Copilot Unavailable</h3>
+                        <p>The AI Copilot component failed to load. Please refresh the page.</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Failed to initialize AI Copilot:', error);
+            const aiCopilotContainer = document.getElementById('ai-copilot-interface');
+            if (aiCopilotContainer) {
+                aiCopilotContainer.innerHTML = '<div class="error-message">AI Copilot failed to load. Please refresh the page.</div>';
+            }
+        }
+    }
+
+    /**
+     * Initialize 3D Farm Globe when tab is activated
+     */
+    async initializeFarmGlobe3D() {
+        try {
+            const farmGlobeContainer = document.getElementById('farm-globe-container');
+
+            if (!farmGlobeContainer) {
+                console.error('Farm globe container not found');
+                return;
+            }
+
+            // Check if CesiumJS is available
+            if (typeof Cesium === 'undefined') {
+                console.log('Loading CesiumJS library...');
+                const cesiumScript = document.createElement('script');
+                cesiumScript.src = 'https://cesium.com/downloads/cesiumjs/releases/1.109/Build/Cesium/Cesium.js';
+
+                return new Promise((resolve, reject) => {
+                    cesiumScript.onload = async () => {
+                        console.log('CesiumJS loaded successfully');
+                        await this.createFarmGlobe3D(farmGlobeContainer);
+                        resolve();
+                    };
+                    cesiumScript.onerror = () => {
+                        console.error('Failed to load CesiumJS');
+                        farmGlobeContainer.innerHTML = `
+                            <div class="error-message">
+                                <h3>3D Globe Unavailable</h3>
+                                <p>Unable to load the 3D globe viewer. Please check your internet connection.</p>
+                            </div>
+                        `;
+                        reject(new Error('CesiumJS loading failed'));
+                    };
+                    document.head.appendChild(cesiumScript);
+                });
+            } else {
+                // CesiumJS already loaded
+                await this.createFarmGlobe3D(farmGlobeContainer);
+            }
+        } catch (error) {
+            console.error('Failed to initialize 3D Farm Globe:', error);
+            const farmGlobeContainer = document.getElementById('farm-globe-container');
+            if (farmGlobeContainer) {
+                farmGlobeContainer.innerHTML = '<div class="error-message">3D Farm Globe failed to load. Please refresh the page.</div>';
+            }
+        }
+    }
+
+    /**
+     * Create and initialize the 3D Farm Globe
+     */
+    async createFarmGlobe3D(container) {
+        try {
+            // Check if global instance exists first to prevent duplicates
+            if (window.farmGlobe3D && window.farmGlobe3D.isInitialized) {
+                this.farmGlobe3D = window.farmGlobe3D;
+                console.log('🔄 Using existing FarmGlobe3D instance');
+            } else if (!this.farmGlobe3D && typeof FarmGlobe3D !== 'undefined') {
+                this.farmGlobe3D = new FarmGlobe3D('farm-globe-container');
+                await this.farmGlobe3D.initialize();
+                window.farmGlobe3D = this.farmGlobe3D;
+                console.log('🌍 3D Farm Globe initialized successfully');
+            } else if (!this.farmGlobe3D) {
+                console.error('FarmGlobe3D class not available');
+                container.innerHTML = `
+                    <div class="error-message">
+                        <h3>3D Globe Component Missing</h3>
+                        <p>The 3D Globe component is not loaded. Please refresh the page.</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error creating 3D Farm Globe:', error);
+            container.innerHTML = `
+                <div class="error-message">
+                    <h3>3D Globe Error</h3>
+                    <p>An error occurred while initializing the 3D globe: ${error.message}</p>
+                </div>
+            `;
         }
     }
 
@@ -5341,6 +5921,119 @@ class NASAFarmNavigatorsApp {
 
         achievementList.innerHTML = achievementHTML;
         console.log('🏆 Achievement display updated');
+    }
+
+    /**
+     * Display NASA Achievement System in main app achievements tab
+     */
+    displayNASAAchievements() {
+        console.log('🏆 Displaying NASA achievements in main app');
+
+        // Check if achievement system and UI are available
+        if (!window.achievementSystem || !window.achievementUI) {
+            console.log('⚠️ NASA Achievement System not available yet');
+
+            // Show loading message
+            const tabContent = document.querySelector('[data-tab="achievements"].tab-content');
+            if (tabContent) {
+                tabContent.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <h3>🛰️ Loading NASA Achievement System...</h3>
+                        <p style="color: #8E96AA; margin-top: 20px;">Please wait while the achievement system initializes...</p>
+                    </div>
+                `;
+            }
+
+            // Retry after a delay
+            setTimeout(() => this.displayNASAAchievements(), 1000);
+            return;
+        }
+
+        // Get the achievements tab content area
+        const tabContent = document.querySelector('[data-tab="achievements"].tab-content');
+        if (!tabContent) {
+            console.error('Achievement tab content not found');
+            return;
+        }
+
+        // Get player level
+        const playerLevel = window.achievementSystem.getPlayerLevel();
+        const totalPoints = window.achievementSystem.getTotalPoints();
+
+        // Get all achievements
+        const achievements = window.achievementSystem.getAllAchievements();
+
+        // Build the achievements display
+        let achievementHTML = `
+            <div class="achievements-panel" style="padding: 20px;">
+                <h2>🏆 NASA Farm Navigator Achievements</h2>
+
+                <div class="player-info" style="background: linear-gradient(135deg, #2c3e50, #667eea); color: white; padding: 20px; border-radius: 15px; margin: 20px 0;">
+                    <h3>Level ${playerLevel.level}: ${playerLevel.title}</h3>
+                    <p>Total Points: ${totalPoints.toLocaleString()}</p>
+                </div>
+
+                <div class="achievements-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+        `;
+
+        // Add each achievement
+        achievements.forEach(achievement => {
+            const progress = window.achievementSystem.getAchievementProgress(achievement.id);
+            const isCompleted = achievement.currentLevel === achievement.levels.length;
+            const progressPercent = progress.completed ? 100 :
+                (progress.progress / progress.maxProgress) * 100;
+
+            achievementHTML += `
+                <div class="achievement-card" style="
+                    background: ${isCompleted ? 'linear-gradient(135deg, #2E96F5, #0960E1)' : '#1a252f'};
+                    color: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    border: 2px solid ${isCompleted ? '#EAFE07' : 'rgba(234, 254, 7, 0.3)'};
+                    position: relative;
+                    overflow: hidden;
+                ">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <span style="font-size: 32px; margin-right: 15px;">${achievement.icon}</span>
+                        <div>
+                            <h4 style="margin: 0; color: #EAFE07;">${achievement.name}</h4>
+                            <p style="margin: 5px 0; font-size: 14px; opacity: 0.9;">${achievement.description}</p>
+                        </div>
+                    </div>
+
+                    <div class="progress-section">
+                        <div style="background: rgba(0,0,0,0.3); border-radius: 10px; height: 8px; overflow: hidden; margin: 10px 0;">
+                            <div style="background: #EAFE07; height: 100%; width: ${progressPercent}%; transition: width 0.5s ease;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                            <span>Level ${achievement.currentLevel}/${achievement.levels.length}</span>
+                            <span>${progress.completed ? 'MASTERED!' : `${progress.totalProgress}/${progress.nextRequirement || 'Max'}`}</span>
+                        </div>
+                    </div>
+
+                    ${isCompleted ? '<div style="position: absolute; top: 10px; right: 10px; background: #EAFE07; color: #07173F; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 12px;">MASTERED</div>' : ''}
+                </div>
+            `;
+        });
+
+        achievementHTML += `
+                </div>
+
+                <div style="margin-top: 30px; padding: 20px; background: rgba(46, 150, 245, 0.1); border-radius: 10px; border: 1px solid #2E96F5;">
+                    <h4 style="color: #2E96F5; margin-bottom: 10px;">🎯 Quick Stats</h4>
+                    <p>Keep using NASA satellite data in your farming decisions to unlock more achievements!</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li>💧 Water crops to progress in Water Wizard</li>
+                        <li>🌱 Plant crops to advance Seed Master</li>
+                        <li>🛰️ Use satellite data to level up Satellite Sage</li>
+                        <li>🌾 Harvest crops to become a Harvest Hero</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+
+        tabContent.innerHTML = achievementHTML;
+        console.log('🏆 NASA Achievement display updated');
     }
 
     /**
@@ -5992,6 +6685,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update level when achievements change
                 window.achievementSystem.on('onLevelUp', updateAchievementLevel);
             }
+
+            // Add global debug functions
+            window.debugAchievements = {
+                reset: () => {
+                    window.achievementSystem.resetAllProgress();
+                    location.reload(); // Reload to see changes
+                },
+                debug: (achievementId) => {
+                    window.achievementSystem.debugAchievementStatus(achievementId);
+                },
+                testWaterWizard: () => {
+                    console.log('🧪 Testing Water Wizard achievement...');
+                    for (let i = 0; i < 3; i++) {
+                        window.achievementSystem.trackAction('irrigation_decision', 1);
+                    }
+                    window.achievementSystem.debugAchievementStatus('water_wizard');
+                },
+                status: () => {
+                    const level = window.achievementSystem.getPlayerLevel();
+                    const points = window.achievementSystem.getTotalPoints();
+                    console.log('🏆 Achievement Status:', { level, points });
+
+                    Object.values(window.achievementSystem.achievements).forEach(achievement => {
+                        if (achievement.progress > 0 || achievement.currentLevel > 0) {
+                            console.log(`${achievement.name}:`, {
+                                progress: achievement.progress,
+                                level: achievement.currentLevel,
+                                maxLevel: achievement.levels.length
+                            });
+                        }
+                    });
+                }
+            };
+
+            console.log('🔧 Debug functions available: window.debugAchievements.reset(), .debug(id), .testWaterWizard(), .status()');
 
             // Track initial NASA data usage
             window.achievementSystem.trackAction('nasa_data_check', 1);

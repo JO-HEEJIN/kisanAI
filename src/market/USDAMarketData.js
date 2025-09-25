@@ -460,12 +460,12 @@ class USDAMarketData {
             potatoes: 400   // cwt per acre
         };
 
-        const yield = typicalYields[priceData.commodity] || 100;
-        const totalProduction = farmSize * yield;
+        const cropYield = typicalYields[priceData.commodity] || 100;
+        const totalProduction = farmSize * cropYield;
         const grossRevenue = totalProduction * priceData.price;
 
         return {
-            expectedYield: yield,
+            expectedYield: cropYield,
             totalProduction,
             grossRevenue: Math.round(grossRevenue),
             revenuePerAcre: Math.round(grossRevenue / farmSize),

@@ -47,6 +47,9 @@ class FarmGameUI {
         // Initialize Environmental Impact Tracker
         this.initializeEnvironmentalTracker();
 
+        // Initialize NASA Achievement System integration
+        this.initializeAchievementSystem();
+
         this.setupEventListeners();
         this.render();
     }
@@ -278,7 +281,10 @@ class FarmGameUI {
         });
 
         this.farmSimulation.on('landRecovered', (data) => {
-            this.showNotification(`🌱 ${data.area} hectares recovered! Total available: ${data.totalAvailable} hectares`, 'success');
+            const message = data.recoveryType === 'harvest'
+                ? `🌾 ${data.area} hectares recovered from ${data.cropType} harvest! Total available: ${data.totalAvailable} hectares`
+                : `🌱 ${data.area} hectares recovered from dead land! Total available: ${data.totalAvailable} hectares`;
+            this.showNotification(message, 'success');
             this.updateResourcesDisplay();
         });
 
@@ -311,7 +317,7 @@ class FarmGameUI {
                                 <span class="season" id="currentSeason">Spring</span>
                                 <span class="year">Year <span id="currentYear">1</span></span>
                             </div>
-                            <button id="helpBtn" class="game-btn secondary help-btn" onclick="farmGameUI.showQuickHelp()">Help</button>
+                            <button id="importSatelliteBtn" class="game-btn primary satellite-import-btn" onclick="farmGameUI.loadFromSatelliteData()">Import Satellite Data</button>
                         </div>
                         ${this.satelliteDataLoaded ? `
                         <div class="satellite-location-info">
@@ -425,9 +431,9 @@ class FarmGameUI {
                     </div>
                     <div class="instructions-content" id="instructionsContent" style="display: ${this.hasSeenTutorial() ? 'none' : 'block'}; ">
                         <div class="instruction-step">
-                            <h5>🏁 Getting Started</h5>
-                            <p>Welcome to NASA Farm Navigators! You're managing a farm using real NASA satellite data to make informed decisions.</p>
-                            <p><strong>Key Resources:</strong> Money (💰), Water (💧), Crop Health (🌱), Season Progress (📅)</p>
+                            <h5 style="color: white;">Getting Started</h5>
+                            <p style="color: white;">Welcome to NASA Farm Navigators! You're managing a farm using real NASA satellite data to make informed decisions.</p>
+                            <p style="color: white;"><strong>Key Resources:</strong> Money, Water, Crop Health, Season Progress</p>
                         </div>
                         <div class="instruction-step">
                             <h5>🎯 Your Goal</h5>
@@ -670,15 +676,17 @@ class FarmGameUI {
     renderLivestockView() {
         return `
             <div class="livestock-container">
-                <h4>🐄 Livestock Management</h4>
+                <h4>Livestock Management</h4>
                 <div class="livestock-grid" id="livestockGrid">
                     <!-- Livestock will be rendered dynamically -->
                 </div>
 
                 <div class="livestock-actions">
                     <h5>Available Actions:</h5>
-                    <button class="action-btn" onclick="farmGameUI.feedLivestock()">🌾 Feed Animals</button>
-                    <button class="action-btn" onclick="farmGameUI.veterinaryCheck()">🏥 Health Check</button>
+                    <button class="action-btn" onclick="console.log('🔥 Feed button clicked!'); farmGameUI.feedAnimals()">Feed Animals</button>
+                    <button class="action-btn" onclick="farmGameUI.veterinaryCheck()">Health Check</button>
+                    <button class="action-btn" onclick="farmGameUI.breedLivestock()">Breed Animals</button>
+                    <button class="action-btn" onclick="farmGameUI.sellLivestock()">Sell Livestock</button>
                 </div>
             </div>
         `;
@@ -709,6 +717,10 @@ class FarmGameUI {
                 <div class="score-summary">
                     <div class="total-score">
                         <h3>Total Score: <span id="totalScore">0</span></h3>
+                        <div class="player-level">
+                            <span>Level: </span><span id="playerLevel">1</span>
+                            <span> - </span><span id="playerTitle">Data Explorer</span>
+                        </div>
                         <div class="score-breakdown">
                             <div class="score-item">
                                 <span>🌾 Crop Decisions:</span>
@@ -731,7 +743,7 @@ class FarmGameUI {
                 </div>
 
                 <div class="achievements-grid" id="achievementsGrid">
-                    <!-- Achievements will be rendered dynamically -->
+                    <!-- NASA + Farm achievements will be rendered here -->
                 </div>
 
                 <div class="leaderboard-section">
@@ -906,13 +918,13 @@ class FarmGameUI {
                                     <div class="event-benefits">
                                         <strong>Benefits:</strong>
                                         <ul>
-                                            ${event.benefits.map(benefit => `<li>${benefit}</li>`).join('')}
+                                            ${(event.benefits || []).map(benefit => `<li>${benefit || ''}</li>`).join('')}
                                         </ul>
                                     </div>
                                     <div class="event-recommendations">
                                         <strong>Recommendations:</strong>
                                         <ul>
-                                            ${event.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                                            ${(event.recommendations || []).map(rec => `<li>${rec || ''}</li>`).join('')}
                                         </ul>
                                     </div>
                                 </div>
@@ -1121,30 +1133,62 @@ class FarmGameUI {
     }
 
     updateLivestockView(farmState) {
+        console.log('🐄 updateLivestockView called with farmState.livestock:', farmState.livestock);
         const livestockContainer = document.getElementById('livestockGrid');
         if (livestockContainer) {
-            const livestock = farmState.livestock || [];
-            if (livestock.length === 0) {
+            const livestock = farmState.livestock || {};
+            console.log('📊 Livestock data for display:', JSON.stringify(livestock, null, 2));
+            const livestockEntries = Object.entries(livestock);
+
+            if (livestockEntries.length === 0) {
                 livestockContainer.innerHTML = `
                     <div class="no-livestock">
-                        <h4>🐄 No Livestock Yet</h4>
+                        <h4>No Livestock Yet</h4>
                         <p>Purchase livestock from the Buy Supplies section to start animal farming!</p>
                     </div>
                 `;
             } else {
-                livestockContainer.innerHTML = livestock.map(animal => `
-                    <div class="livestock-card">
-                        <div class="livestock-icon">${this.getLivestockIcon(animal.type)}</div>
-                        <div class="livestock-info">
-                            <h5>${animal.type.charAt(0).toUpperCase() + animal.type.slice(1)}</h5>
-                            <span class="livestock-count">Count: ${animal.count}</span>
-                            <span class="livestock-health">Health: ${animal.health}%</span>
-                        </div>
-                        <div class="livestock-status ${animal.health > 80 ? 'good' : animal.health > 50 ? 'medium' : 'low'}">
-                            ${animal.health > 80 ? 'Healthy' : animal.health > 50 ? 'Fair' : 'Needs Care'}
-                        </div>
-                    </div>
-                `).join('');
+                livestockContainer.innerHTML = livestockEntries
+                    .filter(([type, data]) => data && typeof data.count !== 'undefined' && data.count > 0)
+                    .map(([type, data]) => {
+                        // Ensure data has valid values
+                        const count = data.count || 0;
+                        const health = data.health || 0;
+                        const feedLevel = data.feed_level || 0;
+
+                        // Convert to percentage if needed (handle both 0-1 and 0-100 ranges)
+                        const healthPercent = health <= 1 ? Math.round(health * 100) : Math.round(health);
+                        const feedPercent = feedLevel <= 1 ? Math.round(feedLevel * 100) : Math.round(feedLevel);
+
+                        return `
+                            <div class="livestock-card">
+                                <div class="livestock-icon">${this.getLivestockIcon(type)}</div>
+                                <div class="livestock-info">
+                                    <h5>${type.charAt(0).toUpperCase() + type.slice(1)}</h5>
+                                    <span class="livestock-count">Count: ${count}</span>
+
+                                    <div class="stat-row">
+                                        <span class="stat-label">Health:</span>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill health-bar" style="width: ${healthPercent}%"></div>
+                                        </div>
+                                        <span class="stat-value">${healthPercent}%</span>
+                                    </div>
+
+                                    <div class="stat-row">
+                                        <span class="stat-label">Feed:</span>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill feed-bar" style="width: ${feedPercent}%"></div>
+                                        </div>
+                                        <span class="stat-value">${feedPercent}%</span>
+                                    </div>
+                                </div>
+                                <div class="livestock-status ${healthPercent > 80 ? 'good' : healthPercent > 50 ? 'medium' : 'low'}">
+                                    ${healthPercent > 80 ? 'Healthy' : healthPercent > 50 ? 'Fair' : 'Needs Care'}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
             }
         }
     }
@@ -1161,14 +1205,17 @@ class FarmGameUI {
     }
 
     updateAchievementsView(farmState) {
-        // Update score breakdown
+        // Update score display
         this.updateScoreDisplay(farmState);
 
-        // Update achievements grid
-        this.updateAchievementsGrid(farmState);
+        // Update NASA achievements mixed with farm achievements
+        this.updateMixedAchievementsGrid(farmState);
 
         // Update progress goals
         this.updateProgressGoals(farmState);
+
+        // Update NASA player level
+        this.updateNASAPlayerLevel();
     }
 
     updateScoreDisplay(farmState) {
@@ -1571,7 +1618,7 @@ class FarmGameUI {
                     <div class="feedback-section learning-outcomes">
                         <h4>📚 What You Learned</h4>
                         <ul class="learning-points">
-                            ${feedbackData.learningPoints.map(point => `<li>${point}</li>`).join('')}
+                            ${(feedbackData.learningPoints || []).map(point => `<li>${point || ''}</li>`).join('')}
                         </ul>
                     </div>
 
@@ -1585,7 +1632,7 @@ class FarmGameUI {
                     <div class="feedback-section recommendations">
                         <h4>💡 Recommendations for Next Time</h4>
                         <ul class="recommendation-list">
-                            ${feedbackData.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                            ${(feedbackData.recommendations || []).map(rec => `<li>${rec || ''}</li>`).join('')}
                         </ul>
                     </div>
 
@@ -2539,10 +2586,6 @@ class FarmGameUI {
 
             console.log(`📊 Current week: ${farmState.currentWeek}, season: ${farmState.currentSeason}`);
 
-            // Show time advancement notification occasionally
-            if (Math.random() < 0.3) { // 30% chance
-                this.showNotification(`⏰ Time advanced to Week ${farmState.currentWeek}`, 'info');
-            }
         }, interval);
 
         console.log(`✅ Speed timer started successfully with ID: ${this.speedTimer}`);
@@ -2760,7 +2803,7 @@ class FarmGameUI {
     }
 
     showWelcomeGuidance() {
-        this.showNotification('🌾 Welcome to NASA Farm Navigators! Click any Farm Decision button to start using real satellite data.', 'success');
+        this.showNotification('Welcome to NASA Farm Navigators! Click any Farm Decision button to start using real satellite data.', 'success');
 
         // Highlight the decision panel for new users
         const decisionPanel = document.querySelector('.decision-panel');
@@ -3277,11 +3320,26 @@ class FarmGameUI {
                             <span>✅ Available:</span>
                             <span class="available">${availableLand} hectares</span>
                         </div>
-                        ${farmState.deadLandPlots && farmState.deadLandPlots.length > 0 ? `
+                        ${((farmState.deadLandPlots && farmState.deadLandPlots.length > 0) || (farmState.harvestedLandPlots && farmState.harvestedLandPlots.length > 0)) ? `
                         <div class="metric">
-                            <span>💀 Recovering:</span>
-                            <span class="recovering">${farmState.deadLandPlots.reduce((sum, plot) => sum + plot.area, 0)} hectares</span>
+                            <span>⏳ Recovering:</span>
+                            <span class="recovering">${
+                                (farmState.deadLandPlots ? farmState.deadLandPlots.reduce((sum, plot) => sum + plot.area, 0) : 0) +
+                                (farmState.harvestedLandPlots ? farmState.harvestedLandPlots.reduce((sum, plot) => sum + plot.area, 0) : 0)
+                            } hectares</span>
                         </div>
+                        ${farmState.deadLandPlots && farmState.deadLandPlots.length > 0 ? `
+                        <div class="metric-detail">
+                            <span>💀 Dead (20min):</span>
+                            <span class="dead-land">${farmState.deadLandPlots.reduce((sum, plot) => sum + plot.area, 0)} hectares</span>
+                        </div>
+                        ` : ''}
+                        ${farmState.harvestedLandPlots && farmState.harvestedLandPlots.length > 0 ? `
+                        <div class="metric-detail">
+                            <span>🌾 Harvested (10min):</span>
+                            <span class="harvested-land">${farmState.harvestedLandPlots.reduce((sum, plot) => sum + plot.area, 0)} hectares</span>
+                        </div>
+                        ` : ''}
                         ` : ''}
                     </div>
                 </div>
@@ -4363,6 +4421,9 @@ class FarmGameUI {
     loadFromSatelliteData() {
         console.log('📡 Loading satellite data for farm configuration');
 
+        // Show loading indicator
+        this.showLoadingModal();
+
         // Get coordinates from Satellite Data Visualization tab
         const latInput = document.getElementById('latInput');
         const lonInput = document.getElementById('lonInput');
@@ -4377,11 +4438,13 @@ class FarmGameUI {
                 }
             }
 
+            this.closeModal();
             this.showNotification('❌ Please visit the Satellite Data Visualization tab first to set coordinates', 'error');
             return;
         }
 
         if (!latInput.value || !lonInput.value) {
+            this.closeModal();
             this.showNotification('⚠️ Please enter coordinates in the Satellite Data Visualization tab first', 'warning');
             return;
         }
@@ -4399,6 +4462,12 @@ class FarmGameUI {
         // Get NASA data for the location
         this.fetchNASADataForLocation(lat, lon).then(nasaData => {
             console.log('🛰️ NASA Data received:', nasaData);
+
+            // Clear loading interval
+            if (this.loadingInterval) {
+                clearInterval(this.loadingInterval);
+                this.loadingInterval = null;
+            }
 
             // Calculate water rate based on satellite data
             const waterRate = this.calculateWaterRateFromSatelliteData(nasaData);
@@ -4430,6 +4499,16 @@ class FarmGameUI {
 
         }).catch(error => {
             console.error('Error loading satellite data:', error);
+
+            // Clear loading interval on error
+            if (this.loadingInterval) {
+                clearInterval(this.loadingInterval);
+                this.loadingInterval = null;
+            }
+
+            // Close loading modal
+            this.closeModal();
+
             this.showNotification('⚠️ Using default data due to connection issues', 'warning');
         });
     }
@@ -4974,15 +5053,6 @@ class FarmGameUI {
                     </div>
                 </div>
 
-                <div class="key-learning">
-                    <h4>🎯 Key Learning</h4>
-                    <p class="learning-text">
-                        ${isNASA ?
-                            `NASA satellite data provided precise information that traditional methods couldn't offer, resulting in $${Math.abs(result.savings - otherResult.savings)} better outcome.` :
-                            `Traditional experience worked this time, but NASA data could have provided $${Math.abs(otherResult.savings - result.savings)} better results with more precision.`
-                        }
-                    </p>
-                </div>
             </div>
 
             <div class="modal-actions">
@@ -5025,13 +5095,6 @@ class FarmGameUI {
     showFarmContextSelection() {
         this.container.innerHTML = `
             <div class="farm-context-selection">
-                <div class="satellite-data-option">
-                    <button class="satellite-load-btn" onclick="window.farmGameUI.loadFromSatelliteData()">
-                        📡 Load from Satellite Data Tab
-                    </button>
-                    <p class="satellite-info">Use real NASA satellite data for your region to customize farm conditions</p>
-                </div>
-
                 <div class="selection-header">
                     <h2>🌾 Choose Your Farm Type</h2>
                     <p>Select the type of farm that matches your learning goals and interests:</p>
@@ -5249,14 +5312,9 @@ class FarmGameUI {
                 tips: []
             },
             industrial: {
-                title: "Welcome to Your Agricultural Enterprise! 🏭",
-                message: "You've chosen to manage an industrial farm. Your success depends on efficiency, scale optimization, and leveraging technology including NASA data for competitive advantage. Focus on maximizing yield while managing environmental responsibilities.",
-                tips: [
-                    "Optimize for scale and efficiency",
-                    "Use technology for competitive advantage",
-                    "Manage environmental compliance",
-                    "Focus on market optimization"
-                ]
+                title: "",
+                message: "",
+                tips: []
             }
         };
 
@@ -5363,59 +5421,55 @@ class FarmGameUI {
                 content: `
                     <div class="tutorial-welcome">
                         <div class="tutorial-hero">
-                            <h2>🛰️ Welcome to NASA Farm Navigators! 🌾</h2>
-                            <p class="tutorial-subtitle">Learn to farm smarter using real NASA satellite data</p>
+                            <h2 style="color: #667eea;">Welcome to NASA Farm Navigators!</h2>
+                            <p class="tutorial-subtitle" style="color: white;">Learn to farm smarter using real NASA satellite data</p>
                         </div>
 
                         <div class="tutorial-intro">
-                            <p>You're about to embark on an agricultural journey where you'll:</p>
+                            <p style="color: white;">You're about to embark on an agricultural journey where you'll:</p>
                             <ul class="tutorial-benefits">
-                                <li>🌱 Manage crops through seasonal cycles</li>
-                                <li>📡 Use real NASA satellite data for farming decisions</li>
-                                <li>💧 Optimize irrigation with SMAP soil moisture data</li>
-                                <li>📊 Track your progress and achieve farming milestones</li>
-                                <li>🌍 Learn real-world agricultural practices</li>
+                                <li style="color: white;">Manage crops through seasonal cycles</li>
+                                <li style="color: white;">Use real NASA satellite data for farming decisions</li>
+                                <li style="color: white;">Optimize irrigation with SMAP soil moisture data</li>
+                                <li style="color: white;">Track your progress and achieve farming milestones</li>
+                                <li style="color: white;">Learn real-world agricultural practices</li>
                             </ul>
                         </div>
 
                         <div class="tutorial-farmtype">
-                            <p><strong>Farm Context:</strong> ${this.farmSimulation.getFarmState().farmContext || 'Mixed Agriculture'}</p>
-                            <p class="tutorial-context-desc">Your farming strategy will be tailored to this agricultural context.</p>
+                            <p style="color: white;"><strong>Farm Context:</strong> ${this.farmSimulation.getFarmState().farmContext || 'Mixed Agriculture'}</p>
+                            <p class="tutorial-context-desc" style="color: white;">Your farming strategy will be tailored to this agricultural context.</p>
                         </div>
                     </div>
                 `,
                 target: null,
                 highlight: false,
                 actions: [
-                    { text: "Let's Start Learning! 🎯", action: "next", primary: true }
+                    { text: "Let's Start Learning!", action: "next", primary: true }
                 ]
             },
             {
                 title: "📅 Understanding Time and Seasons",
                 content: `
                     <div class="tutorial-time">
-                        <h3>🕐 Time Flows in Your Farm</h3>
+                        <h3>Time Flows in Your Farm</h3>
                         <p>Your farm operates on a realistic time cycle:</p>
 
                         <div class="time-breakdown">
                             <div class="time-unit">
-                                <strong>⏰ Real-time:</strong> 1 second = 1 hour in game
+                                <strong>Real-time:</strong> 1 second = 1 hour in game
                             </div>
                             <div class="time-unit">
-                                <strong>📅 Weeks:</strong> 7 days (168 real seconds)
+                                <strong>Weeks:</strong> 7 days (168 real seconds)
                             </div>
                             <div class="time-unit">
-                                <strong>🌱 Seasons:</strong> 13 weeks each (Spring → Summer → Fall → Winter)
+                                <strong>Seasons:</strong> 13 weeks each (Spring → Summer → Fall → Winter)
                             </div>
                             <div class="time-unit">
-                                <strong>🗓️ Year:</strong> 52 weeks (about 2.4 real hours)
+                                <strong>Year:</strong> 52 weeks (about 2.4 real hours)
                             </div>
                         </div>
 
-                        <div class="tutorial-highlight">
-                            <h4>🎯 Key Learning:</h4>
-                            <p>Each season brings different challenges and opportunities. Spring is for planting, summer for growth monitoring, fall for harvest, and winter for planning.</p>
-                        </div>
                     </div>
                 `,
                 target: ".time-display",
@@ -5500,10 +5554,6 @@ class FarmGameUI {
                             </div>
                         </div>
 
-                        <div class="tutorial-highlight">
-                            <h4>🎯 Pro Tip:</h4>
-                            <p>Decisions aligned with NASA data recommendations earn bonus points and improve your farming efficiency!</p>
-                        </div>
                     </div>
                 `,
                 target: ".overview-container",
@@ -5564,16 +5614,16 @@ class FarmGameUI {
                 title: "🎮 Your First Decision - Interactive Tutorial",
                 content: `
                     <div class="tutorial-interactive">
-                        <h3>🎯 Practice Time: Make Your First Decision!</h3>
+                        <h3>Practice Time: Make Your First Decision!</h3>
                         <p>Let's practice with a real farming scenario using NASA data.</p>
 
                         <div class="scenario-setup">
-                            <h4>📍 Current Situation:</h4>
+                            <h4>Current Situation:</h4>
                             <ul>
-                                <li>🌱 Your crops are adapting to local conditions</li>
-                                <li>📡 NASA SMAP provides real soil moisture data</li>
-                                <li>🌤️ Weather patterns vary by your location</li>
-                                <li>💧 Water needs depend on climate and crop type</li>
+                                <li>Your crops are adapting to local conditions</li>
+                                <li>NASA SMAP provides real soil moisture data</li>
+                                <li>Weather patterns vary by your location</li>
+                                <li>Water needs depend on climate and crop type</li>
                             </ul>
                         </div>
 
@@ -6051,6 +6101,47 @@ class FarmGameUI {
         const result = this.farmSimulation.irrigateCrops(cropIndex, 'medium');
 
         if (result.success) {
+            // Track irrigation achievement
+            console.log('🔍 [waterCrop] Checking achievement system:', {
+                hasAchievementSystem: !!this.achievementSystem,
+                hasWindow: typeof window !== 'undefined',
+                hasGlobalAchievementSystem: !!(window && window.achievementSystem)
+            });
+
+            // Try both local and global achievement system
+            const achievementSys = this.achievementSystem || (window && window.achievementSystem);
+
+            if (achievementSys) {
+                const farmState = this.farmSimulation.getFarmState();
+                const soilMoisture = farmState.environmentalData?.soilMoisture || 0.5;
+                const precipitation = farmState.environmentalData?.precipitation || 0.3;
+
+                console.log('💧 [waterCrop] Tracking irrigation for', crop.type);
+
+                // Use direct trackAction which we know works
+                achievementSys.trackAction('irrigation_decision', 1);
+
+                console.log('💧 [waterCrop] Called trackAction for irrigation_decision');
+
+                // Check current progress
+                const waterWizard = achievementSys.achievements['water_wizard'];
+                if (waterWizard) {
+                    console.log('💧 [waterCrop] Water Wizard progress:', {
+                        currentLevel: waterWizard.currentLevel,
+                        progress: waterWizard.progress,
+                        nextRequirement: waterWizard.levels[waterWizard.currentLevel]?.requirement
+                    });
+                }
+
+                // Force update achievements view if on that tab
+                if (this.currentView === 'achievements') {
+                    const farmState = this.farmSimulation.getFarmState();
+                    this.updateAchievementsView(farmState);
+                }
+            } else {
+                console.warn('⚠️ [waterCrop] Achievement system not available');
+            }
+
             this.showNotification(`💧 Watered ${crop.type} successfully!`, 'success');
             this.updateDisplay();
             this.updateCropDisplay();
@@ -6183,6 +6274,57 @@ class FarmGameUI {
         const result = this.farmSimulation.irrigateCrops(null, 'medium');
 
         if (result.success) {
+            // Track irrigation achievement
+            console.log('🔍 Checking achievement system:', {
+                hasAchievementSystem: !!this.achievementSystem,
+                hasWindow: typeof window !== 'undefined',
+                hasGlobalAchievementSystem: !!(window && window.achievementSystem)
+            });
+
+            // Try both local and global achievement system
+            const achievementSys = this.achievementSystem || (window && window.achievementSystem);
+
+            if (achievementSys) {
+                const farmState = this.farmSimulation.getFarmState();
+                const soilMoisture = farmState.environmentalData?.soilMoisture || 0.5;
+                const precipitation = farmState.environmentalData?.precipitation || 0.3;
+
+                console.log('💧 Calling trackIrrigationDecision with:', {
+                    soilMoisture,
+                    precipitation,
+                    decision: 'water'
+                });
+
+                achievementSys.trackIrrigationDecision(
+                    soilMoisture,
+                    precipitation,
+                    'water'
+                );
+
+                // Also try direct trackAction call
+                achievementSys.trackAction('irrigation_decision', 1);
+
+                console.log('💧 Tracked irrigation decision for Water Wizard achievement');
+
+                // Check current progress
+                const waterWizard = achievementSys.achievements['water_wizard'];
+                if (waterWizard) {
+                    console.log('💧 Water Wizard progress:', {
+                        currentLevel: waterWizard.currentLevel,
+                        progress: waterWizard.progress,
+                        nextRequirement: waterWizard.levels[waterWizard.currentLevel]?.requirement
+                    });
+                }
+
+                // Force update achievements view if on that tab
+                if (this.currentView === 'achievements') {
+                    const farmState = this.farmSimulation.getFarmState();
+                    this.updateAchievementsView(farmState);
+                }
+            } else {
+                console.warn('⚠️ Achievement system not available for tracking irrigation');
+            }
+
             this.showNotification('💧 Watered all crops successfully!', 'success');
             this.updateDisplay();
             this.updateCropDisplay();
@@ -6194,6 +6336,315 @@ class FarmGameUI {
     // Show fertilizer dialog for all crops
     fertilizeAllCrops() {
         this.showFertilizerDialog();
+    }
+
+    // === LIVESTOCK ACTIONS ===
+
+    // Feed all livestock
+    feedLivestock() {
+        console.log('🥛 Feed Livestock action started');
+        const farmState = this.farmSimulation.getFarmState();
+        const livestock = farmState.livestock || {};
+
+        console.log('📊 Current livestock state before feeding:', JSON.stringify(livestock, null, 2));
+
+        const livestockCount = Object.values(livestock).reduce((sum, data) => sum + data.count, 0);
+
+        if (livestockCount === 0) {
+            this.showNotification('No livestock to feed!', 'warning');
+            return;
+        }
+
+        const feedCost = livestockCount * 5; // $5 per animal
+        if (farmState.resources.money < feedCost) {
+            this.showNotification(`Not enough money! Need $${feedCost} to feed all animals.`, 'error');
+            return;
+        }
+
+        // Update livestock feed levels and deduct cost
+        Object.entries(livestock).forEach(([type, data]) => {
+            const oldFeedLevel = data.feed_level;
+            data.feed_level = Math.min(data.feed_level + 0.5, 1.0); // Increased from 0.4 to 0.5
+            console.log(`🥛 ${type}: feed_level ${oldFeedLevel.toFixed(2)} → ${data.feed_level.toFixed(2)}`);
+        });
+
+        farmState.resources.money -= feedCost;
+        farmState.playerStats.livestockScore += 10;
+
+        console.log('📊 Current livestock state after feeding:', JSON.stringify(livestock, null, 2));
+
+        this.showNotification(`Fed all livestock for $${feedCost}. Feed levels increased!`, 'success');
+        this.updateDisplay();
+        this.updateCurrentView(); // Update the current view to reflect changes
+
+        console.log('🔄 Feed Livestock action completed, UI updated');
+    }
+
+    // Veterinary health check for all livestock
+    veterinaryCheck() {
+        const farmState = this.farmSimulation.getFarmState();
+        const livestock = farmState.livestock || {};
+        const livestockCount = Object.values(livestock).reduce((sum, data) => sum + data.count, 0);
+
+        if (livestockCount === 0) {
+            this.showNotification('No livestock for health check!', 'warning');
+            return;
+        }
+
+        const vetCost = livestockCount * 10; // $10 per animal
+        if (farmState.resources.money < vetCost) {
+            this.showNotification(`Not enough money! Need $${vetCost} for veterinary service.`, 'error');
+            return;
+        }
+
+        // Improve livestock health and deduct cost
+        Object.values(livestock).forEach(data => {
+            data.health = Math.min(data.health + 0.2, 1.0);
+        });
+
+        farmState.resources.money -= vetCost;
+        farmState.playerStats.livestockScore += 20;
+
+        this.showNotification(`Veterinary check completed for $${vetCost}. Animal health improved!`, 'success');
+        this.updateDisplay();
+        this.updateCurrentView(); // Update the current view to reflect changes
+    }
+
+    // Breed animals (increase count)
+    breedLivestock() {
+        const farmState = this.farmSimulation.getFarmState();
+        const livestock = farmState.livestock || {};
+        const livestockEntries = Object.entries(livestock);
+
+        if (livestockEntries.length === 0) {
+            this.showNotification('No livestock for breeding!', 'warning');
+            return;
+        }
+
+        const breedingCost = 100; // Fixed cost for breeding program
+        if (farmState.resources.money < breedingCost) {
+            this.showNotification(`Not enough money! Need $${breedingCost} for breeding program.`, 'error');
+            return;
+        }
+
+        // Only breed healthy animals (health > 0.7)
+        const healthyAnimals = livestockEntries.filter(([type, data]) => data.health > 0.7);
+
+        if (healthyAnimals.length === 0) {
+            this.showNotification('No healthy animals for breeding! Improve animal health first.', 'warning');
+            return;
+        }
+
+        // Increase count for healthy animals
+        healthyAnimals.forEach(([type, data]) => {
+            const increase = Math.max(1, Math.floor(data.count * 0.1)); // 10% increase, minimum 1
+            data.count += increase;
+        });
+
+        farmState.resources.money -= breedingCost;
+        farmState.playerStats.livestockScore += 50;
+
+        this.showNotification(`Breeding successful for $${breedingCost}. Livestock count increased!`, 'success');
+        this.updateDisplay();
+        this.updateCurrentView(); // Update the current view to reflect changes
+    }
+
+    /**
+     * Sell livestock modal and functionality
+     */
+    sellLivestock() {
+        console.log('💰 Opening sell livestock modal');
+        const farmState = this.farmSimulation.getFarmState();
+
+        const fullContent = `
+            <div class="modal-header">
+                <h3>💰 Sell Livestock</h3>
+            </div>
+            ${this.renderSellLivestockModal(farmState)}
+            <div class="modal-footer">
+                <button class="secondary-btn" onclick="farmGameUI.closeModal()">❌ Close</button>
+            </div>
+        `;
+        this.showModal(fullContent);
+    }
+
+    /**
+     * Render the sell livestock modal content
+     */
+    renderSellLivestockModal(farmState) {
+        const livestock = farmState.livestock || {};
+        const availableLivestock = Object.entries(livestock).filter(([type, data]) => data.count > 0);
+
+        if (availableLivestock.length === 0) {
+            return `
+                <div class="sell-livestock-modal">
+                    <div class="empty-livestock">
+                        <h4>🏃 No Livestock Available</h4>
+                        <p>You don't have any livestock to sell yet.</p>
+                        <p>Purchase some livestock first, then come back to sell them!</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Livestock pricing based on type and health
+        const livestockPrices = {
+            cattle: 400, // Base price for cattle
+            sheep: 150,  // Base price for sheep
+            chickens: 20 // Base price per chicken
+        };
+
+        return `
+            <div class="sell-livestock-modal">
+                <div class="current-livestock">
+                    <h4>🐄 Current Livestock</h4>
+                </div>
+
+                <div class="livestock-market">
+                    ${availableLivestock.map(([type, data]) => {
+                        const basePrice = livestockPrices[type] || 50;
+
+                        // Safely handle health and feed_level values
+                        const health = data.health || 0;
+                        const feedLevel = data.feed_level || 0;
+
+                        // Convert to percentage if needed (handle both 0-1 and 0-100 ranges)
+                        const healthPercent = health <= 1 ? Math.round(health * 100) : Math.round(health);
+                        const feedPercent = feedLevel <= 1 ? Math.round(feedLevel * 100) : Math.round(feedLevel);
+
+                        const healthMultiplier = Math.max(0.5, healthPercent / 100); // Health affects price
+                        const finalPrice = Math.floor(basePrice * healthMultiplier);
+
+                        return `
+                            <div class="livestock-sell-item">
+                                <div class="livestock-info">
+                                    <h5>${type.charAt(0).toUpperCase() + type.slice(1)} (${data.count || 0} available)</h5>
+                                    <p>Health: ${healthPercent}% | Feed Level: ${feedPercent}%</p>
+                                    <div class="livestock-price">$${finalPrice} per ${type === 'chickens' ? 'bird' : 'head'}</div>
+                                    <small>Health affects selling price</small>
+                                </div>
+                                <div class="livestock-sell-controls">
+                                    <div class="quantity-controls">
+                                        <button class="qty-btn" onclick="farmGameUI.changeLivestockQuantity('${type}', -1)">-</button>
+                                        <input type="number" id="sell-qty-${type}" value="1" min="1" max="${data.count}" class="qty-input">
+                                        <button class="qty-btn" onclick="farmGameUI.changeLivestockQuantity('${type}', 1)">+</button>
+                                    </div>
+                                    <button class="sell-btn" onclick="farmGameUI.executeLivestockSale('${type}', ${finalPrice})">
+                                        Sell
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <div class="sell-tips">
+                    <h5>💡 Selling Tips:</h5>
+                    <ul>
+                        <li>🏥 Healthier animals sell for better prices</li>
+                        <li>🌾 Keep some livestock for breeding and production</li>
+                        <li>📈 Market prices are based on animal health and condition</li>
+                        <li>⚠️ Sold animals cannot be recovered</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Change quantity controls for livestock selling
+     */
+    changeLivestockQuantity(livestockType, change) {
+        const qtyInput = document.getElementById(`sell-qty-${livestockType}`);
+        if (qtyInput) {
+            const currentValue = parseInt(qtyInput.value);
+            const maxValue = parseInt(qtyInput.max);
+            const newValue = Math.max(1, Math.min(maxValue, currentValue + change));
+            qtyInput.value = newValue;
+        }
+    }
+
+    /**
+     * Execute the livestock sale
+     */
+    executeLivestockSale(livestockType, unitPrice) {
+        const qtyInput = document.getElementById(`sell-qty-${livestockType}`);
+        const quantity = qtyInput ? parseInt(qtyInput.value) : 1;
+        const totalRevenue = unitPrice * quantity;
+
+        const farmState = this.farmSimulation.getFarmState();
+        const livestock = farmState.livestock || {};
+
+        // Validate sale
+        if (!livestock[livestockType] || livestock[livestockType].count < quantity) {
+            this.showNotification('Not enough livestock to sell!', 'error');
+            return;
+        }
+
+        // Execute sale
+        livestock[livestockType].count -= quantity;
+        farmState.resources.money += totalRevenue;
+
+        // Add some livestock score (but less than breeding)
+        this.farmSimulation.addLivestockScore(quantity * 3); // 3 points per sold animal
+
+        // Show success notification
+        const displayName = livestockType.charAt(0).toUpperCase() + livestockType.slice(1);
+        this.showNotification(
+            `✅ Sold ${quantity} ${displayName} for $${totalRevenue}! Money earned.`,
+            'success'
+        );
+
+        // Refresh the modal with updated data
+        const updatedFarmState = this.farmSimulation.getFarmState();
+        const fullContent = `
+            <div class="modal-header">
+                <h3>💰 Sell Livestock</h3>
+            </div>
+            ${this.renderSellLivestockModal(updatedFarmState)}
+            <div class="modal-footer">
+                <button class="secondary-btn" onclick="farmGameUI.closeModal()">❌ Close</button>
+            </div>
+        `;
+        this.showModal(fullContent);
+
+        // Update UI displays
+        this.updateCurrentView();
+    }
+
+    /**
+     * Feed animals - wrapper for feedLivestock() method
+     */
+    feedAnimals() {
+        console.log('🥛 Feed Animals clicked - calling feedLivestock()');
+        console.log('📊 farmGameUI instance exists:', !!window.farmGameUI);
+        console.log('📊 feedLivestock method exists:', typeof this.feedLivestock === 'function');
+        console.log('📊 this context:', this.constructor.name);
+
+        try {
+            console.log('🔄 About to call this.feedLivestock()...');
+            this.feedLivestock();
+            console.log('✅ feedLivestock() call completed');
+        } catch (error) {
+            console.error('❌ Error calling feedLivestock():', error);
+            console.error('Error stack:', error.stack);
+        }
+    }
+
+    /**
+     * Show veterinary dialog - wrapper for veterinaryCheck() method
+     */
+    showVeterinaryDialog() {
+        console.log('🏥 Veterinary Dialog clicked - calling veterinaryCheck()');
+        this.veterinaryCheck();
+    }
+
+    /**
+     * Show breeding dialog - wrapper for breedLivestock() method
+     */
+    showBreedingDialog() {
+        console.log('🐣 Breeding Dialog clicked - calling breedLivestock()');
+        this.breedLivestock();
     }
 
     /**
@@ -6323,11 +6774,26 @@ class FarmGameUI {
                             <span>💰 Current Money:</span>
                             <span>$${farmState.resources.money.toFixed(0)}</span>
                         </div>
-                        ${farmState.deadLandPlots && farmState.deadLandPlots.length > 0 ? `
+                        ${((farmState.deadLandPlots && farmState.deadLandPlots.length > 0) || (farmState.harvestedLandPlots && farmState.harvestedLandPlots.length > 0)) ? `
                         <div class="land-metric recovering">
                             <span>⏳ Recovering Land:</span>
+                            <span>${
+                                (farmState.deadLandPlots ? farmState.deadLandPlots.reduce((sum, plot) => sum + plot.area, 0) : 0) +
+                                (farmState.harvestedLandPlots ? farmState.harvestedLandPlots.reduce((sum, plot) => sum + plot.area, 0) : 0)
+                            } hectares</span>
+                        </div>
+                        ${farmState.deadLandPlots && farmState.deadLandPlots.length > 0 ? `
+                        <div class="land-metric dead-recovery">
+                            <span>💀 Dead Land (20min):</span>
                             <span>${farmState.deadLandPlots.reduce((sum, plot) => sum + plot.area, 0)} hectares</span>
                         </div>
+                        ` : ''}
+                        ${farmState.harvestedLandPlots && farmState.harvestedLandPlots.length > 0 ? `
+                        <div class="land-metric harvest-recovery">
+                            <span>🌾 Harvested (10min):</span>
+                            <span>${farmState.harvestedLandPlots.reduce((sum, plot) => sum + plot.area, 0)} hectares</span>
+                        </div>
+                        ` : ''}
                         ` : ''}
                     </div>
                 </div>
@@ -6430,6 +6896,11 @@ class FarmGameUI {
                     <h4>🛰️ NASA Recommendations</h4>
                     ${this.generateCropRecommendations(farmState)}
                 </div>
+
+                <div class="decision-history">
+                    <h4>📋 Decision History & NASA Alignment</h4>
+                    ${this.generateDecisionHistory(farmState)}
+                </div>
             </div>
         `;
 
@@ -6464,174 +6935,130 @@ class FarmGameUI {
         return recommendations.map(rec => `<p>• ${rec}</p>`).join('');
     }
 
-    feedLivestock() {
-        const farmState = this.farmSimulation.getFarmState();
+    generateDecisionHistory(farmState) {
+        const decisions = farmState.decisions || [];
 
-        const content = `
-            <div class="modal-header">
-                <h3>🌾 Feed Animals</h3>
-            </div>
-
-            <div class="feed-livestock">
-                <p>Feeding your livestock improves their health and productivity.</p>
-
-                <div class="feed-options">
-                    <div class="feed-option" onclick="farmGameUI.executeFeedLivestock('basic')">
-                        <h4>🌾 Basic Feed</h4>
-                        <p>Cost: $20 | Effect: +10% health</p>
-                        <p>Standard feed for daily nutrition</p>
-                    </div>
-
-                    <div class="feed-option" onclick="farmGameUI.executeFeedLivestock('premium')">
-                        <h4>🌟 Premium Feed</h4>
-                        <p>Cost: $50 | Effect: +25% health</p>
-                        <p>High-quality feed with supplements</p>
-                    </div>
-
-                    <div class="feed-option" onclick="farmGameUI.executeFeedLivestock('organic')">
-                        <h4>🌿 Organic Feed</h4>
-                        <p>Cost: $75 | Effect: +35% health + sustainability</p>
-                        <p>Organic feed that boosts farm sustainability</p>
-                    </div>
-                </div>
-
-                <div class="livestock-status">
-                    <h4>Current Livestock:</h4>
-                    <p>🐄 Cattle: ${farmState.livestock?.cattle || 0}</p>
-                    <p>🐖 Pigs: ${farmState.livestock?.pigs || 0}</p>
-                    <p>🐓 Chickens: ${farmState.livestock?.chickens || 0}</p>
-                    <p>💰 Available Money: $${farmState.resources.money}</p>
-                </div>
-            </div>
-        `;
-
-        this.showModal(content);
-    }
-
-    executeFeedLivestock(feedType) {
-        const farmState = this.farmSimulation.getFarmState();
-        const feedCosts = { basic: 20, premium: 50, organic: 75 };
-        const cost = feedCosts[feedType];
-
-        if (farmState.resources.money >= cost) {
-            farmState.resources.money -= cost;
-
-            // Initialize livestock if not present
-            if (!farmState.livestock) {
-                farmState.livestock = { cattle: 2, pigs: 3, chickens: 10, health: 0.7 };
-            }
-
-            // Improve livestock health
-            const healthBoost = { basic: 0.1, premium: 0.25, organic: 0.35 };
-            farmState.livestock.health = Math.min(1.0, farmState.livestock.health + healthBoost[feedType]);
-
-            if (feedType === 'organic') {
-                farmState.sustainability = Math.min(100, (farmState.sustainability || 50) + 5);
-            }
-
-            this.closeModal();
-            this.showNotification(`🌾 Fed livestock with ${feedType} feed! Health improved.`, 'success');
-            this.updateDisplay();
-        } else {
-            this.showNotification(`❌ Not enough money for ${feedType} feed. Need $${cost}`, 'error');
-        }
-    }
-
-    veterinaryCheck() {
-        const farmState = this.farmSimulation.getFarmState();
-
-        if (!farmState.livestock) {
-            farmState.livestock = { cattle: 2, pigs: 3, chickens: 10, health: 0.7 };
+        if (decisions.length === 0) {
+            return '<p class="no-decisions">No decisions recorded yet. Start making farming decisions to see your NASA alignment history!</p>';
         }
 
-        const content = `
-            <div class="modal-header">
-                <h3>🏥 Veterinary Health Check</h3>
+        // Sort decisions by timestamp (most recent first)
+        const recentDecisions = decisions
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, 10); // Show last 10 decisions
+
+        // Calculate overall NASA alignment
+        const totalDecisions = decisions.length;
+        const totalScore = decisions.reduce((sum, decision) => sum + (decision.score || 0), 0);
+        const avgAlignment = totalDecisions > 0 ? (totalScore / totalDecisions).toFixed(1) : 0;
+
+        // Categorize alignment level
+        let alignmentLevel = 'Poor';
+        let alignmentColor = '#ff6b6b';
+        if (avgAlignment >= 80) {
+            alignmentLevel = 'Excellent';
+            alignmentColor = '#28a745';
+        } else if (avgAlignment >= 60) {
+            alignmentLevel = 'Good';
+            alignmentColor = '#28a745';
+        } else if (avgAlignment >= 40) {
+            alignmentLevel = 'Fair';
+            alignmentColor = '#ffa726';
+        }
+
+        // Generate decision type summary
+        const decisionTypes = {};
+        decisions.forEach(decision => {
+            decisionTypes[decision.type] = (decisionTypes[decision.type] || 0) + 1;
+        });
+
+        let content = `
+            <div class="alignment-summary">
+                <div class="alignment-score">
+                    <span class="score-label">Overall NASA Alignment:</span>
+                    <span class="score-value" style="color: ${alignmentColor}; font-weight: bold; font-size: 1.2em;">
+                        ${avgAlignment}/100 (${alignmentLevel})
+                    </span>
+                </div>
+                <div class="decision-stats">
+                    <span>Total Decisions: ${totalDecisions}</span>
+                    <span>Recent Period: Last ${Math.min(10, totalDecisions)} decisions</span>
+                </div>
             </div>
 
-            <div class="vet-check">
-                <div class="health-report">
-                    <h4>🩺 Health Assessment</h4>
-                    <div class="health-status ${farmState.livestock.health > 0.8 ? 'excellent' : farmState.livestock.health > 0.6 ? 'good' : farmState.livestock.health > 0.4 ? 'fair' : 'poor'}">
-                        Overall Health: ${(farmState.livestock.health * 100).toFixed(0)}%
-                    </div>
-
-                    <div class="livestock-details">
-                        <p>🐄 Cattle: ${farmState.livestock.cattle || 0} head</p>
-                        <p>🐖 Pigs: ${farmState.livestock.pigs || 0} head</p>
-                        <p>🐓 Chickens: ${farmState.livestock.chickens || 0} birds</p>
-                    </div>
+            <div class="decision-type-summary">
+                <h5>📊 Decision Breakdown</h5>
+                <div class="decision-types">
+                    ${Object.entries(decisionTypes).map(([type, count]) => {
+                        const typeEmoji = {
+                            'irrigation': '💧',
+                            'fertilize': '🌿',
+                            'plant_crop': '🌱',
+                            'harvest': '🌾',
+                            'sell_produce': '💰'
+                        }[type] || '🔧';
+                        return `<span class="decision-type-badge">${typeEmoji} ${type}: ${count}</span>`;
+                    }).join('')}
                 </div>
+            </div>
 
-                <div class="treatment-options">
-                    <h4>🏥 Available Treatments</h4>
+            <div class="recent-decisions">
+                <h5>🕐 Recent Decisions</h5>
+                <div class="decisions-list">
+                    ${recentDecisions.map(decision => {
+                        const timeAgo = this.getTimeAgo(decision.timestamp);
+                        const score = decision.score || 0;
+                        const scoreColor = score >= 80 ? '#28a745' : score >= 60 ? '#28a745' : score >= 40 ? '#ffa726' : '#ff6b6b';
+                        const actionEmoji = {
+                            'irrigation': '💧',
+                            'fertilize': '🌿',
+                            'plant_crop': '🌱',
+                            'harvest': '🌾',
+                            'sell_produce': '💰'
+                        }[decision.type] || '🔧';
 
-                    <div class="treatment-option" onclick="farmGameUI.executeVetTreatment('checkup')">
-                        <h5>🩺 Routine Checkup</h5>
-                        <p>Cost: $30 | Effect: +15% health</p>
-                        <p>Basic health examination and preventive care</p>
-                    </div>
-
-                    <div class="treatment-option" onclick="farmGameUI.executeVetTreatment('vaccination')">
-                        <h5>💉 Vaccination</h5>
-                        <p>Cost: $60 | Effect: +25% health + disease prevention</p>
-                        <p>Comprehensive vaccination program</p>
-                    </div>
-
-                    <div class="treatment-option" onclick="farmGameUI.executeVetTreatment('emergency')">
-                        <h5>🚨 Emergency Treatment</h5>
-                        <p>Cost: $100 | Effect: +40% health</p>
-                        <p>Intensive care for seriously ill animals</p>
-                    </div>
-                </div>
-
-                <div class="recommendations">
-                    <h4>📋 Veterinary Recommendations</h4>
-                    ${this.generateVetRecommendations(farmState)}
+                        return `
+                            <div class="decision-entry">
+                                <div class="decision-header">
+                                    <span class="decision-action">${actionEmoji} ${decision.type.replace('_', ' ').toUpperCase()}</span>
+                                    <span class="decision-time">${timeAgo}</span>
+                                </div>
+                                <div class="decision-details">
+                                    ${decision.cropType ? `<span class="crop-type">Crop: ${decision.cropType}</span>` : ''}
+                                    ${decision.amount ? `<span class="decision-amount">Amount: ${decision.amount}</span>` : ''}
+                                    ${decision.cost ? `<span class="decision-cost">Cost: $${decision.cost.toFixed(0)}</span>` : ''}
+                                    ${decision.revenue ? `<span class="decision-revenue">Revenue: $${decision.revenue.toFixed(0)}</span>` : ''}
+                                </div>
+                                <div class="decision-score">
+                                    <span class="score-label">NASA Alignment:</span>
+                                    <span class="score-badge" style="background-color: ${scoreColor}; color: white;">
+                                        ${score.toFixed(0)}/100
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;
 
-        this.showModal(content);
+        return content;
     }
 
-    executeVetTreatment(treatmentType) {
-        const farmState = this.farmSimulation.getFarmState();
-        const treatmentCosts = { checkup: 30, vaccination: 60, emergency: 100 };
-        const cost = treatmentCosts[treatmentType];
+    getTimeAgo(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+        const minutes = Math.floor(diff / (1000 * 60));
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
 
-        if (farmState.resources.money >= cost) {
-            farmState.resources.money -= cost;
-
-            const healthBoost = { checkup: 0.15, vaccination: 0.25, emergency: 0.40 };
-            farmState.livestock.health = Math.min(1.0, farmState.livestock.health + healthBoost[treatmentType]);
-
-            this.closeModal();
-            this.showNotification(`🏥 ${treatmentType} treatment completed! Livestock health improved.`, 'success');
-            this.updateDisplay();
-        } else {
-            this.showNotification(`❌ Not enough money for ${treatmentType}. Need $${cost}`, 'error');
-        }
+        if (days > 0) return `${days}d ago`;
+        if (hours > 0) return `${hours}h ago`;
+        if (minutes > 0) return `${minutes}m ago`;
+        return 'Just now';
     }
 
-    generateVetRecommendations(farmState) {
-        const recommendations = [];
 
-        if (farmState.livestock.health < 0.4) {
-            recommendations.push("🚨 Critical health levels - emergency treatment recommended immediately!");
-        } else if (farmState.livestock.health < 0.6) {
-            recommendations.push("⚠️ Health below optimal - consider vaccination or treatment.");
-        } else if (farmState.livestock.health < 0.8) {
-            recommendations.push("📋 Routine checkup recommended to maintain good health.");
-        } else {
-            recommendations.push("✅ Livestock in excellent health! Continue current care routine.");
-        }
-
-        recommendations.push("🌾 Regular feeding improves overall health and productivity.");
-        recommendations.push("💧 Ensure adequate water supply for all animals.");
-
-        return recommendations.map(rec => `<p>${rec}</p>`).join('');
-    }
 
     /**
      * Get pixel hunt achievements from localStorage
@@ -6794,12 +7221,42 @@ class FarmGameUI {
             },
             {
                 id: 'fuel',
-                name: '⛽ Fuel',
+                name: 'Fuel',
                 description: 'Diesel fuel for tractors and farm equipment',
                 price: 80,
                 unit: 'per 50 liters',
                 icon: '⛽',
                 currentAmount: farmState.resources.fuel || 0
+            },
+            {
+                id: 'cattle',
+                name: 'Cattle',
+                description: 'Dairy cattle for milk production',
+                price: 500,
+                unit: 'per head',
+                icon: '🐄',
+                currentAmount: farmState.livestock?.cattle?.count || 0,
+                isLivestock: true
+            },
+            {
+                id: 'sheep',
+                name: 'Sheep',
+                description: 'Sheep for wool and meat production',
+                price: 200,
+                unit: 'per head',
+                icon: '🐑',
+                currentAmount: farmState.livestock?.sheep?.count || 0,
+                isLivestock: true
+            },
+            {
+                id: 'chickens',
+                name: 'Chickens',
+                description: 'Chickens for eggs and meat production',
+                price: 25,
+                unit: 'per 5 birds',
+                icon: '🐔',
+                currentAmount: farmState.livestock?.chickens?.count || 0,
+                isLivestock: true
             }
         ];
 
@@ -6901,6 +7358,18 @@ class FarmGameUI {
                 supplyAmount = quantity * 50; // 50 liters per purchase
                 supplyName = 'Fuel';
                 break;
+            case 'cattle':
+                // Handle cattle purchase differently - update livestock object
+                this.purchaseLivestock('cattle', quantity, totalCost);
+                return; // Exit early since livestock is handled separately
+            case 'sheep':
+                // Handle sheep purchase differently - update livestock object
+                this.purchaseLivestock('sheep', quantity, totalCost);
+                return; // Exit early since livestock is handled separately
+            case 'chickens':
+                // Handle chickens purchase differently - update livestock object
+                this.purchaseLivestock('chickens', quantity, totalCost);
+                return; // Exit early since livestock is handled separately
         }
 
         // Update farm resources
@@ -6912,6 +7381,85 @@ class FarmGameUI {
         // Show success notification
         this.showNotification(
             `✅ Purchased ${quantity}x ${supplyName} for $${totalCost}! (+${supplyAmount} units)`,
+            'success'
+        );
+
+        // Refresh the modal with updated data
+        const updatedFarmState = this.farmSimulation.getFarmState();
+        const fullContent = `
+            <div class="modal-header">
+                <h3>🛒 Buy Supplies</h3>
+            </div>
+            ${this.renderBuySuppliesModal(updatedFarmState)}
+            <div class="modal-footer">
+                <button class="secondary-btn" onclick="farmGameUI.closeModal()">❌ Close</button>
+            </div>
+        `;
+        this.showModal(fullContent);
+
+        // Update UI displays
+        this.updateCurrentView();
+    }
+
+    /**
+     * Purchase livestock - handles livestock differently from regular supplies
+     */
+    purchaseLivestock(livestockType, quantity, totalCost) {
+        const farmState = this.farmSimulation.getFarmState();
+
+        // Ensure livestock object exists and is properly initialized (using 0-1 range like Farm Engine)
+        if (!farmState.livestock) {
+            farmState.livestock = {
+                cattle: { count: 0, health: 0.85, feed_level: 0.8 },
+                sheep: { count: 0, health: 0.85, feed_level: 0.8 },
+                chickens: { count: 0, health: 0.85, feed_level: 0.8 }
+            };
+        }
+
+        // Initialize specific livestock type if it doesn't exist
+        if (!farmState.livestock[livestockType]) {
+            farmState.livestock[livestockType] = { count: 0, health: 0.85, feed_level: 0.8 };
+        }
+
+        // Determine actual quantity based on livestock type
+        let actualQuantity = quantity;
+        let displayName = '';
+
+        switch (livestockType) {
+            case 'cattle':
+                actualQuantity = quantity; // 1 cattle per purchase
+                displayName = 'Cattle';
+                break;
+            case 'sheep':
+                actualQuantity = quantity; // 1 sheep per purchase
+                displayName = 'Sheep';
+                break;
+            case 'chickens':
+                actualQuantity = quantity * 5; // 5 chickens per purchase (as defined in supplies)
+                displayName = 'Chickens';
+                break;
+        }
+
+        // Update livestock count
+        farmState.livestock[livestockType].count += actualQuantity;
+
+        // Ensure health and feed levels are reasonable for new animals
+        const currentCount = farmState.livestock[livestockType].count;
+        if (currentCount > 0) {
+            // New animals arrive healthy and well-fed (0-1 range)
+            farmState.livestock[livestockType].health = Math.max(farmState.livestock[livestockType].health, 0.85);
+            farmState.livestock[livestockType].feed_level = Math.max(farmState.livestock[livestockType].feed_level, 0.75);
+        }
+
+        // Deduct money
+        this.farmSimulation.updateResources({ money: -totalCost });
+
+        // Add livestock score for successful purchase
+        this.farmSimulation.addLivestockScore(actualQuantity * 5); // 5 points per animal
+
+        // Show success notification
+        this.showNotification(
+            `✅ Purchased ${actualQuantity} ${displayName} for $${totalCost}! They've joined your farm.`,
             'success'
         );
 
@@ -7055,16 +7603,28 @@ class FarmGameUI {
      * Initialize NASA Data Tutorial System
      */
     initializeTutorialSystem() {
+        console.log('🎓 Initializing NASA Data Tutorial System...');
+
         // Load tutorial system dynamically
         this.loadTutorialScript().then(() => {
             if (typeof NASADataTutorial !== 'undefined') {
-                this.nasaDataTutorial = new NASADataTutorial(this);
-                console.log('🎓 NASA Data Tutorial System initialized');
+                try {
+                    this.nasaDataTutorial = new NASADataTutorial(this);
+                    // Make instance globally available for button clicks
+                    window.nasaDataTutorial = this.nasaDataTutorial;
+                    console.log('✅ NASA Data Tutorial System initialized successfully');
+                    console.log('🌐 Tutorial instance available globally as window.nasaDataTutorial');
+                } catch (error) {
+                    console.error('❌ Error creating NASADataTutorial instance:', error);
+                    this.nasaDataTutorial = null;
+                }
             } else {
-                console.warn('⚠️ NASA Data Tutorial System failed to load');
+                console.warn('⚠️ NASADataTutorial class not available after loading');
+                this.nasaDataTutorial = null;
             }
         }).catch(error => {
-            console.error('Tutorial loading error:', error);
+            console.error('❌ Tutorial loading error:', error);
+            this.nasaDataTutorial = null;
         });
     }
 
@@ -7078,24 +7638,25 @@ class FarmGameUI {
 
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.type = 'module';
-            script.src = '/src/tutorial/NASADataTutorial.js';
+            script.src = './src/tutorial/NASADataTutorial.js';
             script.onload = () => {
-                // Wait for module to be available
+                // Wait for script to execute and class to be available
                 setTimeout(() => {
                     if (typeof NASADataTutorial !== 'undefined') {
+                        console.log('✅ NASADataTutorial loaded successfully');
                         resolve();
                     } else {
-                        // Create global reference for tutorial system
-                        import('/src/tutorial/NASADataTutorial.js').then(module => {
-                            window.NASADataTutorial = module.default;
-                            resolve();
-                        }).catch(reject);
+                        console.error('❌ NASADataTutorial class not available after script load');
+                        reject(new Error('Tutorial class not available'));
                     }
-                }, 100);
+                }, 200);
             };
-            script.onerror = reject;
+            script.onerror = (error) => {
+                console.error('❌ Tutorial script failed to load:', error);
+                reject(error);
+            };
             document.head.appendChild(script);
+            console.log('📥 Loading NASA Data Tutorial script...');
         });
     }
 
@@ -7103,18 +7664,48 @@ class FarmGameUI {
      * Start NASA Data Tutorial
      */
     startNASATutorial() {
+        console.log('🚀 Starting NASA Tutorial...');
+
         if (this.nasaDataTutorial) {
-            this.nasaDataTutorial.startTutorial();
+            console.log('✅ Tutorial system ready, starting...');
+            try {
+                this.nasaDataTutorial.startTutorial();
+            } catch (error) {
+                console.error('❌ Error starting tutorial:', error);
+                this.showNotification('Tutorial system encountered an error. Please refresh and try again.', 'error');
+            }
         } else {
+            console.log('⏳ Tutorial system not ready, attempting to initialize...');
+
             // Try to initialize and start
             this.initializeTutorialSystem();
-            setTimeout(() => {
+
+            // Wait longer and provide more feedback
+            let attempts = 0;
+            const maxAttempts = 5;
+
+            const checkAndStart = () => {
+                attempts++;
+                console.log(`🔍 Checking tutorial system (attempt ${attempts}/${maxAttempts})...`);
+
                 if (this.nasaDataTutorial) {
-                    this.nasaDataTutorial.startTutorial();
+                    console.log('✅ Tutorial system now ready!');
+                    try {
+                        this.nasaDataTutorial.startTutorial();
+                    } catch (error) {
+                        console.error('❌ Error starting tutorial:', error);
+                        this.showNotification('Tutorial system encountered an error. Please refresh and try again.', 'error');
+                    }
+                } else if (attempts < maxAttempts) {
+                    console.log(`⏳ Still loading... (${attempts}/${maxAttempts})`);
+                    setTimeout(checkAndStart, 1000);
                 } else {
-                    this.showNotification('🔄 Tutorial system is loading... Please try again in a moment', 'info');
+                    console.error('❌ Tutorial system failed to load after multiple attempts');
+                    this.showNotification('🔄 Tutorial system is having trouble loading. Please refresh the page and try again.', 'warning');
                 }
-            }, 1000);
+            };
+
+            setTimeout(checkAndStart, 500);
         }
     }
 
@@ -8026,6 +8617,363 @@ class FarmGameUI {
             default:
                 return 'No data';
         }
+    }
+
+    /**
+     * Show loading modal for satellite data
+     */
+    showLoadingModal() {
+        const content = `
+            <div class="modal-header">
+                <h3>🛰️ Loading NASA Satellite Data</h3>
+            </div>
+
+            <div class="loading-content" style="text-align: center; padding: 30px;">
+                <div class="satellite-loading-animation" style="margin: 20px auto;">
+                    <div style="width: 60px; height: 60px; border: 4px solid rgba(234, 254, 7, 0.2); border-top-color: #EAFE07; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                </div>
+
+                <h4 style="color: #EAFE07; margin: 20px 0;">Fetching Real-Time Data...</h4>
+
+                <div class="loading-steps" style="text-align: left; max-width: 400px; margin: 20px auto;">
+                    <p id="loading-step-1" style="opacity: 0.5;">📡 Connecting to NASA servers...</p>
+                    <p id="loading-step-2" style="opacity: 0.5;">🌍 Retrieving SMAP soil moisture data...</p>
+                    <p id="loading-step-3" style="opacity: 0.5;">🌿 Analyzing MODIS vegetation index...</p>
+                    <p id="loading-step-4" style="opacity: 0.5;">🛰️ Processing Landsat imagery...</p>
+                    <p id="loading-step-5" style="opacity: 0.5;">📊 Calculating regional parameters...</p>
+                </div>
+
+                <p style="color: #8E96AA; margin-top: 20px; font-size: 14px;">
+                    This may take 10-15 seconds depending on NASA server response times...
+                </p>
+            </div>
+
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+
+        this.showModal(content);
+
+        // Animate loading steps
+        let step = 1;
+        this.loadingInterval = setInterval(() => {
+            if (step <= 5) {
+                const stepElement = document.getElementById(`loading-step-${step}`);
+                if (stepElement) {
+                    stepElement.style.opacity = '1';
+                    stepElement.style.color = '#EAFE07';
+                }
+                step++;
+            }
+        }, 2000);
+    }
+
+    /**
+     * Initialize NASA Achievement System integration
+     */
+    initializeAchievementSystem() {
+        // Check if Achievement System is available
+        if (typeof window !== 'undefined' && window.achievementSystem && window.achievementUI) {
+            this.achievementSystem = window.achievementSystem;
+            this.achievementUI = window.achievementUI;
+
+            console.log('🏆 NASA Achievement System connected to Farm Game');
+
+            // Debug: Check Water Wizard achievement status
+            const waterWizard = this.achievementSystem.achievements['water_wizard'];
+            console.log('💧 Water Wizard initial status:', {
+                exists: !!waterWizard,
+                currentLevel: waterWizard?.currentLevel,
+                progress: waterWizard?.progress,
+                levels: waterWizard?.levels
+            });
+
+            // Track initial actions
+            this.achievementSystem.trackAction('nasa_data_check', 1);
+
+            // Set up Farm Game specific achievement tracking
+            this.setupAchievementTracking();
+
+            // Force update achievements view if on that tab
+            if (this.currentView === 'achievements') {
+                const farmState = this.farmSimulation.getFarmState();
+                this.updateAchievementsView(farmState);
+            }
+        } else {
+            console.warn('⚠️ NASA Achievement System not available yet, will retry...');
+            // Retry after a delay
+            setTimeout(() => {
+                this.initializeAchievementSystem();
+            }, 2000);
+        }
+    }
+
+    /**
+     * Set up achievement tracking for farm game actions
+     */
+    setupAchievementTracking() {
+        if (!this.achievementSystem) return;
+
+        // Track planting actions - this event exists
+        this.farmSimulation.on('cropPlanted', (data) => {
+            const farmState = this.farmSimulation.getFarmState();
+            const ndvi = farmState.environmentalData?.ndvi || 0.7;
+
+            this.achievementSystem.trackPlantingSuccess(
+                ndvi,
+                'optimal',
+                true
+            );
+            console.log('🌱 Tracked planting action for Seed Master achievement');
+        });
+
+        // Track harvest - check for harvestReady event
+        this.farmSimulation.on('harvestReady', (data) => {
+            this.achievementSystem.trackAction('yield_increase', 100);
+            console.log('🌾 Tracked harvest for Harvest Hero achievement');
+        });
+
+        // Track environmental updates
+        this.farmSimulation.on('environmentalDataApplied', (data) => {
+            this.achievementSystem.trackNASADataUsage(['SMAP', 'MODIS', 'Landsat']);
+            console.log('🛰️ Tracked NASA data usage for Satellite Sage achievement');
+        });
+
+        // Track season changes for climate adaptation
+        this.farmSimulation.on('seasonChanged', (data) => {
+            this.achievementSystem.trackAction('climate_adaptation', 1);
+            console.log('🌍 Tracked climate adaptation for Climate Guardian achievement');
+        });
+
+        // Note: Irrigation tracking is done directly in irrigateAllCrops and waterCrop methods
+
+        console.log('🏆 Farm Game achievement tracking configured');
+    }
+
+    /**
+     * Update mixed achievements grid with NASA and Farm achievements
+     */
+    updateMixedAchievementsGrid(farmState) {
+        const achievementsGrid = document.getElementById('achievementsGrid');
+        if (!achievementsGrid) return;
+
+        const allAchievements = [];
+
+        // Add NASA Achievements if available
+        if (this.achievementSystem) {
+            const nasaAchievements = this.achievementSystem.getAllAchievements();
+            nasaAchievements.forEach(achievement => {
+                const progress = this.achievementSystem.getAchievementProgress(achievement.id);
+                const progressPercent = progress.completed ? 100 :
+                    (progress.progress / progress.maxProgress) * 100;
+
+                allAchievements.push({
+                    name: achievement.name,
+                    description: achievement.description,
+                    icon: achievement.icon,
+                    progress: progressPercent,
+                    unlocked: progressPercent > 0,
+                    progressText: `Level ${achievement.currentLevel}/${achievement.levels.length}`,
+                    category: 'nasa'
+                });
+            });
+        }
+
+        // Add Farm-specific achievements
+        const farmAchievements = this.getAchievements(farmState);
+        allAchievements.push(...farmAchievements);
+
+        // Render all achievements
+        achievementsGrid.innerHTML = allAchievements.map(achievement => `
+            <div class="achievement-card ${achievement.unlocked ? 'unlocked' : 'locked'}">
+                <div class="achievement-icon">${achievement.icon}</div>
+                <div class="achievement-info">
+                    <h4>${achievement.name}</h4>
+                    <p>${achievement.description}</p>
+                </div>
+                <div class="achievement-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${achievement.progress}%"></div>
+                    </div>
+                    <span class="progress-text">${achievement.progressText || `${Math.round(achievement.progress)}%`}</span>
+                </div>
+                ${achievement.progress >= 100 ? '<div class="achievement-badge">✓</div>' : ''}
+            </div>
+        `).join('');
+    }
+
+    /**
+     * Update NASA player level in score display
+     */
+    updateNASAPlayerLevel() {
+        if (!this.achievementSystem) return;
+
+        const playerLevel = this.achievementSystem.getPlayerLevel();
+        const levelElement = document.getElementById('playerLevel');
+        const titleElement = document.getElementById('playerTitle');
+
+        if (levelElement) {
+            levelElement.textContent = playerLevel.level;
+        }
+        if (titleElement) {
+            titleElement.textContent = playerLevel.title;
+        }
+    }
+
+    /**
+     * Update NASA Achievement display
+     */
+    updateNASAAchievements() {
+        if (!this.achievementSystem) return;
+
+        const grid = document.getElementById('nasaAchievementsGrid');
+        if (!grid) return;
+
+        const achievements = this.achievementSystem.getAllAchievements();
+
+        grid.innerHTML = achievements.map(achievement => {
+            const progress = this.achievementSystem.getAchievementProgress(achievement.id);
+            const isCompleted = achievement.currentLevel === achievement.levels.length;
+            const progressPercent = progress.completed ? 100 : (progress.progress / progress.maxProgress) * 100;
+
+            return `
+                <div class="achievement-card ${isCompleted ? 'completed' : ''}" onclick="farmGameUI.showAchievementDetails('${achievement.id}')">
+                    <div class="achievement-header">
+                        <div class="achievement-icon">${achievement.icon}</div>
+                        <div class="achievement-info">
+                            <h4>${achievement.name}</h4>
+                            <p>${achievement.description}</p>
+                        </div>
+                    </div>
+                    <div class="achievement-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span>Level ${achievement.currentLevel}/${achievement.levels.length}</span>
+                            <span>${progress.completed ? 'MASTERED!' : `${progress.totalProgress}/${progress.nextRequirement || 'Max'}`}</span>
+                        </div>
+                    </div>
+                    ${isCompleted ? '<div class="completion-badge">MASTERED</div>' : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * Update player level display
+     */
+    updatePlayerLevel() {
+        if (!this.achievementSystem) return;
+
+        const playerLevel = this.achievementSystem.getPlayerLevel();
+        const totalPoints = this.achievementSystem.getTotalPoints();
+
+        const levelElement = document.getElementById('playerLevelTitle');
+        const pointsElement = document.getElementById('totalAchievementPoints');
+
+        if (levelElement) {
+            levelElement.textContent = `Level ${playerLevel.level}: ${playerLevel.title}`;
+        }
+
+        if (pointsElement) {
+            pointsElement.textContent = `${totalPoints.toLocaleString()} pts`;
+        }
+    }
+
+    /**
+     * Filter achievements by category
+     */
+    filterAchievements(category) {
+        // Update active button
+        document.querySelectorAll('.category-filter').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-category="${category}"]`).classList.add('active');
+
+        // Filter achievements
+        if (!this.achievementSystem) return;
+
+        const grid = document.getElementById('nasaAchievementsGrid');
+        if (!grid) return;
+
+        const achievements = category === 'all'
+            ? this.achievementSystem.getAllAchievements()
+            : this.achievementSystem.getAchievementsByCategory(category);
+
+        // Reuse the same rendering logic
+        grid.innerHTML = achievements.map(achievement => {
+            const progress = this.achievementSystem.getAchievementProgress(achievement.id);
+            const isCompleted = achievement.currentLevel === achievement.levels.length;
+            const progressPercent = progress.completed ? 100 : (progress.progress / progress.maxProgress) * 100;
+
+            return `
+                <div class="achievement-card ${isCompleted ? 'completed' : ''}" onclick="farmGameUI.showAchievementDetails('${achievement.id}')">
+                    <div class="achievement-header">
+                        <div class="achievement-icon">${achievement.icon}</div>
+                        <div class="achievement-info">
+                            <h4>${achievement.name}</h4>
+                            <p>${achievement.description}</p>
+                        </div>
+                    </div>
+                    <div class="achievement-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span>Level ${achievement.currentLevel}/${achievement.levels.length}</span>
+                            <span>${progress.completed ? 'MASTERED!' : `${progress.totalProgress}/${progress.nextRequirement || 'Max'}`}</span>
+                        </div>
+                    </div>
+                    ${isCompleted ? '<div class="completion-badge">MASTERED</div>' : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * Show detailed achievement modal
+     */
+    showAchievementDetails(achievementId) {
+        if (!this.achievementSystem || !this.achievementUI) return;
+
+        // Use the existing AchievementUI modal functionality
+        this.achievementUI.showAchievementDetails(achievementId);
+    }
+
+    /**
+     * Update progress statistics
+     */
+    updateProgressStats(farmState) {
+        const statsElement = document.getElementById('progressStats');
+        if (!statsElement) return;
+
+        const stats = farmState.playerStats || {};
+
+        statsElement.innerHTML = `
+            <div class="stat-card">
+                <h6>🌱 Farm Operations</h6>
+                <p>Crops Planted: ${stats.totalCropsPlanted || 0}</p>
+                <p>Harvest Count: ${stats.totalHarvests || 0}</p>
+                <p>Livestock Actions: ${stats.livestockActions || 0}</p>
+            </div>
+            <div class="stat-card">
+                <h6>🛰️ NASA Data Usage</h6>
+                <p>Data Queries: ${stats.nasaDataChecks || 0}</p>
+                <p>Satellite Decisions: ${stats.satelliteDecisions || 0}</p>
+                <p>Environmental Adaptations: ${stats.climateAdaptations || 0}</p>
+            </div>
+            <div class="stat-card">
+                <h6>🎯 Performance</h6>
+                <p>Average Yield: ${((stats.totalYield || 0) / Math.max(stats.totalHarvests || 1, 1)).toFixed(1)} bu/ha</p>
+                <p>Water Efficiency: ${((stats.waterEfficiency || 0) * 100).toFixed(0)}%</p>
+                <p>Sustainability Score: ${stats.sustainabilityScore || 0}</p>
+            </div>
+        `;
     }
 }
 

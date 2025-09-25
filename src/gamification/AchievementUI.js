@@ -97,7 +97,6 @@ class AchievementUI {
         return `
             <div class="achievement-card ${isCompleted ? 'completed' : ''}" data-achievement="${achievement.id}">
                 <div class="achievement-header">
-                    <div class="icon">${achievement.icon}</div>
                     <div class="achievement-details">
                         <h3>${achievement.name}</h3>
                         <p>${achievement.description}</p>
@@ -115,15 +114,15 @@ class AchievementUI {
                 </div>
 
                 <div class="achievement-levels">
-                    ${achievement.levels.map((level, index) => {
-                        const levelNum = index + 1;
-                        const status = levelNum <= achievement.currentLevel ? 'completed' :
-                                     levelNum === achievement.currentLevel + 1 ? 'current' : '';
-                        return `<div class="level-badge ${status}" title="${level.description}">${level.title}</div>`;
-                    }).join('')}
+                    ${achievement.levels
+                        .filter((level, index) => index + 1 === achievement.currentLevel + 1)
+                        .map((level, index) => {
+                            const levelNum = achievement.currentLevel + 1;
+                            return `<div class="level-badge current" title="${level.description}">${level.title}</div>`;
+                        }).join('')}
                 </div>
 
-                ${isCompleted ? '<div class="completion-badge">🎉 MASTERED</div>' : ''}
+                ${isCompleted ? '<div class="completion-badge">MASTERED</div>' : ''}
             </div>
         `;
     }
@@ -169,7 +168,7 @@ class AchievementUI {
             <div class="modal-overlay">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2>${achievement.icon} ${achievement.name}</h2>
+                        <h2>${achievement.name}</h2>
                         <button class="close-btn">&times;</button>
                     </div>
 
@@ -208,6 +207,49 @@ class AchievementUI {
         `;
 
         document.body.appendChild(modal);
+
+        // Apply modal center alignment fix (from CLAUDE.md solution)
+        const applyModalStyles = () => {
+            const overlay = modal.querySelector('.modal-overlay');
+            const modalContent = modal.querySelector('.modal-content');
+
+            if (overlay) {
+                overlay.style.cssText = `
+                    position: fixed !important;
+                    inset: 0 !important;
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                    z-index: 10002 !important;
+                    background: rgba(0, 0, 0, 0.8) !important;
+                    backdrop-filter: blur(10px) !important;
+                `;
+            }
+
+            if (modalContent) {
+                modalContent.style.cssText = `
+                    position: static !important;
+                    transform: none !important;
+                    margin: auto !important;
+                    background: linear-gradient(135deg, #2c3e50, #667eea) !important;
+                    color: white !important;
+                    border-radius: 20px !important;
+                    padding: 30px !important;
+                    max-width: 700px !important;
+                    width: 95% !important;
+                    max-height: 85vh !important;
+                    overflow-y: auto !important;
+                    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5) !important;
+                    border: 2px solid rgba(234, 254, 7, 0.3) !important;
+                `;
+            }
+        };
+
+        // Apply immediately and with delays to prevent override
+        applyModalStyles();
+        setTimeout(applyModalStyles, 10);
+        setTimeout(applyModalStyles, 100);
+        setTimeout(applyModalStyles, 500);
 
         // Close modal functionality
         const closeBtn = modal.querySelector('.close-btn');

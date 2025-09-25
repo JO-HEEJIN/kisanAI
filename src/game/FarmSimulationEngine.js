@@ -70,6 +70,7 @@ class FarmSimulationEngine {
 
             // Land recovery system
             deadLandPlots: [], // { area: number, deathTime: timestamp, recoveryTime: timestamp }
+            harvestedLandPlots: [], // { area: number, harvestTime: timestamp, recoveryTime: timestamp, cropType: string }
 
             // Resources
             resources: {
@@ -448,29 +449,59 @@ class FarmSimulationEngine {
     }
 
     /**
-     * Check and process land recovery
+     * Check and process land recovery (both dead and harvested land)
      */
     processLandRecovery() {
         const now = Date.now();
-        const recoveredPlots = this.farmState.deadLandPlots.filter(plot => now >= plot.recoveryTime);
 
-        recoveredPlots.forEach(plot => {
+        // Process dead land recovery (20 minutes)
+        const recoveredDeadPlots = this.farmState.deadLandPlots.filter(plot => now >= plot.recoveryTime);
+
+        recoveredDeadPlots.forEach(plot => {
             // Restore land
             this.farmState.availableLand = Math.min(
                 this.farmState.farmSize,
                 this.farmState.availableLand + plot.area
             );
 
+            console.log(`🌱 Dead land recovered: +${plot.area}ha (was dead for ${((now - plot.deathTime) / 60000).toFixed(1)} minutes)`);
+
             // Emit recovery event
             this.emit('landRecovered', {
                 area: plot.area,
                 totalAvailable: this.farmState.availableLand,
+                recoveryType: 'death',
                 recoveryDuration: '20 minutes'
             });
         });
 
-        // Remove recovered plots from dead land list
+        // Process harvested land recovery (10 minutes)
+        const recoveredHarvestedPlots = this.farmState.harvestedLandPlots.filter(plot => now >= plot.recoveryTime);
+
+        recoveredHarvestedPlots.forEach(plot => {
+            // Restore land
+            this.farmState.availableLand = Math.min(
+                this.farmState.farmSize,
+                this.farmState.availableLand + plot.area
+            );
+
+            console.log(`🌾 Harvested land recovered: +${plot.area}ha (from ${plot.cropType}, rested for ${((now - plot.harvestTime) / 60000).toFixed(1)} minutes)`);
+
+            // Emit recovery event
+            this.emit('landRecovered', {
+                area: plot.area,
+                totalAvailable: this.farmState.availableLand,
+                recoveryType: 'harvest',
+                recoveryDuration: '10 minutes',
+                cropType: plot.cropType
+            });
+        });
+
+        // Remove recovered plots from both lists
         this.farmState.deadLandPlots = this.farmState.deadLandPlots.filter(
+            plot => now < plot.recoveryTime
+        );
+        this.farmState.harvestedLandPlots = this.farmState.harvestedLandPlots.filter(
             plot => now < plot.recoveryTime
         );
     }
@@ -686,6 +717,20 @@ class FarmSimulationEngine {
         // Remove harvested crop from field
         this.farmState.crops = this.farmState.crops.filter(crop => crop !== cropToHarvest);
 
+        // Add harvested land to recovery system (10 minutes = 600000ms)
+        // Land needs time to rest and be prepared for next planting
+        const recoveryTime = Date.now() + (10 * 60 * 1000);
+        this.farmState.harvestedLandPlots.push({
+            area: cropToHarvest.area,
+            harvestTime: Date.now(),
+            recoveryTime: recoveryTime,
+            cropType: cropType
+        });
+
+        console.log(`🌾 Harvested ${cropType} (${cropToHarvest.area}ha) - Land added to recovery system`);
+        console.log(`⏱️ Land will be available in 10 minutes`);
+        console.log(`📍 Available land: ${this.farmState.availableLand}/${this.farmState.farmSize} hectares`);
+
         const decision = {
             type: 'harvest',
             week: this.farmState.currentWeek,
@@ -787,13 +832,17 @@ class FarmSimulationEngine {
         this.farmState.resources.money -= totalCost;
         this.farmState.availableLand -= plantingArea;
 
+        // Get the correct first stage for this crop type
+        const cropStageConfig = this.cropStages[cropType];
+        const firstStage = cropStageConfig ? Object.keys(cropStageConfig)[0] : 'germination';
+
         // Create new crop with complete data structure
         const newCrop = {
             type: cropType,
             emoji: cropConfig.emoji,
             area: plantingArea,
             planted_week: this.farmState.currentWeek,
-            current_stage: 'germination',
+            current_stage: firstStage,
             health: 1.0,
             growth_progress: 0.0,
             water_level: 0.8,

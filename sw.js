@@ -44,9 +44,17 @@ const STATIC_ASSETS = [
 const NASA_API_PATTERNS = [
     /https:\/\/appeears\.earthdatacloud\.nasa\.gov\/api/,
     /https:\/\/smap\.jpl\.nasa\.gov\/api/,
-    /https:\/\/glam1\.gsfc\.nasa\.gov/,
+    /https:\/\/glam1\.gsfc\.nasa\.gov/
+];
+
+// Problematic endpoints that cause CORS issues - bypass service worker
+const CORS_BYPASS_PATTERNS = [
     /https:\/\/gibs\.earthdata\.nasa\.gov/,
-    /https:\/\/gpm1\.gesdisc\.eosdis\.nasa\.gov/
+    /https:\/\/gpm1\.gesdisc\.eosdis\.nasa\.gov/,
+    /https:\/\/.*\.tile\.stamen\.com/,
+    /https:\/\/.*\.tile\.openstreetmap\.org/,
+    /https:\/\/cesiumjs\.org/,
+    /https:\/\/ion\.cesium\.com/
 ];
 
 // Educational content patterns
@@ -110,6 +118,12 @@ self.addEventListener('fetch', (event) => {
     const request = event.request;
     const url = new URL(request.url);
 
+    // Bypass service worker for CORS-problematic requests
+    if (shouldBypassCORS(request)) {
+        // Let these requests go directly through the network
+        return;
+    }
+
     // Handle different types of requests with different strategies
     if (isStaticAsset(request)) {
         event.respondWith(handleStaticAsset(request));
@@ -157,6 +171,15 @@ function isNASAAPIRequest(request) {
  */
 function isEducationalContent(request) {
     return EDUCATIONAL_PATTERNS.some(pattern => pattern.test(request.url));
+}
+
+/**
+ * Check if request should bypass service worker due to CORS issues
+ * @param {Request} request - Fetch request
+ * @returns {boolean} True if should bypass
+ */
+function shouldBypassCORS(request) {
+    return CORS_BYPASS_PATTERNS.some(pattern => pattern.test(request.url));
 }
 
 /**

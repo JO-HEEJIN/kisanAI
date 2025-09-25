@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 NASA Farm Navigator - 3D Globe</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.98/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.98/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .main-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #2E96F5 0%, #0042A6 100%);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            width: 300px;
+            background: rgba(26, 26, 26, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-section h3 {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .layer-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .layer-toggle:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .layer-toggle input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .layer-toggle label {
+            color: #ccc;
+            font-size: 14px;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .view-mode-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 1px solid #2E96F5;
+            color: #2E96F5;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .mode-btn:hover,
+        .mode-btn.active {
+            background: #2E96F5;
+            color: white;
+        }
+
+        /* Statistics Panel */
+        .stats-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 26, 26, 0.95);
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        /* Farm Info Panel */
+        .farm-info-panel {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            width: 350px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: rgba(26, 26, 26, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: none;
+        }
+
+        .farm-info-panel.show {
+            display: block;
+        }
+
+        .farm-info-panel h3 {
+            color: #2E96F5;
+            margin: 0 0 15px 0;
+            font-size: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-card {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .info-card .label {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .info-card .value {
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .nasa-data {
+            background: rgba(46, 150, 245, 0.1);
+            border: 1px solid rgba(46, 150, 245, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .nasa-data h4 {
+            color: #2E96F5;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .data-label {
+            color: #aaa;
+        }
+
+        .data-value {
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Globe Container */
+        .globe-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #farm-globe-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            color: white;
+            font-size: 18px;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            border: 3px solid #333;
+            border-top: 3px solid #2E96F5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .control-panel,
+            .farm-info-panel {
+                width: calc(100vw - 40px);
+                max-width: 300px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header p {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🌍 NASA Farm Navigator</h1>
+            <p>🛰️ Real-time satellite data • 📊 AI-driven investment analysis • 🌾 Agricultural intelligence platform</p>
+        </div>
+
+        <!-- Globe Container -->
+        <div class="globe-container">
+            <div id="farm-globe-container"></div>
+
+            <!-- Loading Overlay -->
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="loading-spinner"></div>
+                <span>Loading 3D Earth and NASA satellite data...</span>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="control-section">
+                <h3>📡 NASA Data Layers</h3>
+
+                <div class="layer-toggle" onclick="toggleLayer('modis')">
+                    <input type="checkbox" id="modis-layer" checked>
+                    <label for="modis-layer">MODIS Satellite Imagery</label>
+                </div>
+
+                <div class="layer-toggle" onclick="toggleLayer('smap')">
+                    <input type="checkbox" id="smap-layer">
+                    <label for="smap-layer">SMAP Soil Moisture</label>
+                </div>
+
+                <div class="layer-toggle" onclick="toggleLayer('precipitation')">
+                    <input type="checkbox" id="precipitation-layer">
+                    <label for="precipitation-layer">GPM Precipitation</label>
+                </div>
+
+                <div class="layer-toggle" onclick="toggleLayer('boundaries')">
+                    <input type="checkbox" id="boundaries-layer">
+                    <label for="boundaries-layer">Property Boundaries</label>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>🗺️ View Mode</h3>
+                <div class="view-mode-buttons">
+                    <button class="mode-btn active" onclick="setViewMode('3D')">3D Globe</button>
+                    <button class="mode-btn" onclick="setViewMode('2D')">2D Map</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>🎯 Quick Navigation</h3>
+                <div class="view-mode-buttons">
+                    <button class="mode-btn" onclick="flyToIowa()">Iowa Overview</button>
+                    <button class="mode-btn" onclick="flyToFarms()">All Farms</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Panel -->
+        <div class="stats-panel">
+            <div class="stat-item">
+                <span>Available Properties:</span>
+                <span class="stat-value" id="total-properties">4</span>
+            </div>
+            <div class="stat-item">
+                <span>Avg. Price/Acre:</span>
+                <span class="stat-value" id="avg-price">$3,812</span>
+            </div>
+            <div class="stat-item">
+                <span>Avg. ROI:</span>
+                <span class="stat-value" id="avg-roi">16.2%</span>
+            </div>
+            <div class="stat-item">
+                <span>NASA Data Status:</span>
+                <span class="stat-value">🟢 Live</span>
+            </div>
+        </div>
+
+        <!-- Farm Info Panel -->
+        <div class="farm-info-panel" id="farm-info-panel">
+            <h3 id="farm-name">Select a farm to view details</h3>
+
+            <div class="info-grid" id="farm-info-grid">
+                <!-- Will be populated by JavaScript -->
+            </div>
+
+            <div class="nasa-data">
+                <h4>🛰️ NASA Satellite Analysis</h4>
+                <div id="nasa-data-content">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button style="background: linear-gradient(135deg, #2E96F5 0%, #0042A6 100%);
+                               color: white; border: none; padding: 12px 24px;
+                               border-radius: 6px; cursor: pointer; font-weight: bold;"
+                        onclick="showDetailedAnalysis()">
+                    🔍 Detailed Investment Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load our 3D Globe component -->
+    <script src="src/components/FarmGlobe3D.js"></script>
+
+    <script>
+        let currentSelectedFarm = null;
+
+        // Initialize after page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (farmGlobe3D) {
+                    farmGlobe3D.initialize().then(() => {
+                        document.getElementById('loading-overlay').classList.add('hidden');
+                    }).catch(error => {
+                        console.error('Failed to initialize 3D globe:', error);
+                        document.getElementById('loading-overlay').innerHTML =
+                            '<div>⚠️ 3D view unavailable. Using fallback mode.</div>';
+                    });
+                } else {
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                }
+            }, 1000);
+        });
+
+        // Layer toggle functions
+        function toggleLayer(layerName) {
+            const checkbox = document.getElementById(`${layerName}-layer`);
+            checkbox.checked = !checkbox.checked;
+
+            if (farmGlobe3D && farmGlobe3D.isInitialized) {
+                farmGlobe3D.toggleNASALayer(layerName, checkbox.checked);
+            }
+        }
+
+        // View mode functions
+        function setViewMode(mode) {
+            // Update button states
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            if (farmGlobe3D && farmGlobe3D.isInitialized) {
+                farmGlobe3D.setViewMode(mode);
+            }
+        }
+
+        // Navigation functions
+        function flyToIowa() {
+            if (farmGlobe3D && farmGlobe3D.isInitialized) {
+                farmGlobe3D.flyToLocation([-93.5, 41.9], 500000);
+            }
+        }
+
+        function flyToFarms() {
+            if (farmGlobe3D && farmGlobe3D.isInitialized) {
+                farmGlobe3D.flyToLocation([-93.0, 41.8], 200000);
+            }
+        }
+
+        // Farm selection handler
+        window.addEventListener('farmSelected', function(event) {
+            currentSelectedFarm = event.detail;
+            showFarmInfo(currentSelectedFarm);
+        });
+
+        function showFarmInfo(farm) {
+            const panel = document.getElementById('farm-info-panel');
+            const nameEl = document.getElementById('farm-name');
+            const gridEl = document.getElementById('farm-info-grid');
+            const nasaEl = document.getElementById('nasa-data-content');
+
+            nameEl.textContent = farm.name;
+
+            // Update info grid
+            gridEl.innerHTML = `
+                <div class="info-card">
+                    <div class="label">Size</div>
+                    <div class="value">${farm.acres} acres</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Price/Acre</div>
+                    <div class="value">$${farm.pricePerAcre.toLocaleString()}</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Total Price</div>
+                    <div class="value">$${farm.price.toLocaleString()}</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Est. ROI</div>
+                    <div class="value" style="color: ${farm.roi >= 15 ? '#4CAF50' : '#FF9800'}">${farm.roi}%</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Drought Risk</div>
+                    <div class="value">${farm.droughtRisk}</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">Water Rights</div>
+                    <div class="value">${farm.waterRights ? 'Yes' : 'No'}</div>
+                </div>
+            `;
+
+            // Update NASA data
+            nasaEl.innerHTML = `
+                <div class="data-row">
+                    <span class="data-label">Soil Moisture:</span>
+                    <span class="data-value">${farm.soilMoisture}%</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">NDVI Index:</span>
+                    <span class="data-value">${farm.ndvi}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Precipitation:</span>
+                    <span class="data-value">${farm.precipitation}mm</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Soil Quality:</span>
+                    <span class="data-value">${farm.soilQuality}/100</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Elevation:</span>
+                    <span class="data-value">${farm.elevation}m</span>
+                </div>
+            `;
+
+            panel.classList.add('show');
+        }
+
+        function showDetailedAnalysis() {
+            if (currentSelectedFarm) {
+                alert(`🔍 Detailed Analysis for ${currentSelectedFarm.name}\n\n` +
+                      `This would open a comprehensive investment analysis including:\n` +
+                      `• 5-year ROI projections\n` +
+                      `• Climate risk assessment\n` +
+                      `• Market trend analysis\n` +
+                      `• Soil composition details\n` +
+                      `• Historical yield data`);
+            }
+        }
+
+        // Detailed analysis handler
+        window.addEventListener('showDetailedAnalysis', function(event) {
+            showDetailedAnalysis();
+        });
+
+        // Update statistics periodically
+        function updateStatistics() {
+            // These would come from real data in production
+            const stats = {
+                totalProperties: 4,
+                avgPrice: 3812,
+                avgROI: 16.2
+            };
+
+            document.getElementById('total-properties').textContent = stats.totalProperties;
+            document.getElementById('avg-price').textContent = `$${stats.avgPrice.toLocaleString()}`;
+            document.getElementById('avg-roi').textContent = `${stats.avgROI}%`;
+        }
+
+        // Initialize statistics
+        updateStatistics();
+
+        // Update every 30 seconds (in real app, this would fetch from API)
+        setInterval(updateStatistics, 30000);
+    </script>
+</body>
+</html>

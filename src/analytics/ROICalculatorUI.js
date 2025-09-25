@@ -17,6 +17,22 @@ class ROICalculatorUI {
         console.log('📊 ROI Calculator UI initialized');
     }
 
+    /**
+     * Render the calculator interface to a container
+     * This method is expected by the advanced component loader
+     */
+    async renderCalculator(container) {
+        if (container) {
+            const calculatorElement = this.createUI();
+            container.innerHTML = '';
+            container.appendChild(calculatorElement);
+            this.attachEventListeners();
+            console.log('📊 ROI Calculator rendered to container');
+        } else {
+            this.init();
+        }
+    }
+
     createUI() {
         this.container = document.createElement('div');
         this.container.className = 'roi-calculator-dashboard';

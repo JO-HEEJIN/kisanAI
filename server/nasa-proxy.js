@@ -925,6 +925,37 @@ app.get('/api/power/weather', async (req, res) => {
     }
 });
 
+// Simple comprehensive data endpoint for FarmDataService
+app.get('/api/comprehensive-data', async (req, res) => {
+    try {
+        const { lat, lon } = req.query;
+
+        if (!lat || !lon) {
+            return res.status(400).json({ error: 'Latitude and longitude required' });
+        }
+
+        // Return combined data from different sources
+        res.json({
+            smap: {
+                soilMoisture: 60 + Math.random() * 20,
+                quality: 'simulated'
+            },
+            modis: {
+                ndvi: 0.6 + Math.random() * 0.3,
+                quality: 'simulated'
+            },
+            gpm: {
+                precipitation: 30 + Math.random() * 30,
+                quality: 'simulated'
+            },
+            temperature: 15 + Math.random() * 15,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Comprehensive multi-dataset endpoint
 app.get('/api/comprehensive/agriculture', async (req, res) => {
     try {

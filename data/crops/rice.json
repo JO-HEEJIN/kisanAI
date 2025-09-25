@@ -1,0 +1,59 @@
+{
+  "name": "Rice",
+  "scientificName": "Oryza sativa",
+  "family": "Poaceae",
+  "type": "cereal grain",
+  "growingRegions": [
+    "Southern United States",
+    "California Central Valley",
+    "Arkansas Delta"
+  ],
+  "climate": {
+    "temperature": {
+      "optimal": "20-27°C",
+      "minimum": "16°C",
+      "maximum": "35°C"
+    },
+    "rainfall": "1000-2000mm annually",
+    "humidity": "high (80-90%)"
+  },
+  "soil": {
+    "type": "clay soil with water retention",
+    "pH": "5.5-6.5",
+    "fertility": "high organic matter"
+  },
+  "lifecycle": {
+    "plantingPeriod": "late spring to early summer",
+    "growingPeriod": "100-130 days",
+    "harvestPeriod": "late summer to early fall"
+  },
+  "yield": {
+    "average": "150 bushels per acre",
+    "optimal": "200-250 bushels per acre"
+  },
+  "nutritionalValue": {
+    "protein": "6-8%",
+    "carbohydrates": "78-80%",
+    "fiber": "2-3%"
+  },
+  "uses": [
+    "human consumption",
+    "rice flour",
+    "rice wine",
+    "animal feed"
+  ],
+  "marketPrice": {
+    "current": "$14.20 per cwt",
+    "trend": "increasing"
+  },
+  "diseases": [
+    "rice blast",
+    "bacterial leaf blight",
+    "sheath blight"
+  ],
+  "pests": [
+    "rice water weevil",
+    "stem borers",
+    "brown planthopper"
+  ]
+}
