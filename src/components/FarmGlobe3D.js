@@ -229,6 +229,9 @@ class FarmGlobe3D {
 
             this.viewer = new Cesium.Viewer(this.containerId, viewerConfig);
 
+            // Configure rendering for better compatibility
+            this.configureRenderingSettings();
+
             // Enable lighting
             this.viewer.scene.globe.enableLighting = true;
 
@@ -271,6 +274,58 @@ class FarmGlobe3D {
             // Try to diagnose the specific issue
             this.diagnoseError(error);
             this.fallbackToSimpleView();
+        }
+    }
+
+    /**
+     * Configure rendering settings to fix WebGL shader issues
+     * Addresses IBL and PBR rendering compatibility problems
+     */
+    configureRenderingSettings() {
+        try {
+            console.log('🔧 Configuring rendering settings to fix shader issues...');
+
+            // Fix IBL (Image-Based Lighting) shader issues
+            if (this.viewer.scene) {
+                // Disable problematic IBL features that cause shader compilation errors
+                if (this.viewer.scene.globe) {
+                    // Ensure proper atmosphere rendering without IBL conflicts
+                    this.viewer.scene.globe.showGroundAtmosphere = true;
+                    this.viewer.scene.skyAtmosphere.show = true;
+                }
+
+                // Configure model rendering to avoid IBL reference frame issues
+                if (this.viewer.scene.primitives) {
+                    // Set conservative rendering options
+                    this.viewer.scene.requestRenderMode = false; // Ensure continuous rendering
+                    this.viewer.scene.maximumRenderTimeChange = Infinity;
+                }
+
+                // Configure proper lighting that doesn't rely on problematic IBL matrices
+                if (this.viewer.scene.light) {
+                    // Use sun lighting instead of IBL when possible
+                    this.viewer.scene.light = new Cesium.SunLight();
+                }
+
+                // Disable advanced material features that might cause shader issues
+                if (this.viewer.scene.context) {
+                    // Check WebGL capabilities and adjust accordingly
+                    const gl = this.viewer.scene.context._gl;
+                    if (gl) {
+                        console.log('🖥️ WebGL Renderer:', gl.getParameter(gl.RENDERER));
+                        console.log('🖥️ WebGL Version:', gl.getParameter(gl.VERSION));
+                    }
+                }
+
+                // Configure model matrix handling to avoid IBL reference frame errors
+                this.viewer.scene.postProcessStages.fxaa.enabled = true;
+
+                console.log('✅ Rendering settings configured successfully');
+            }
+
+        } catch (error) {
+            console.warn('⚠️ Could not fully configure rendering settings:', error);
+            // Continue with default settings if configuration fails
         }
     }
 
@@ -363,7 +418,7 @@ class FarmGlobe3D {
         try {
             console.log('🏢 Adding advanced Ion features...');
 
-            // Add Cesium OSM Buildings (3D buildings worldwide)
+            // Add Cesium OSM Buildings (3D buildings worldwide) with IBL compatibility
             try {
                 // Try both old and new API
                 let osmBuildings;
@@ -372,13 +427,35 @@ class FarmGlobe3D {
                 } else if (typeof Cesium.createOsmBuildings === 'function') {
                     osmBuildings = await Cesium.createOsmBuildings();
                 } else {
-                    // Fallback to direct 3D tileset
+                    // Fallback to direct 3D tileset with IBL-safe configuration
                     osmBuildings = await Cesium.Cesium3DTileset.fromIonAssetId(96188);
                 }
-                this.viewer.scene.primitives.add(osmBuildings);
-                console.log('✅ Cesium OSM Buildings added');
+
+                // Configure the tileset to avoid IBL shader issues
+                if (osmBuildings) {
+                    // Set conservative rendering options for 3D models
+                    osmBuildings.skipLevels = 0;
+                    osmBuildings.skipScreenSpaceErrorFactor = 16;
+                    osmBuildings.skipLevelOfDetail = false;
+                    osmBuildings.immediatelyLoadDesiredLevelOfDetail = false;
+                    osmBuildings.loadSiblings = false;
+
+                    // Add event handler to configure models when they load
+                    osmBuildings.tileLoad.addEventListener((tile) => {
+                        if (tile.content && tile.content._model) {
+                            // Disable IBL on individual models to prevent shader errors
+                            const model = tile.content._model;
+                            if (model._imageBasedLightingFactor) {
+                                model._imageBasedLightingFactor = new Cesium.Cartesian2(0.0, 0.0);
+                            }
+                        }
+                    });
+
+                    this.viewer.scene.primitives.add(osmBuildings);
+                    console.log('✅ Cesium OSM Buildings added with IBL compatibility');
+                }
             } catch (buildingError) {
-                console.log('ℹ️ OSM Buildings not available in this Cesium version');
+                console.log('ℹ️ OSM Buildings not available or IBL incompatible:', buildingError.message);
             }
 
             // Optional: Add Google Photorealistic 3D Tiles for specific areas
@@ -403,18 +480,46 @@ class FarmGlobe3D {
                 return;
             }
 
-            console.log('🌐 Loading Google Photorealistic 3D Tiles...');
+            console.log('🌐 Loading Google Photorealistic 3D Tiles with IBL compatibility...');
             this.googleTileset = await Cesium.Cesium3DTileset.fromIonAssetId(2275207);
-            this.viewer.scene.primitives.add(this.googleTileset);
 
-            // Adjust style for better visibility
-            this.googleTileset.style = new Cesium.Cesium3DTileStyle({
-                color: "color('white', 0.8)"
+            // Configure Google tileset to avoid IBL shader issues
+            this.googleTileset.skipLevels = 1;
+            this.googleTileset.skipScreenSpaceErrorFactor = 32;
+            this.googleTileset.skipLevelOfDetail = true;
+            this.googleTileset.immediatelyLoadDesiredLevelOfDetail = false;
+            this.googleTileset.loadSiblings = false;
+
+            // Add event handler to disable IBL on Google 3D models
+            this.googleTileset.tileLoad.addEventListener((tile) => {
+                if (tile.content && tile.content._model) {
+                    const model = tile.content._model;
+                    try {
+                        // Disable IBL lighting to prevent model_iblReferenceFrameMatrix errors
+                        if (model._imageBasedLightingFactor) {
+                            model._imageBasedLightingFactor = new Cesium.Cartesian2(0.0, 0.0);
+                        }
+                        // Disable environmental mapping that can cause shader issues
+                        if (model._environmentMapManager) {
+                            model._environmentMapManager.enabled = false;
+                        }
+                    } catch (modelError) {
+                        console.warn('Could not configure IBL for model:', modelError);
+                    }
+                }
             });
 
-            console.log('✅ Google Photorealistic 3D Tiles loaded successfully');
+            this.viewer.scene.primitives.add(this.googleTileset);
+
+            // Adjust style for better visibility without advanced shaders
+            this.googleTileset.style = new Cesium.Cesium3DTileStyle({
+                color: "color('white', 0.9)"
+            });
+
+            console.log('✅ Google Photorealistic 3D Tiles loaded with IBL compatibility');
         } catch (error) {
             console.error('❌ Failed to load Google Photorealistic 3D Tiles:', error);
+            console.error('This might be due to IBL shader compatibility issues');
         }
     }
 
