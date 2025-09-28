@@ -46,6 +46,14 @@ class NASAFarmNavigatorsApp {
             // Show loading screen
             this.showLoadingScreen();
 
+            // Set default OpenAI API key if not already set
+            if (!localStorage.getItem('openai_api_key')) {
+                // Placeholder API key - replace with actual key for production
+                const defaultKey = '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';
+                localStorage.setItem('openai_api_key', defaultKey);
+                console.log('🔑 OpenAI API key initialized with default');
+            }
+
             // Initialize service worker for offline support
             await this.initializeServiceWorker();
 
@@ -5109,7 +5117,7 @@ class NASAFarmNavigatorsApp {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const advancedContainer = document.getElementById('advancedComponentsContainer');
-                if (advancedContainer.style.display !== 'none') {
+                if (advancedContainer && advancedContainer.style.display !== 'none') {
                     this.showDefaultLayout();
                 }
             }

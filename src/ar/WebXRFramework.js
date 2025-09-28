@@ -73,6 +73,26 @@ class WebXRFramework {
 
         // Add AR controls
         arOverlay.innerHTML = `
+            <!-- Emergency Exit Button - Always Visible -->
+            <button id="emergency-exit-btn" style="
+                position: fixed !important;
+                top: 20px !important;
+                right: 20px !important;
+                background: #ff3b30 !important;
+                color: white !important;
+                border: none !important;
+                padding: 15px 25px !important;
+                border-radius: 8px !important;
+                font-size: 16px !important;
+                font-weight: bold !important;
+                z-index: 999999 !important;
+                cursor: pointer !important;
+                box-shadow: 0 4px 15px rgba(255, 59, 48, 0.5) !important;
+                border: 2px solid rgba(255, 255, 255, 0.3) !important;
+                min-width: 100px !important;
+                touch-action: manipulation !important;
+            ">✕ Exit AR</button>
+
             <div class="ar-controls">
                 <div class="ar-top-bar">
                     <button id="ar-exit-btn" class="ar-btn ar-exit">Exit AR</button>
@@ -107,6 +127,27 @@ class WebXRFramework {
     }
 
     setupARControlEvents() {
+        // Emergency exit button (always visible)
+        const emergencyExitBtn = document.getElementById('emergency-exit-btn');
+        if (emergencyExitBtn) {
+            console.log('🚨 Emergency exit button found, adding listeners');
+
+            // Add multiple event types for better mobile support
+            const exitHandler = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🚪 Emergency exit triggered');
+                this.exitAR();
+            };
+
+            emergencyExitBtn.addEventListener('click', exitHandler);
+            emergencyExitBtn.addEventListener('touchstart', exitHandler);
+            emergencyExitBtn.addEventListener('touchend', (e) => e.preventDefault());
+        } else {
+            console.error('❌ Emergency exit button not found');
+        }
+
+        // Regular exit button
         const exitBtn = document.getElementById('ar-exit-btn');
         const voiceBtn = document.getElementById('ar-voice-btn');
         const scanBtn = document.getElementById('ar-scan-btn');

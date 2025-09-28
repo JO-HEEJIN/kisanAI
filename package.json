@@ -22,6 +22,8 @@
     "@babylonjs/core": "^8.29.0",
     "@babylonjs/loaders": "^8.29.0",
     "@babylonjs/materials": "^8.29.0",
+    "@tensorflow/tfjs": "^4.15.0",
+    "@tensorflow/tfjs-backend-webgl": "^4.15.0",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
     "express": "^4.21.2"

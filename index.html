@@ -644,38 +644,38 @@
                 if (!isChrome && !isSafari) {
                     shouldShowPopup = true;
                     message = `
-                        <h2 style="color: #00ff88; margin-bottom: 20px;">📱 모바일 브라우저 안내</h2>
-                        <p style="margin-bottom: 15px;">최적의 AR 경험을 위해 <strong>Chrome 또는 Safari</strong> 브라우저를 사용해주세요.</p>
-                        <p style="margin-bottom: 15px;">현재 브라우저: <span style="color: #ffa500;">${navigator.userAgent.split(' ')[0]}</span></p>
+                        <h2 style="color: #00ff88; margin-bottom: 20px;">📱 Mobile Browser Guide</h2>
+                        <p style="margin-bottom: 15px;">For optimal AR experience, please use <strong>Chrome or Safari</strong> browser.</p>
+                        <p style="margin-bottom: 15px;">Current browser: <span style="color: #ffa500;">${navigator.userAgent.split(' ')[0]}</span></p>
                         <div style="margin: 20px 0;">
-                            <p><strong>📋 필요한 기능:</strong></p>
+                            <p><strong>📋 Required Features:</strong></p>
                             <ul style="text-align: left; margin: 10px 0; padding-left: 20px;">
-                                <li>카메라 접근 권한</li>
-                                <li>HTTPS 연결</li>
-                                <li>WebXR/WebRTC 지원</li>
+                                <li>Camera access permission</li>
+                                <li>HTTPS connection</li>
+                                <li>WebXR/WebRTC support</li>
                             </ul>
                         </div>
-                        <p style="color: #888; font-size: 14px;">일부 기능이 제한될 수 있습니다.</p>
+                        <p style="color: #888; font-size: 14px;">Some features may be limited.</p>
                     `;
                 }
             } else {
                 if (!isChrome) {
                     shouldShowPopup = true;
-                    const browserName = isFirefox ? 'Firefox' : isEdge ? 'Edge' : isSafari ? 'Safari' : '알 수 없는 브라우저';
+                    const browserName = isFirefox ? 'Firefox' : isEdge ? 'Edge' : isSafari ? 'Safari' : 'Unknown Browser';
                     message = `
-                        <h2 style="color: #00ff88; margin-bottom: 20px;">🌐 브라우저 호환성 안내</h2>
-                        <p style="margin-bottom: 15px;">이 앱은 <strong>Google Chrome</strong>에서 최적화되어 있습니다.</p>
-                        <p style="margin-bottom: 15px;">현재 브라우저: <span style="color: #ffa500;">${browserName}</span></p>
+                        <h2 style="color: #00ff88; margin-bottom: 20px;">🌐 Browser Compatibility Guide</h2>
+                        <p style="margin-bottom: 15px;">This app is optimized for <strong>Google Chrome</strong>.</p>
+                        <p style="margin-bottom: 15px;">Current browser: <span style="color: #ffa500;">${browserName}</span></p>
                         <div style="margin: 20px 0;">
-                            <p><strong>🚀 Chrome에서 지원되는 기능:</strong></p>
+                            <p><strong>🚀 Features supported in Chrome:</strong></p>
                             <ul style="text-align: left; margin: 10px 0; padding-left: 20px;">
-                                <li>WebXR AR 세션</li>
-                                <li>고급 카메라 기능</li>
-                                <li>음성 인식</li>
-                                <li>실시간 위성 데이터</li>
+                                <li>WebXR AR sessions</li>
+                                <li>Advanced camera features</li>
+                                <li>Voice recognition</li>
+                                <li>Real-time satellite data</li>
                             </ul>
                         </div>
-                        <p style="color: #888; font-size: 14px;">다른 브라우저에서는 일부 기능이 제한됩니다.</p>
+                        <p style="color: #888; font-size: 14px;">Some features may be limited in other browsers.</p>
                     `;
                 }
             }
@@ -3443,14 +3443,14 @@
                         updateStatus('webxr-status', 'AR Failed', 'error');
 
                         // More specific error messages for mobile users
-                        let errorMessage = 'AR 세션 시작 실패: ' + error.message;
+                        let errorMessage = 'AR session start failed: ' + error.message;
 
                         if (error.message.includes('setupCameraBackground')) {
-                            errorMessage = 'AR 시스템 초기화 실패\n\n가능한 해결방법:\n• 페이지를 새로고침하세요\n• 카메라 권한을 허용해주세요\n• HTTPS 연결을 확인하세요';
+                            errorMessage = 'AR System initialization failed\n\nPossible solutions:\n• Refresh the page\n• Allow camera permission\n• Check HTTPS connection';
                         } else if (error.message.includes('not available')) {
-                            errorMessage = 'AR 기능을 사용할 수 없습니다\n\n모바일에서는:\n• Chrome이나 Safari 최신 버전을 사용하세요\n• HTTPS 연결이 필요합니다\n• 카메라 권한을 허용해주세요';
+                            errorMessage = 'AR feature is not available\n\nOn mobile devices:\n• Use latest Chrome or Safari browser\n• HTTPS connection required\n• Allow camera permission';
                         } else if (/Mobi|Android/i.test(navigator.userAgent)) {
-                            errorMessage += '\n\n모바일 장치에서는:\n• 브라우저를 업데이트하세요\n• 카메라 권한을 확인하세요\n• Wi-Fi 연결을 사용하세요';
+                            errorMessage += '\n\nOn mobile devices:\n• Update your browser\n• Check camera permissions\n• Use Wi-Fi connection';
                         }
 
                         alert(errorMessage);

@@ -17,7 +17,7 @@ class BabylonXRFramework {
         this.canvas = null;
         this.planeDetector = null;
         this.detectedPlanes = [];
-        this.gpsCoords = { latitude: null, longitude: null };
+        this.gpsCoords = { latitude: 37.7749, longitude: -122.4194 }; // Start with fallback coordinates
         this.compassHeading = 0;
         this.analysisPoints = [];
         this.aiEngine = null;
@@ -328,26 +328,61 @@ class BabylonXRFramework {
 
     async initializeGPSTracking() {
         // Initialize GPS for coordinate mapping
+        console.log('🌍 Initializing GPS tracking...');
+
         try {
-            if (navigator.geolocation) {
-                const position = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+            if (!navigator.geolocation) {
+                throw new Error('Geolocation not supported');
+            }
+
+            // Show GPS request notification
+            console.log('📍 Requesting location permission...');
+
+            const position = await new Promise((resolve, reject) => {
+                const timeoutId = setTimeout(() => {
+                    reject(new Error('GPS timeout'));
+                }, 15000); // Increased timeout
+
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        clearTimeout(timeoutId);
+                        resolve(pos);
+                    },
+                    (error) => {
+                        clearTimeout(timeoutId);
+                        reject(error);
+                    },
+                    {
                         enableHighAccuracy: true,
-                        timeout: 10000,
+                        timeout: 12000,
+                        maximumAge: 30000 // Allow slightly cached location
+                    }
+                );
+            });
+
+            this.gpsCoords.latitude = position.coords.latitude;
+            this.gpsCoords.longitude = position.coords.longitude;
+
+            console.log(`✅ GPS coordinates obtained: ${this.gpsCoords.latitude.toFixed(4)}, ${this.gpsCoords.longitude.toFixed(4)}`);
+            console.log(`📍 Accuracy: ${position.coords.accuracy} meters`);
+
+            // Watch for GPS updates
+            if (navigator.geolocation.watchPosition) {
+                navigator.geolocation.watchPosition(
+                    (pos) => {
+                        this.gpsCoords.latitude = pos.coords.latitude;
+                        this.gpsCoords.longitude = pos.coords.longitude;
+                        console.log(`🔄 GPS updated: ${this.gpsCoords.latitude.toFixed(4)}, ${this.gpsCoords.longitude.toFixed(4)}`);
+                    },
+                    (error) => {
+                        console.warn('GPS watch position error:', error);
+                    },
+                    {
+                        enableHighAccuracy: false, // Less battery intensive for updates
+                        timeout: 5000,
                         maximumAge: 60000
-                    });
-                });
-
-                this.gpsCoords.latitude = position.coords.latitude;
-                this.gpsCoords.longitude = position.coords.longitude;
-
-                console.log(`GPS coordinates: ${this.gpsCoords.latitude}, ${this.gpsCoords.longitude}`);
-
-                // Watch for GPS updates
-                navigator.geolocation.watchPosition((pos) => {
-                    this.gpsCoords.latitude = pos.coords.latitude;
-                    this.gpsCoords.longitude = pos.coords.longitude;
-                });
+                    }
+                );
             }
 
             // Initialize compass heading if available
@@ -357,8 +392,26 @@ class BabylonXRFramework {
                 });
             }
 
+            return true; // Success
+
         } catch (error) {
-            console.warn('GPS tracking initialization failed:', error);
+            console.warn('❌ GPS tracking initialization failed:', error.message);
+
+            // Show user-friendly error
+            if (error.message.includes('denied') || error.code === 1) {
+                console.log('📍 Location permission denied. Using default coordinates.');
+            } else if (error.message.includes('timeout') || error.code === 3) {
+                console.log('📍 GPS timeout. Using default coordinates.');
+            } else {
+                console.log('📍 GPS unavailable. Using default coordinates.');
+            }
+
+            // Use default coordinates (San Francisco - better fallback)
+            this.gpsCoords.latitude = 37.7749;
+            this.gpsCoords.longitude = -122.4194;
+            console.log(`📍 Using fallback location: ${this.gpsCoords.latitude}, ${this.gpsCoords.longitude}`);
+
+            return false; // Failed
         }
     }
 
@@ -709,16 +762,16 @@ class BabylonXRFramework {
             // Process SMAP soil moisture data
             if (smapResponse.status === 'fulfilled' && smapResponse.value.ok) {
                 const smapData = await smapResponse.value.json();
-                soilMoisture = smapData.soilMoisture || soilMoisture;
-                console.log('✅ SMAP data loaded:', soilMoisture);
+                soilMoisture = (smapData.surface_moisture * 100) || soilMoisture; // Convert to percentage
+                temperature = smapData.surface_temperature || temperature; // Get temperature from SMAP
+                console.log('✅ SMAP data loaded - Soil moisture:', soilMoisture, '%, Temperature:', temperature, '°C');
             }
 
             // Process MODIS NDVI data
             if (modisResponse.status === 'fulfilled' && modisResponse.value.ok) {
                 const modisData = await modisResponse.value.json();
                 ndvi = modisData.ndvi || ndvi;
-                temperature = modisData.temperature || temperature;
-                console.log('✅ MODIS data loaded:', ndvi, temperature);
+                console.log('✅ MODIS data loaded - NDVI:', ndvi);
             }
 
             return {
@@ -726,7 +779,7 @@ class BabylonXRFramework {
                 ndvi: ndvi,
                 temperature: temperature,
                 precipitation: 0,
-                source: 'NASA Proxy Server'
+                source: 'Real NASA Satellite Data'
             };
 
         } catch (error) {
@@ -955,7 +1008,7 @@ class BabylonXRFramework {
             console.error('❌ Camera access failed:', error);
 
             // Show detailed error message
-            alert(`카메라 접근 실패: ${error.message}\n\n브라우저에서 카메라 권한을 허용해주세요.`);
+            alert(`Camera access failed: ${error.message}\n\nPlease allow camera permission in your browser.`);
 
             // Create a placeholder background
             this.createPlaceholderBackground();
@@ -1473,11 +1526,11 @@ class BabylonXRFramework {
             } catch (error) {
                 console.error('❌ Mobile camera preview setup failed:', error);
                 if (error.name === 'NotAllowedError') {
-                    reject(new Error('카메라 권한이 거부되었습니다. 브라우저 설정에서 카메라 권한을 허용해주세요.'));
+                    reject(new Error('Camera permission denied. Please allow camera access in your browser settings.'));
                 } else if (error.name === 'NotFoundError') {
-                    reject(new Error('카메라를 찾을 수 없습니다. 장치에 카메라가 있는지 확인해주세요.'));
+                    reject(new Error('Camera not found. Please check if your device has a camera.'));
                 } else {
-                    reject(new Error('카메라 초기화 실패: ' + error.message));
+                    reject(new Error('Camera initialization failed: ' + error.message));
                 }
             }
         });
@@ -1759,12 +1812,12 @@ class BabylonXRFramework {
                 font-size: 20px;
                 cursor: pointer;
             ">×</button>
-            <h3 style="color: #00ff88; margin: 0 0 15px 0;">🌱 AR 토양 분석</h3>
-            <div><strong>토양 수분:</strong> ${result.soilMoisture || '측정 중'}%</div>
-            <div><strong>식생 지수:</strong> ${result.ndvi || '측정 중'}</div>
-            <div><strong>온도:</strong> ${result.temperature || '측정 중'}°C</div>
+            <h3 style="color: #00ff88; margin: 0 0 15px 0;">🌱 AR Soil Analysis</h3>
+            <div><strong>Soil Moisture:</strong> ${result.soilMoisture || 'Loading...'}%</div>
+            <div><strong>NDVI:</strong> ${result.ndvi || 'Loading...'}</div>
+            <div><strong>Temperature:</strong> ${result.temperature || 'Loading...'}°C</div>
             <div style="margin-top: 10px; font-size: 14px; color: #ccc;">
-                터치한 위치: (${result.x || 0}, ${result.y || 0})
+                Touch Position: (${result.x || 0}, ${result.y || 0})
             </div>
         `;
 

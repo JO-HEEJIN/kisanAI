@@ -6,6 +6,8 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const https = require('https');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -1039,6 +1041,9 @@ app.get('/api/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3444;
+
+// Start HTTP server
 app.listen(PORT, () => {
     console.log(`🛰️ NASA Proxy Server running on http://localhost:${PORT}`);
     console.log('Available endpoints:');
@@ -1048,3 +1053,19 @@ app.listen(PORT, () => {
     console.log('  - GET /api/pixel-hunt/data');
     console.log('  - GET /api/health');
 });
+
+// Start HTTPS server for WebXR compatibility
+try {
+    const privateKey = fs.readFileSync('/Users/momo/kisanAI/key.pem', 'utf8');
+    const certificate = fs.readFileSync('/Users/momo/kisanAI/cert.pem', 'utf8');
+    const credentials = { key: privateKey, cert: certificate };
+
+    const httpsServer = https.createServer(credentials, app);
+    httpsServer.listen(HTTPS_PORT, () => {
+        console.log(`🔒 NASA Proxy HTTPS server running on https://localhost:${HTTPS_PORT}`);
+        console.log(`🛰️ WebXR-compatible NASA API available at: https://localhost:${HTTPS_PORT}`);
+    });
+} catch (error) {
+    console.log('HTTPS server not started for NASA proxy (SSL cert missing):', error.message);
+    console.log('WebXR will require HTTPS endpoints. Use existing cert.pem and key.pem');
+}

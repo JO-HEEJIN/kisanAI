@@ -307,8 +307,12 @@ class ARChatGPTCore {
                 }
             }
 
-            // Fetch NASA data directly from proxy server
-            const response = await fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`);
+            // Fetch NASA data directly from proxy server with protocol detection
+            const isHTTPS = window.location.protocol === 'https:';
+            const apiUrl = isHTTPS ?
+                `https://localhost:3444/api/smap/soil-moisture?lat=${lat}&lon=${lon}` :
+                `http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`;
+            const response = await fetch(apiUrl);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }

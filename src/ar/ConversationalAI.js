@@ -1340,8 +1340,12 @@ class ConversationalAI {
                 console.log('📍 Geolocation not supported, using default location');
             }
 
-            // Fetch NASA data directly from proxy server
-            const response = await fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`);
+            // Fetch NASA data directly from proxy server with protocol detection
+            const isHTTPS = window.location.protocol === 'https:';
+            const apiUrl = isHTTPS ?
+                `https://localhost:3444/api/smap/soil-moisture?lat=${lat}&lon=${lon}` :
+                `http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`;
+            const response = await fetch(apiUrl);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -1350,7 +1354,10 @@ class ConversationalAI {
             // Try to get MODIS data
             let modisData = null;
             try {
-                const modisResponse = await fetch(`http://localhost:3001/api/modis/ndvi?lat=${lat}&lon=${lon}`);
+                const modisApiUrl = isHTTPS ?
+                    `https://localhost:3444/api/modis/ndvi?lat=${lat}&lon=${lon}` :
+                    `http://localhost:3001/api/modis/ndvi?lat=${lat}&lon=${lon}`;
+                const modisResponse = await fetch(modisApiUrl);
                 if (modisResponse.ok) {
                     modisData = await modisResponse.json();
                 }

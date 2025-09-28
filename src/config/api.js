@@ -6,8 +6,13 @@ const getApiBaseUrl = () => {
         // Production: Use relative path for Vercel serverless functions
         return '/api';
     } else {
-        // Development: Use local proxy server
-        return 'http://localhost:3001/api';
+        // Development: Use local proxy server with protocol detection
+        const isHTTPS = window.location.protocol === 'https:';
+        const port = isHTTPS ? '3444' : '3001';
+        const protocol = isHTTPS ? 'https' : 'http';
+
+        console.log(`🔗 API Base URL: Using ${protocol} on port ${port} (WebXR mode: ${isHTTPS})`);
+        return `${protocol}://localhost:${port}/api`;
     }
 };
 
@@ -22,6 +27,23 @@ export const API_ENDPOINTS = {
     LANDSAT_IMAGERY: `${API_BASE_URL}/landsat/imagery`,
     POWER_WEATHER: `${API_BASE_URL}/power/weather`,
     AI_QUERY: `${API_BASE_URL}/ai-query`
+};
+
+// Utility function to get API URL for any endpoint
+export const getApiUrl = (endpoint) => {
+    return `${API_BASE_URL}/${endpoint}`;
+};
+
+// Utility function for WebXR compatibility
+export const getNASAApiUrl = (endpoint, params = {}) => {
+    const isHTTPS = window.location.protocol === 'https:';
+    const port = isHTTPS ? '3444' : '3001';
+    const protocol = isHTTPS ? 'https' : 'http';
+
+    const queryString = Object.keys(params).length > 0 ?
+        '?' + Object.entries(params).map(([key, value]) => `${key}=${value}`).join('&') : '';
+
+    return `${protocol}://localhost:${port}/api/${endpoint}${queryString}`;
 };
 
 console.log('API Configuration:', {

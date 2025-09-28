@@ -1,9 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const https = require('https');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
 
 // Middleware
 app.use(cors());
@@ -88,10 +91,27 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Start server
+// Start HTTP server
 app.listen(PORT, () => {
     console.log(`TerraData server running on http://localhost:${PORT}`);
-    console.log('Press Ctrl+C to stop the server');
 });
+
+// Start HTTPS server for WebXR support
+try {
+    const privateKey = fs.readFileSync('key.pem', 'utf8');
+    const certificate = fs.readFileSync('cert.pem', 'utf8');
+    const credentials = { key: privateKey, cert: certificate };
+
+    const httpsServer = https.createServer(credentials, app);
+    httpsServer.listen(HTTPS_PORT, () => {
+        console.log(`🔒 HTTPS server running on https://localhost:${HTTPS_PORT}`);
+        console.log(`🥽 WebXR available at: https://localhost:${HTTPS_PORT}`);
+        console.log('Press Ctrl+C to stop both servers');
+    });
+} catch (error) {
+    console.log('HTTPS server not started (SSL cert missing):', error.message);
+    console.log('WebXR will not work without HTTPS. Generate SSL cert with:');
+    console.log('openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -sha256 -days 365 -nodes');
+}
 
 module.exports = app;
