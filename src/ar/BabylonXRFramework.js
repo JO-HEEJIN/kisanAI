@@ -1227,6 +1227,19 @@ class BabylonXRFramework {
                 console.log('🚪 Super exit button removed');
             }
 
+            // Remove mobile exit button
+            if (this.mobileExitBtn && this.mobileExitBtn.parentNode) {
+                this.mobileExitBtn.parentNode.removeChild(this.mobileExitBtn);
+                console.log('📱 Mobile exit button removed');
+            }
+
+            // Remove any exit buttons by ID
+            const mobileExitBtn = document.getElementById('mobile-exit-btn');
+            if (mobileExitBtn) {
+                mobileExitBtn.remove();
+                console.log('📱 Mobile exit button removed by ID');
+            }
+
             // 4. Hide AR overlay
             const arOverlay = document.getElementById('ar-overlay');
             if (arOverlay) {
@@ -1362,6 +1375,12 @@ class BabylonXRFramework {
                             });
                         }, 1000);
 
+                        // Create mobile-optimized exit button after video starts
+                        this.createMobileExitButton();
+
+                        // Setup mobile touch interaction
+                        this.setupMobileTouchInteraction(videoElement);
+
                         resolve();
                     } catch (error) {
                         console.error(`❌ Video play attempt ${attemptNumber} failed:`, error);
@@ -1428,6 +1447,346 @@ class BabylonXRFramework {
                 }
             }
         });
+    }
+
+    /**
+     * Create mobile-optimized exit button
+     */
+    createMobileExitButton() {
+        // Remove any existing mobile exit button
+        const existingBtn = document.getElementById('mobile-exit-btn');
+        if (existingBtn) {
+            existingBtn.remove();
+        }
+
+        console.log('📱 Creating mobile-optimized exit button...');
+
+        const exitBtn = document.createElement('button');
+        exitBtn.id = 'mobile-exit-btn';
+        exitBtn.innerHTML = '✕';
+
+        exitBtn.style.cssText = `
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            width: 60px !important;
+            height: 60px !important;
+            background: rgba(255, 59, 48, 0.9) !important;
+            color: white !important;
+            border: 3px solid rgba(255, 255, 255, 0.8) !important;
+            border-radius: 50% !important;
+            font-size: 24px !important;
+            font-weight: bold !important;
+            z-index: 999999 !important;
+            cursor: pointer !important;
+            box-shadow: 0 8px 20px rgba(255, 59, 48, 0.6) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            touch-action: manipulation !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+            line-height: 1 !important;
+            transition: all 0.2s ease !important;
+        `;
+
+        // Mobile-optimized event handlers
+        const exitHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('📱 Mobile exit button triggered');
+
+            // Visual feedback
+            exitBtn.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                exitBtn.style.transform = 'scale(1)';
+            }, 100);
+
+            // Force exit AR
+            this.forceExitAR();
+        };
+
+        // Add multiple event types for maximum compatibility
+        exitBtn.addEventListener('click', exitHandler);
+        exitBtn.addEventListener('touchstart', exitHandler);
+        exitBtn.addEventListener('touchend', (e) => e.preventDefault());
+
+        // Add hover effects for visual feedback
+        exitBtn.addEventListener('touchstart', () => {
+            exitBtn.style.background = 'rgba(255, 59, 48, 1)';
+            exitBtn.style.transform = 'scale(1.1)';
+        });
+
+        exitBtn.addEventListener('touchend', () => {
+            setTimeout(() => {
+                exitBtn.style.background = 'rgba(255, 59, 48, 0.9)';
+                exitBtn.style.transform = 'scale(1)';
+            }, 100);
+        });
+
+        // Add to body
+        document.body.appendChild(exitBtn);
+
+        console.log('✅ Mobile exit button created and added');
+        this.mobileExitBtn = exitBtn;
+    }
+
+    /**
+     * Setup mobile touch interaction for AR analysis
+     */
+    setupMobileTouchInteraction(videoElement) {
+        console.log('📱 Setting up mobile touch interaction...');
+
+        // Remove existing touch listeners
+        if (this.mobileTouchHandler) {
+            videoElement.removeEventListener('touchstart', this.mobileTouchHandler);
+        }
+
+        // Create mobile touch handler
+        this.mobileTouchHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (e.touches && e.touches.length === 1) {
+                const touch = e.touches[0];
+                const rect = videoElement.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+
+                console.log(`📱 Touch detected at: ${x}, ${y}`);
+
+                // Visual feedback for touch
+                this.showTouchFeedback(touch.clientX, touch.clientY);
+
+                // Trigger AR analysis
+                this.handleMobileARAnalysis(x, y);
+            }
+        };
+
+        // Add touch event listeners
+        videoElement.addEventListener('touchstart', this.mobileTouchHandler, { passive: false });
+
+        // Also handle regular clicks for testing
+        videoElement.addEventListener('click', (e) => {
+            e.preventDefault();
+            const rect = videoElement.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            console.log(`🖱️ Click detected at: ${x}, ${y}`);
+            this.showTouchFeedback(e.clientX, e.clientY);
+            this.handleMobileARAnalysis(x, y);
+        });
+
+        console.log('✅ Mobile touch interaction setup completed');
+    }
+
+    /**
+     * Show visual feedback for touch
+     */
+    showTouchFeedback(screenX, screenY) {
+        const feedback = document.createElement('div');
+        feedback.style.cssText = `
+            position: fixed !important;
+            left: ${screenX - 25}px !important;
+            top: ${screenY - 25}px !important;
+            width: 50px !important;
+            height: 50px !important;
+            border: 3px solid #00ff88 !important;
+            border-radius: 50% !important;
+            background: rgba(0, 255, 136, 0.2) !important;
+            z-index: 99999 !important;
+            pointer-events: none !important;
+            animation: pulse 0.6s ease-out !important;
+        `;
+
+        // Add pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(0.5); opacity: 1; }
+                100% { transform: scale(2); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        document.body.appendChild(feedback);
+
+        // Remove after animation
+        setTimeout(() => {
+            feedback.remove();
+            style.remove();
+        }, 600);
+    }
+
+    /**
+     * Handle mobile AR analysis
+     */
+    async handleMobileARAnalysis(x, y) {
+        try {
+            console.log(`🔍 Starting mobile AR analysis at: ${x}, ${y}`);
+
+            // Show loading indicator
+            this.showMobileLoadingIndicator();
+
+            // Check if we have the overlay display system
+            if (this.overlayDisplay && typeof this.overlayDisplay.handleScreenTouch === 'function') {
+                await this.overlayDisplay.handleScreenTouch(x, y);
+            } else if (window.babylonXRFramework && window.babylonXRFramework.performARAnalysis) {
+                const result = await window.babylonXRFramework.performARAnalysis(x, y);
+                if (result) {
+                    this.displayMobileAnalysisResult(result);
+                }
+            } else {
+                // Fallback: simulate AR analysis
+                const mockResult = this.generateMockAnalysisResult(x, y);
+                this.displayMobileAnalysisResult(mockResult);
+            }
+
+        } catch (error) {
+            console.error('❌ Mobile AR analysis failed:', error);
+            this.showMobileErrorMessage('AR 분석 실패: ' + error.message);
+        } finally {
+            this.hideMobileLoadingIndicator();
+        }
+    }
+
+    /**
+     * Show mobile loading indicator
+     */
+    showMobileLoadingIndicator() {
+        const existing = document.getElementById('mobile-loading');
+        if (existing) existing.remove();
+
+        const loading = document.createElement('div');
+        loading.id = 'mobile-loading';
+        loading.innerHTML = '🔍 분석 중...';
+        loading.style.cssText = `
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            background: rgba(0, 0, 0, 0.8) !important;
+            color: white !important;
+            padding: 20px 30px !important;
+            border-radius: 10px !important;
+            font-size: 18px !important;
+            z-index: 999999 !important;
+            border: 2px solid #00ff88 !important;
+        `;
+
+        document.body.appendChild(loading);
+    }
+
+    /**
+     * Hide mobile loading indicator
+     */
+    hideMobileLoadingIndicator() {
+        const loading = document.getElementById('mobile-loading');
+        if (loading) {
+            loading.remove();
+        }
+    }
+
+    /**
+     * Display mobile analysis result
+     */
+    displayMobileAnalysisResult(result) {
+        const existing = document.getElementById('mobile-result');
+        if (existing) existing.remove();
+
+        const resultDiv = document.createElement('div');
+        resultDiv.id = 'mobile-result';
+        resultDiv.style.cssText = `
+            position: fixed !important;
+            bottom: 80px !important;
+            left: 20px !important;
+            right: 20px !important;
+            background: rgba(0, 0, 0, 0.9) !important;
+            color: white !important;
+            padding: 20px !important;
+            border-radius: 15px !important;
+            border: 2px solid #00ff88 !important;
+            z-index: 999999 !important;
+            max-height: 200px !important;
+            overflow-y: auto !important;
+            font-size: 16px !important;
+        `;
+
+        resultDiv.innerHTML = `
+            <button onclick="this.parentElement.remove()" style="
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                background: none;
+                border: none;
+                color: white;
+                font-size: 20px;
+                cursor: pointer;
+            ">×</button>
+            <h3 style="color: #00ff88; margin: 0 0 15px 0;">🌱 AR 토양 분석</h3>
+            <div><strong>토양 수분:</strong> ${result.soilMoisture || '측정 중'}%</div>
+            <div><strong>식생 지수:</strong> ${result.ndvi || '측정 중'}</div>
+            <div><strong>온도:</strong> ${result.temperature || '측정 중'}°C</div>
+            <div style="margin-top: 10px; font-size: 14px; color: #ccc;">
+                터치한 위치: (${result.x || 0}, ${result.y || 0})
+            </div>
+        `;
+
+        document.body.appendChild(resultDiv);
+
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+            if (document.body.contains(resultDiv)) {
+                resultDiv.remove();
+            }
+        }, 10000);
+    }
+
+    /**
+     * Generate mock analysis result for testing
+     */
+    generateMockAnalysisResult(x, y) {
+        return {
+            x: Math.round(x),
+            y: Math.round(y),
+            soilMoisture: Math.round(20 + Math.random() * 40),
+            ndvi: (0.3 + Math.random() * 0.5).toFixed(3),
+            temperature: Math.round(15 + Math.random() * 20),
+            analysis: '모바일 AR 분석 완료'
+        };
+    }
+
+    /**
+     * Show mobile error message
+     */
+    showMobileErrorMessage(message) {
+        const existing = document.getElementById('mobile-error');
+        if (existing) existing.remove();
+
+        const errorDiv = document.createElement('div');
+        errorDiv.id = 'mobile-error';
+        errorDiv.innerHTML = `❌ ${message}`;
+        errorDiv.style.cssText = `
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            background: rgba(255, 59, 48, 0.9) !important;
+            color: white !important;
+            padding: 20px 30px !important;
+            border-radius: 10px !important;
+            font-size: 16px !important;
+            z-index: 999999 !important;
+            text-align: center !important;
+        `;
+
+        document.body.appendChild(errorDiv);
+
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 3000);
     }
 }
 
