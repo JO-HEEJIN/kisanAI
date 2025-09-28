@@ -1308,14 +1308,18 @@ class BabylonXRFramework {
                     videoElement = document.createElement('video');
                     videoElement.id = 'ar-camera-video';
                     videoElement.style.cssText = `
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100vw;
-                        height: 100vh;
-                        object-fit: cover;
-                        z-index: 1;
-                        background: #000;
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        object-fit: cover !important;
+                        z-index: 9998 !important;
+                        background: #000 !important;
+                        pointer-events: auto !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        display: block !important;
                     `;
                     videoElement.autoplay = true;
                     videoElement.muted = true;
@@ -1325,21 +1329,87 @@ class BabylonXRFramework {
 
                 // Set stream to video element
                 videoElement.srcObject = stream;
+                console.log('📹 Video element created and stream assigned');
+                console.log('Video element details:', {
+                    id: videoElement.id,
+                    width: videoElement.clientWidth,
+                    height: videoElement.clientHeight,
+                    zIndex: videoElement.style.zIndex,
+                    position: videoElement.style.position,
+                    stream: !!stream
+                });
 
-                // Wait for video to load
-                videoElement.onloadedmetadata = () => {
-                    console.log('📹 Video metadata loaded, starting playback');
-                    videoElement.play()
-                        .then(() => {
-                            console.log('✅ Mobile camera preview active');
-                            this.cameraStream = stream; // Store for cleanup
-                            resolve();
-                        })
-                        .catch(error => {
-                            console.error('❌ Video play failed:', error);
+                // Force video to be visible
+                videoElement.style.display = 'block';
+                videoElement.style.visibility = 'visible';
+
+                // Multiple attempts to start video playback
+                const attemptVideoPlay = async (attemptNumber = 1) => {
+                    try {
+                        console.log(`📹 Attempting video play (attempt ${attemptNumber})`);
+                        await videoElement.play();
+                        console.log('✅ Mobile camera preview active');
+                        this.cameraStream = stream; // Store for cleanup
+
+                        // Verify video is actually playing
+                        setTimeout(() => {
+                            console.log('Video playback verification:', {
+                                paused: videoElement.paused,
+                                currentTime: videoElement.currentTime,
+                                readyState: videoElement.readyState,
+                                videoWidth: videoElement.videoWidth,
+                                videoHeight: videoElement.videoHeight
+                            });
+                        }, 1000);
+
+                        resolve();
+                    } catch (error) {
+                        console.error(`❌ Video play attempt ${attemptNumber} failed:`, error);
+                        if (attemptNumber < 3) {
+                            setTimeout(() => attemptVideoPlay(attemptNumber + 1), 500);
+                        } else {
                             reject(error);
-                        });
+                        }
+                    }
                 };
+
+                // Wait for video to load with timeout
+                const metadataTimeout = setTimeout(() => {
+                    console.warn('⏰ Video metadata loading timeout, forcing play attempt');
+                    attemptVideoPlay();
+                }, 3000);
+
+                videoElement.onloadedmetadata = () => {
+                    clearTimeout(metadataTimeout);
+                    console.log('📹 Video metadata loaded successfully');
+                    console.log('Video dimensions:', {
+                        videoWidth: videoElement.videoWidth,
+                        videoHeight: videoElement.videoHeight,
+                        duration: videoElement.duration
+                    });
+                    attemptVideoPlay();
+                };
+
+                // Additional event listeners for debugging
+                videoElement.oncanplay = () => {
+                    console.log('📹 Video can start playing');
+                };
+
+                videoElement.onplaying = () => {
+                    console.log('📹 Video is now playing');
+                };
+
+                videoElement.onstalled = () => {
+                    console.warn('⚠️ Video playback stalled');
+                };
+
+                // Start immediate play attempt for some browsers
+                setTimeout(() => {
+                    if (videoElement.readyState >= 2) { // HAVE_CURRENT_DATA
+                        console.log('📹 Video ready for immediate play');
+                        attemptVideoPlay();
+                    }
+                }, 100);
 
                 // Handle video errors
                 videoElement.onerror = (error) => {
