@@ -46,6 +46,16 @@ class ARChatGPTCore {
             return { supported: false, reason: 'HTTPS required', fallback: true };
         }
 
+        // Check Babylon.js WebXR support
+        if (this.webXRFramework && this.webXRFramework.isInitialized) {
+            const babylonSupport = this.webXRFramework.getXRSupport();
+            if (babylonSupport.webxr) {
+                console.log('Babylon.js WebXR support detected');
+                return { supported: true, reason: 'Babylon.js WebXR support', mode: 'babylon-xr' };
+            }
+        }
+
+        // Fallback to native WebXR check
         if (!navigator.xr) {
             console.warn('WebXR not supported on this device');
             return { supported: false, reason: 'WebXR not available', fallback: true };
@@ -57,7 +67,7 @@ class ARChatGPTCore {
             console.log('Basic AR Session Support:', basicSupported);
 
             if (basicSupported) {
-                return { supported: true, reason: 'Full AR support', mode: 'immersive-ar' };
+                return { supported: true, reason: 'Native WebXR support', mode: 'immersive-ar' };
             } else {
                 // Check for inline AR as fallback
                 try {
@@ -90,9 +100,9 @@ class ARChatGPTCore {
             await this.plantIdentificationAI.initialize();
         }
 
-        // Initialize WebXR Framework
-        if (typeof WebXRFramework !== 'undefined') {
-            this.webXRFramework = new WebXRFramework();
+        // Initialize Babylon.js WebXR Framework
+        if (typeof BabylonXRFramework !== 'undefined') {
+            this.webXRFramework = new BabylonXRFramework();
             await this.webXRFramework.initialize();
         }
     }
@@ -135,11 +145,14 @@ class ARChatGPTCore {
                 };
             }
 
-            console.log(`Starting AR session in ${sessionMode} mode...`);
-            this.xrSession = await navigator.xr.requestSession(sessionMode, sessionOptions);
+            console.log(`Starting AR session with Babylon.js WebXR...`);
 
             if (this.webXRFramework) {
-                await this.webXRFramework.startSession(this.xrSession);
+                const xrStarted = await this.webXRFramework.startXRSession();
+                if (!xrStarted) {
+                    return this.startFallbackMode('Babylon.js XR session failed');
+                }
+                this.xrSession = this.webXRFramework.xrExperience;
             }
 
             document.dispatchEvent(new CustomEvent('ar-session-start', {
@@ -216,11 +229,11 @@ class ARChatGPTCore {
     }
 
     async endARSession() {
-        if (this.xrSession) {
-            await this.xrSession.end();
-            this.xrSession = null;
-            document.dispatchEvent(new CustomEvent('ar-session-end'));
+        if (this.webXRFramework && this.webXRFramework.isXRActive()) {
+            await this.webXRFramework.endXRSession();
         }
+        this.xrSession = null;
+        document.dispatchEvent(new CustomEvent('ar-session-end'));
     }
 
     // Chat Interface Methods
