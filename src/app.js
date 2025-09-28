@@ -843,11 +843,8 @@ class NASAFarmNavigatorsApp {
             case 'farm-game':
                 this.initializeFarmGame();
                 break;
-            case 'ai-copilot':
-                this.initializeAICopilot();
-                break;
-            case 'farm-globe-3d':
-                this.initializeFarmGlobe3D();
+            case 'farmland-survey':
+                this.initializeFarmlandSurvey();
                 break;
             case 'data':
                 // Data tab is already initialized
@@ -6688,6 +6685,219 @@ class NASAFarmNavigatorsApp {
                 }
             }
         }, 1000); // Wait 1 second to ensure DOM is fully loaded
+    }
+
+    /**
+     * Initialize farmland survey tools with tab switching functionality
+     */
+    async initializeFarmlandSurvey() {
+        console.log('🛰️ Initializing farmland survey tools...');
+
+        try {
+            // Set up tool tab switching
+            this.setupFarmlandSurveyTabs();
+
+            // Initialize ROI Calculator by default (active tab)
+            await this.initializeFarmlandSurveyROI();
+
+            console.log('✅ Farmland survey tools initialized successfully');
+        } catch (error) {
+            console.error('❌ Error initializing farmland survey:', error);
+        }
+    }
+
+    /**
+     * Set up tab switching for farmland survey tools
+     */
+    setupFarmlandSurveyTabs() {
+        const toolTabs = document.querySelectorAll('.tool-tab[data-tool]');
+        const toolContents = document.querySelectorAll('.tool-content');
+
+        toolTabs.forEach(tab => {
+            tab.addEventListener('click', async (e) => {
+                const toolName = e.target.dataset.tool;
+
+                // Remove active class from all tabs and contents
+                toolTabs.forEach(t => t.classList.remove('active'));
+                toolContents.forEach(c => c.classList.remove('active'));
+
+                // Add active class to clicked tab
+                e.target.classList.add('active');
+
+                // Show corresponding content and initialize if needed
+                const targetContent = document.getElementById(`${toolName}-tool`);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+
+                // Initialize the specific tool
+                await this.initializeFarmlandSurveyTool(toolName);
+            });
+        });
+    }
+
+    /**
+     * Initialize specific farmland survey tool
+     */
+    async initializeFarmlandSurveyTool(toolName) {
+        console.log(`🔧 Initializing farmland survey tool: ${toolName}`);
+
+        try {
+            switch (toolName) {
+                case 'roi':
+                    await this.initializeFarmlandSurveyROI();
+                    break;
+                case 'climate':
+                    await this.initializeFarmlandSurveyClimate();
+                    break;
+                case 'ai-navigator':
+                    await this.initializeFarmlandSurveyAI();
+                    break;
+                case '3d-globe':
+                    await this.initializeFarmlandSurvey3D();
+                    break;
+                default:
+                    console.warn(`Unknown farmland survey tool: ${toolName}`);
+            }
+        } catch (error) {
+            console.error(`Error initializing ${toolName} tool:`, error);
+        }
+    }
+
+    /**
+     * Initialize ROI Calculator in farmland survey
+     */
+    async initializeFarmlandSurveyROI() {
+        const roiContainer = document.getElementById('roiCalculatorInterface');
+        if (!roiContainer) {
+            console.warn('ROI Calculator container not found');
+            return;
+        }
+
+        try {
+            // Check if ROI Calculator is already initialized
+            if (window.roiCalculatorUI) {
+                console.log('ROI Calculator already initialized');
+                return;
+            }
+
+            // Initialize ROI Calculator if available
+            if (typeof ROICalculatorUI !== 'undefined' && window.roiCalculator) {
+                const roiCalculatorUI = new ROICalculatorUI(window.roiCalculator);
+                await roiCalculatorUI.renderCalculator(roiContainer);
+                window.roiCalculatorUI = roiCalculatorUI;
+                console.log('✅ ROI Calculator initialized in farmland survey');
+            } else {
+                roiContainer.innerHTML = `
+                    <div class="tool-placeholder">
+                        <h3>💰 ROI Calculator</h3>
+                        <p>Calculate return on investment for farmland purchases using NASA satellite data analysis.</p>
+                        <p class="loading-message">Loading ROI Calculator components...</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error initializing ROI Calculator:', error);
+            roiContainer.innerHTML = `
+                <div class="error-message">
+                    <h3>ROI Calculator Error</h3>
+                    <p>Failed to load ROI Calculator: ${error.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Initialize Climate Risk Assessment in farmland survey
+     */
+    async initializeFarmlandSurveyClimate() {
+        const climateContainer = document.getElementById('climateRiskInterface');
+        if (!climateContainer) {
+            console.warn('Climate Risk container not found');
+            return;
+        }
+
+        try {
+            // Check if Climate Risk is already initialized
+            if (window.climateRiskUI) {
+                console.log('Climate Risk Assessment already initialized');
+                return;
+            }
+
+            // Initialize Climate Risk Assessment if available
+            if (typeof ClimateRiskUI !== 'undefined') {
+                const climateRiskUI = new ClimateRiskUI();
+                await climateRiskUI.renderInterface(climateContainer);
+                window.climateRiskUI = climateRiskUI;
+                console.log('✅ Climate Risk Assessment initialized in farmland survey');
+            } else {
+                climateContainer.innerHTML = `
+                    <div class="tool-placeholder">
+                        <h3>🌡️ Climate Risk Assessment</h3>
+                        <p>Assess climate risks for agricultural investments using historical and predictive NASA data.</p>
+                        <p class="loading-message">Loading Climate Risk Assessment components...</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error initializing Climate Risk Assessment:', error);
+            climateContainer.innerHTML = `
+                <div class="error-message">
+                    <h3>Climate Risk Assessment Error</h3>
+                    <p>Failed to load Climate Risk Assessment: ${error.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Initialize AI Navigator in farmland survey
+     */
+    async initializeFarmlandSurveyAI() {
+        const aiContainer = document.getElementById('ai-copilot-interface');
+        if (!aiContainer) {
+            console.warn('AI Navigator container not found');
+            return;
+        }
+
+        try {
+            // Use the existing initializeAICopilot method
+            await this.initializeAICopilot();
+            console.log('✅ AI Navigator initialized in farmland survey');
+        } catch (error) {
+            console.error('Error initializing AI Navigator:', error);
+            aiContainer.innerHTML = `
+                <div class="error-message">
+                    <h3>AI Navigator Error</h3>
+                    <p>Failed to load AI Navigator: ${error.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Initialize 3D Farm Globe in farmland survey
+     */
+    async initializeFarmlandSurvey3D() {
+        const globeContainer = document.getElementById('farm-globe-container');
+        if (!globeContainer) {
+            console.warn('3D Globe container not found');
+            return;
+        }
+
+        try {
+            // Use the existing initializeFarmGlobe3D method
+            await this.initializeFarmGlobe3D();
+            console.log('✅ 3D Farm Globe initialized in farmland survey');
+        } catch (error) {
+            console.error('Error initializing 3D Farm Globe:', error);
+            globeContainer.innerHTML = `
+                <div class="error-message">
+                    <h3>3D Farm Globe Error</h3>
+                    <p>Failed to load 3D Farm Globe: ${error.message}</p>
+                </div>
+            `;
+        }
     }
 
 }

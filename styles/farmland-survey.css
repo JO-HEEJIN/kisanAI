@@ -1,0 +1,121 @@
+/* Farmland Survey Tools Styles */
+
+.farmland-survey-wrapper {
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    min-height: calc(100vh - 160px);
+}
+
+.farmland-survey-wrapper .section-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--nasa-neon-blue), var(--nasa-electric-blue));
+    color: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(9, 96, 225, 0.3);
+}
+
+.farmland-survey-wrapper .section-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.8em;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.farmland-survey-wrapper .section-header p {
+    margin: 0;
+    font-size: 1.1em;
+    opacity: 0.9;
+}
+
+/* Tool Navigation */
+.tool-navigation {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.tool-tab {
+    padding: 12px 20px;
+    background: white;
+    border: 2px solid var(--nasa-electric-blue);
+    color: var(--nasa-electric-blue);
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1em;
+}
+
+.tool-tab:hover {
+    background: var(--nasa-electric-blue);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(9, 96, 225, 0.3);
+}
+
+.tool-tab.active {
+    background: var(--nasa-electric-blue);
+    color: white;
+    box-shadow: 0 5px 15px rgba(9, 96, 225, 0.4);
+}
+
+/* Tool Content Area */
+.tool-content-area {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    min-height: 600px;
+}
+
+.tool-content {
+    display: none;
+}
+
+.tool-content.active {
+    display: block;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .farmland-survey-wrapper {
+        padding: 15px;
+    }
+
+    .farmland-survey-wrapper .section-header h2 {
+        font-size: 1.4em;
+    }
+
+    .tool-navigation {
+        gap: 8px;
+    }
+
+    .tool-tab {
+        padding: 10px 16px;
+        font-size: 0.9em;
+    }
+
+    .tool-content-area {
+        padding: 15px;
+    }
+}
+
+/* Integration with existing Farm Globe styles */
+.tool-content .farm-globe-container {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* ROI Calculator specific styles */
+#roi-tool {
+    min-height: 500px;
+}
+
+/* Climate Risk specific styles */
+#climate-tool {
+    min-height: 500px;
+}

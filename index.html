@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="styles/roi-calculator.css">
     <link rel="stylesheet" href="styles/climate-risk.css">
     <link rel="stylesheet" href="styles/ai-copilot.css">
+    <link rel="stylesheet" href="styles/farmland-survey.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e3c72">
     <meta name="description" content="Interactive agricultural monitoring using NASA satellite data with AR ChatGPT assistant">
@@ -160,11 +161,10 @@
         <!-- Tab Bar -->
         <div class="tab-bar">
             <div class="tab-container">
-                <button class="tab active" data-tab="farm-globe-3d">🌍 3D Farm Globe</button>
-                <button class="tab" data-tab="education">Understanding Satellite Pixels</button>
+                <button class="tab active" data-tab="education">Understanding Satellite Pixels</button>
                 <button class="tab" data-tab="pixel-hunt">Pixel Hunt Challenge</button>
                 <button class="tab" data-tab="data">Satellite Data Visualization</button>
-                <button class="tab" data-tab="ai-copilot">🤖 AI Farm Navigator</button>
+                <button class="tab" data-tab="farmland-survey">🛰️ Farmland Survey Tools</button>
                 <button class="tab" data-tab="farm-game">🚜 Farm Game</button>
                 <button class="tab" data-tab="sensor-fusion">🔬 Sensor Fusion</button>
                 <button class="tab" data-tab="ar-chatgpt">🥽 AR ChatGPT</button>
@@ -196,100 +196,135 @@
                     </div>
                 </div>
 
-                <!-- AI Copilot Tab Content -->
-                <div id="aiCopilotTab" class="tab-content" data-tab="ai-copilot">
-                    <div id="ai-copilot-interface" style="width: 100%; height: calc(100vh - 160px); overflow-y: auto;">
-                        <!-- AI Copilot UI will be initialized here -->
-                    </div>
-                </div>
-
-                <!-- 3D Farm Globe Tab Content -->
-                <div id="farmGlobe3DTab" class="tab-content active" data-tab="farm-globe-3d">
-                    <div class="farm-globe-container" style="height: calc(100vh - 160px); position: relative;">
-                        <!-- Main Globe Container -->
-                        <div id="farm-globe-container" style="width: 100%; height: 100%;"></div>
-
-                        <!-- Control Panel (Left) -->
-                        <div class="farm-globe-control-panel">
-                            <div class="control-section">
-                                <h3>📡 NASA Data Layers</h3>
-
-                                <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('modis', this.querySelector('input').checked)">
-                                    <input type="checkbox" id="modis-layer" checked>
-                                    <label for="modis-layer">MODIS Satellite Imagery</label>
-                                </div>
-
-                                <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('smap', this.querySelector('input').checked)">
-                                    <input type="checkbox" id="smap-layer">
-                                    <label for="smap-layer">SMAP Soil Moisture</label>
-                                </div>
-
-                                <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('precipitation', this.querySelector('input').checked)">
-                                    <input type="checkbox" id="precipitation-layer">
-                                    <label for="precipitation-layer">GPM Precipitation</label>
-                                </div>
-
-                                <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('boundaries', this.querySelector('input').checked)">
-                                    <input type="checkbox" id="boundaries-layer">
-                                    <label for="boundaries-layer">Property Boundaries</label>
-                                </div>
-                            </div>
-
-                            <div class="control-section">
-                                <h3>🗺️ View Mode</h3>
-                                <div class="view-mode-buttons">
-                                    <button class="mode-btn active" onclick="farmGlobe3D?.setViewMode('3D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">3D Globe</button>
-                                    <button class="mode-btn" onclick="farmGlobe3D?.setViewMode('2D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">2D Map</button>
-                                </div>
-                            </div>
-
-                            <div class="control-section">
-                                <h3>🎯 Quick Navigation</h3>
-                                <div class="view-mode-buttons">
-                                    <button class="mode-btn" onclick="farmGlobe3D?.flyToLocation([-93.5, 41.9], 500000)">Iowa Overview</button>
-                                    <button class="mode-btn" onclick="farmGlobe3D?.flyToLocation([-93.0, 41.8], 200000)">All Farms</button>
-                                </div>
-                            </div>
-
-                            <div class="control-section">
-                                <h3>🌙 Special Imagery</h3>
-                                <div class="view-mode-buttons">
-                                    <button class="mode-btn" onclick="window.switchToEarthAtNight?.()">Earth at Night</button>
-                                    <button class="mode-btn" onclick="window.switchToBingAerial?.()">Satellite View</button>
-                                </div>
-                            </div>
+                <!-- Farmland Survey Tools Tab Content -->
+                <div id="farmlandSurveyTab" class="tab-content" data-tab="farmland-survey">
+                    <div class="farmland-survey-wrapper">
+                        <div class="section-header">
+                            <h2>🛰️ Using NASA SATELLITE DATA to survey farmland for potential expansion or investment for farming companies</h2>
+                            <p>Comprehensive analysis tools combining ROI calculator, climate risk assessment, AI navigation, and 3D visualization</p>
                         </div>
 
-                        <!-- Statistics Panel (Bottom) -->
-                        <div class="farm-globe-stats-panel">
-                            <div class="stat-item">
-                                <span class="stat-label">Properties</span>
-                                <span class="stat-value" id="total-properties">4</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Avg Price/Acre</span>
-                                <span class="stat-value" id="avg-price">$3,812</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Avg ROI</span>
-                                <span class="stat-value" id="avg-roi">16.2%</span>
-                            </div>
+                        <!-- Tool Navigation -->
+                        <div class="tool-navigation">
+                            <button class="tool-tab active" data-tool="roi">💰 ROI Calculator</button>
+                            <button class="tool-tab" data-tool="climate">🌡️ Climate Risk Assessment</button>
+                            <button class="tool-tab" data-tool="ai-navigator">🤖 AI Farm Navigator</button>
+                            <button class="tool-tab" data-tool="3d-globe">🌍 3D Farm Globe</button>
                         </div>
 
-                        <!-- Farm Info Panel (Right) -->
-                        <div class="farm-globe-info-panel" id="farm-info-panel">
-                            <h2 id="farm-name">Select a Farm</h2>
-                            <div id="farm-info-grid" class="info-grid"></div>
-
-                            <div class="nasa-data-section">
-                                <h3>🛰️ NASA Satellite Data</h3>
-                                <div id="nasa-data-content"></div>
+                        <!-- Tool Content Areas -->
+                        <div class="tool-content-area">
+                            <!-- ROI Calculator -->
+                            <div id="roi-tool" class="tool-content active">
+                                <div id="roiCalculatorInterface">
+                                    <!-- ROI Calculator will be initialized here -->
+                                </div>
                             </div>
 
-                            <div style="text-align: center; margin-top: 20px;">
-                                <button class="detail-btn" onclick="farmGlobe3D?.viewDetailedAnalysis?.(window.currentSelectedFarmId)">
-                                    🔍 Detailed Investment Analysis
-                                </button>
+                            <!-- Climate Risk Assessment -->
+                            <div id="climate-tool" class="tool-content">
+                                <div id="climateRiskInterface">
+                                    <!-- Climate Risk Assessment will be initialized here -->
+                                </div>
+                            </div>
+
+                            <!-- AI Farm Navigator -->
+                            <div id="ai-navigator-tool" class="tool-content">
+                                <div id="ai-copilot-interface" style="width: 100%; height: calc(100vh - 260px); overflow-y: auto;">
+                                    <!-- AI Copilot UI will be initialized here -->
+                                </div>
+                            </div>
+
+                            <!-- 3D Farm Globe -->
+                            <div id="3d-globe-tool" class="tool-content">
+                                <div class="farm-globe-container" style="height: calc(100vh - 260px); position: relative;">
+                                    <!-- Main Globe Container -->
+                                    <div id="farm-globe-container" style="width: 100%; height: 100%;"></div>
+
+                                    <!-- Control Panel (Left) -->
+                                    <div class="farm-globe-control-panel">
+                                        <div class="control-section">
+                                            <h3>📡 NASA Data Layers</h3>
+
+                                            <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('modis', this.querySelector('input').checked)">
+                                                <input type="checkbox" id="modis-layer" checked>
+                                                <label for="modis-layer">MODIS Satellite Imagery</label>
+                                            </div>
+
+                                            <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('smap', this.querySelector('input').checked)">
+                                                <input type="checkbox" id="smap-layer">
+                                                <label for="smap-layer">SMAP Soil Moisture</label>
+                                            </div>
+
+                                            <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('precipitation', this.querySelector('input').checked)">
+                                                <input type="checkbox" id="precipitation-layer">
+                                                <label for="precipitation-layer">GPM Precipitation</label>
+                                            </div>
+
+                                            <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('boundaries', this.querySelector('input').checked)">
+                                                <input type="checkbox" id="boundaries-layer">
+                                                <label for="boundaries-layer">Property Boundaries</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-section">
+                                            <h3>🗺️ View Mode</h3>
+                                            <div class="view-mode-buttons">
+                                                <button class="mode-btn active" onclick="farmGlobe3D?.setViewMode('3D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">3D Globe</button>
+                                                <button class="mode-btn" onclick="farmGlobe3D?.setViewMode('2D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">2D Map</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-section">
+                                            <h3>🎯 Quick Navigation</h3>
+                                            <div class="view-mode-buttons">
+                                                <button class="mode-btn" onclick="farmGlobe3D?.flyToLocation([-93.5, 41.9], 500000)">Iowa Overview</button>
+                                                <button class="mode-btn" onclick="farmGlobe3D?.flyToLocation([-93.0, 41.8], 200000)">All Farms</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-section">
+                                            <h3>🌙 Special Imagery</h3>
+                                            <div class="view-mode-buttons">
+                                                <button class="mode-btn" onclick="window.switchToEarthAtNight?.()">Earth at Night</button>
+                                                <button class="mode-btn" onclick="window.switchToBingAerial?.()">Satellite View</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Statistics Panel (Bottom) -->
+                                    <div class="farm-globe-stats-panel">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Properties</span>
+                                            <span class="stat-value" id="total-properties">4</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">Avg Price/Acre</span>
+                                            <span class="stat-value" id="avg-price">$3,812</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">Avg ROI</span>
+                                            <span class="stat-value" id="avg-roi">16.2%</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Farm Info Panel (Right) -->
+                                    <div class="farm-globe-info-panel" id="farm-info-panel">
+                                        <h2 id="farm-name">Select a Farm</h2>
+                                        <div id="farm-info-grid" class="info-grid"></div>
+
+                                        <div class="nasa-data-section">
+                                            <h3>🛰️ NASA Satellite Data</h3>
+                                            <div id="nasa-data-content"></div>
+                                        </div>
+
+                                        <div style="text-align: center; margin-top: 20px;">
+                                            <button class="detail-btn" onclick="farmGlobe3D?.viewDetailedAnalysis?.(window.currentSelectedFarmId)">
+                                                🔍 Detailed Investment Analysis
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
