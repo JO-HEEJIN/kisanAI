@@ -17,7 +17,8 @@ class ARChatGPTCore {
             console.log('Initializing AR ChatGPT Core...');
 
             // Check WebXR support
-            this.arSupported = await this.checkARSupport();
+            this.arSupportInfo = await this.checkARSupport();
+            this.arSupported = this.arSupportInfo.supported;
 
             // Initialize components
             await this.initializeComponents();
@@ -39,18 +40,40 @@ class ARChatGPTCore {
     }
 
     async checkARSupport() {
+        // Check if we're in a secure context (HTTPS required for WebXR)
+        if (!window.isSecureContext) {
+            console.warn('WebXR requires HTTPS');
+            return { supported: false, reason: 'HTTPS required', fallback: true };
+        }
+
         if (!navigator.xr) {
             console.warn('WebXR not supported on this device');
-            return false;
+            return { supported: false, reason: 'WebXR not available', fallback: true };
         }
 
         try {
-            const isSupported = await navigator.xr.isSessionSupported('immersive-ar');
-            console.log('AR Session Support:', isSupported);
-            return isSupported;
+            // Try with minimal requirements first
+            const basicSupported = await navigator.xr.isSessionSupported('immersive-ar');
+            console.log('Basic AR Session Support:', basicSupported);
+
+            if (basicSupported) {
+                return { supported: true, reason: 'Full AR support', mode: 'immersive-ar' };
+            } else {
+                // Check for inline AR as fallback
+                try {
+                    const inlineSupported = await navigator.xr.isSessionSupported('inline');
+                    if (inlineSupported) {
+                        return { supported: true, reason: 'Inline AR support', mode: 'inline', fallback: true };
+                    }
+                } catch (inlineError) {
+                    console.warn('Inline AR check failed:', inlineError);
+                }
+            }
+
+            return { supported: false, reason: 'No AR session types supported', fallback: true };
         } catch (error) {
             console.warn('AR support check failed:', error);
-            return false;
+            return { supported: false, reason: `Check failed: ${error.message}`, fallback: true };
         }
     }
 
@@ -88,24 +111,107 @@ class ARChatGPTCore {
 
     // AR Session Management
     async startARSession() {
-        if (!this.arSupported) {
-            throw new Error('AR not supported on this device');
+        // Re-check AR support with current status
+        const supportInfo = await this.checkARSupport();
+
+        if (!supportInfo.supported) {
+            return this.startFallbackMode(supportInfo.reason);
         }
 
         try {
-            this.xrSession = await navigator.xr.requestSession('immersive-ar', {
-                requiredFeatures: ['hit-test', 'dom-overlay'],
-                optionalFeatures: ['camera-access', 'plane-detection'],
-                domOverlay: { root: document.getElementById('ar-overlay') }
-            });
+            let sessionOptions;
+            const sessionMode = supportInfo.mode || 'immersive-ar';
 
-            await this.webXRFramework.startSession(this.xrSession);
+            if (sessionMode === 'immersive-ar') {
+                // Try with reduced requirements for better compatibility
+                sessionOptions = {
+                    optionalFeatures: ['hit-test', 'dom-overlay', 'camera-access', 'plane-detection'],
+                    domOverlay: { root: document.getElementById('ar-overlay') }
+                };
+            } else {
+                // Inline mode with minimal requirements
+                sessionOptions = {
+                    optionalFeatures: ['camera-access']
+                };
+            }
 
-            document.dispatchEvent(new CustomEvent('ar-session-start'));
+            console.log(`Starting AR session in ${sessionMode} mode...`);
+            this.xrSession = await navigator.xr.requestSession(sessionMode, sessionOptions);
+
+            if (this.webXRFramework) {
+                await this.webXRFramework.startSession(this.xrSession);
+            }
+
+            document.dispatchEvent(new CustomEvent('ar-session-start', {
+                detail: { mode: sessionMode, fallback: supportInfo.fallback }
+            }));
+
+            return { success: true, mode: sessionMode };
 
         } catch (error) {
             console.error('Failed to start AR session:', error);
+
+            // Try fallback mode if AR session failed
+            if (error.name === 'NotSupportedError' || error.name === 'SecurityError') {
+                return this.startFallbackMode('WebXR session failed - ' + error.message);
+            }
+
             throw error;
+        }
+    }
+
+    async startFallbackMode(reason) {
+        console.log('Starting AR fallback mode:', reason);
+
+        // Show fallback UI instead of AR
+        this.showARFallbackInterface(reason);
+
+        document.dispatchEvent(new CustomEvent('ar-fallback-start', {
+            detail: { reason }
+        }));
+
+        return { success: true, mode: 'fallback', reason };
+    }
+
+    showARFallbackInterface(reason) {
+        const arOverlay = document.getElementById('ar-overlay');
+        if (arOverlay) {
+            arOverlay.style.display = 'block';
+            arOverlay.innerHTML = `
+                <div class="ar-fallback-container">
+                    <div class="ar-fallback-header">
+                        <h3>🌱 Agricultural AI Assistant</h3>
+                        <p>AR Mode: ${reason}</p>
+                    </div>
+                    <div class="ar-fallback-content">
+                        <div class="feature-grid">
+                            <div class="feature-card" onclick="window.arChatGPTCore.identifyPlant()">
+                                <span class="feature-icon">🔍</span>
+                                <h4>Plant Recognition</h4>
+                                <p>Upload photo to identify plants</p>
+                            </div>
+                            <div class="feature-card" onclick="window.arChatGPTCore.startChat()">
+                                <span class="feature-icon">💬</span>
+                                <h4>AI Chat</h4>
+                                <p>Ask agricultural questions</p>
+                            </div>
+                            <div class="feature-card" onclick="window.arChatGPTCore.testVoice()">
+                                <span class="feature-icon">🎤</span>
+                                <h4>Voice Commands</h4>
+                                <p>Test voice recognition</p>
+                            </div>
+                            <div class="feature-card" onclick="window.arChatGPTCore.showNASAData()">
+                                <span class="feature-icon">🛰️</span>
+                                <h4>NASA Data</h4>
+                                <p>View satellite information</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="ar-close-btn" onclick="window.arChatGPTCore.closeARInterface()">
+                        Close
+                    </button>
+                </div>
+            `;
         }
     }
 
@@ -293,6 +399,130 @@ class ARChatGPTCore {
         return { status: 'exited', mode: this.currentMode };
     }
 
+    // Fallback Methods for Non-AR Devices
+    async identifyPlant() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file && this.plantIdentificationAI) {
+                try {
+                    const result = await this.plantIdentificationAI.identifyFromFile(file);
+                    this.showPlantResult(result);
+                } catch (error) {
+                    console.error('Plant identification failed:', error);
+                    this.showMessage('Plant identification failed. Please try again.');
+                }
+            }
+        };
+
+        input.click();
+    }
+
+    async startChat() {
+        if (this.conversationalAI) {
+            const message = prompt("Ask a question about farming or NASA data:");
+            if (message) {
+                try {
+                    const response = await this.conversationalAI.sendMessage(message);
+                    this.showMessage(`AI: ${response.text}`);
+                } catch (error) {
+                    console.error('Chat failed:', error);
+                    this.showMessage('Chat is temporarily unavailable.');
+                }
+            }
+        }
+    }
+
+    async testVoice() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+
+            recognition.onresult = (event) => {
+                const command = event.results[0][0].transcript;
+                this.showMessage(`Voice command received: "${command}"`);
+            };
+
+            recognition.onerror = () => {
+                this.showMessage('Voice recognition failed. Please check microphone permissions.');
+            };
+
+            recognition.start();
+            this.showMessage('Listening... Please speak now.');
+        } else {
+            this.showMessage('Voice recognition not supported on this device.');
+        }
+    }
+
+    async showNASAData() {
+        try {
+            const response = await fetch('/api/nasa-proxy.js?lat=33.43&lon=-111.94');
+            const data = await response.json();
+            this.showMessage(`NASA Data: Temperature: ${data.temperature}°C, Humidity: ${data.humidity}%`);
+        } catch (error) {
+            console.error('NASA data fetch failed:', error);
+            this.showMessage('NASA data temporarily unavailable.');
+        }
+    }
+
+    showPlantResult(result) {
+        const overlay = document.getElementById('ar-overlay');
+        if (overlay) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'plant-result';
+            resultDiv.innerHTML = `
+                <div class="plant-result-card">
+                    <h4>🌱 Plant Identified</h4>
+                    <p><strong>Species:</strong> ${result.species || 'Unknown'}</p>
+                    <p><strong>Confidence:</strong> ${Math.round((result.confidence || 0) * 100)}%</p>
+                    <p><strong>Health:</strong> ${result.health || 'Good'}</p>
+                    <button onclick="this.parentElement.parentElement.remove()">Close</button>
+                </div>
+            `;
+            overlay.appendChild(resultDiv);
+
+            setTimeout(() => {
+                if (resultDiv.parentElement) {
+                    resultDiv.remove();
+                }
+            }, 5000);
+        }
+    }
+
+    showMessage(message) {
+        const overlay = document.getElementById('ar-overlay');
+        if (overlay) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'ar-message';
+            messageDiv.innerHTML = `
+                <div class="message-card">
+                    <p>${message}</p>
+                    <button onclick="this.parentElement.parentElement.remove()">Close</button>
+                </div>
+            `;
+            overlay.appendChild(messageDiv);
+
+            setTimeout(() => {
+                if (messageDiv.parentElement) {
+                    messageDiv.remove();
+                }
+            }, 3000);
+        } else {
+            alert(message);
+        }
+    }
+
+    closeARInterface() {
+        const overlay = document.getElementById('ar-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.innerHTML = '';
+        }
+    }
+
     // Public API
     isReady() {
         return this.isInitialized;
@@ -301,6 +531,7 @@ class ARChatGPTCore {
     getSupportedFeatures() {
         return {
             ar: this.arSupported,
+            arInfo: this.arSupportInfo,
             chat: !!this.conversationalAI,
             plantID: !!this.plantIdentificationAI,
             webXR: !!this.webXRFramework
