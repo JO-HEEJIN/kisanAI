@@ -340,16 +340,29 @@ class AchievementSystem {
 
     loadUserProgress() {
         try {
-            const saved = localStorage.getItem('nasa_farm_achievements');
-            return saved ? JSON.parse(saved) : { totalPoints: 0 };
+            // Changed storage key to reset everyone to level 1 (v2 = new start)
+            const saved = localStorage.getItem('nasa_farm_achievements_v2');
+            return saved ? JSON.parse(saved) : {
+                totalPoints: 0,
+                isNewUser: true,
+                version: 2
+            };
         } catch (error) {
-            return { totalPoints: 0 };
+            return {
+                totalPoints: 0,
+                isNewUser: true,
+                version: 2
+            };
         }
     }
 
     saveUserProgress() {
         try {
-            localStorage.setItem('nasa_farm_achievements', JSON.stringify(this.userProgress));
+            // Mark user as no longer new after first save
+            if (this.userProgress.isNewUser) {
+                this.userProgress.isNewUser = false;
+            }
+            localStorage.setItem('nasa_farm_achievements_v2', JSON.stringify(this.userProgress));
         } catch (error) {
             console.warn('Could not save achievement progress');
         }
@@ -365,7 +378,11 @@ class AchievementSystem {
         console.log('🔄 Resetting all achievement progress...');
 
         // Reset user progress
-        this.userProgress = { totalPoints: 0 };
+        this.userProgress = {
+            totalPoints: 0,
+            isNewUser: true,
+            version: 2
+        };
 
         // Reset all achievement progress
         Object.values(this.achievements).forEach(achievement => {
@@ -375,7 +392,8 @@ class AchievementSystem {
 
         // Clear localStorage
         try {
-            localStorage.removeItem('nasa_farm_achievements');
+            localStorage.removeItem('nasa_farm_achievements_v2');
+            localStorage.removeItem('nasa_farm_achievements'); // Remove old key too
             console.log('✅ Achievement progress reset complete');
         } catch (error) {
             console.warn('Could not clear localStorage:', error);

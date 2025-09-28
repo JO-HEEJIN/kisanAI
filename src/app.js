@@ -7108,8 +7108,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             console.log('🔧 Debug functions available: window.debugAchievements.reset(), .debug(id), .testWaterWizard(), .status()');
 
-            // Track initial NASA data usage
-            window.achievementSystem.trackAction('nasa_data_check', 1);
+            // Do not track initial NASA data usage - let users earn points through actual interactions
         }
     }, 1500);
 

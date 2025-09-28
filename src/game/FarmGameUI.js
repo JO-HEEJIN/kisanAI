@@ -5641,7 +5641,7 @@ class FarmGameUI {
                 highlight: true,
                 actions: [
                     { text: "⬅️ Previous", action: "prev", primary: false },
-                    { text: "Open Irrigation Dialog 💧", action: "interactive_irrigation", primary: true }
+                    { text: "Plant New Crops 🌱", action: "interactive_crops", primary: true }
                 ]
             },
             {
@@ -5814,9 +5814,9 @@ class FarmGameUI {
             case 'prev':
                 this.prevTutorialStep();
                 break;
-            case 'interactive_irrigation':
+            case 'interactive_crops':
                 this.closeTutorial();
-                this.showIrrigationDialog(true); // true = tutorial mode
+                this.activateCropsSection(); // Navigate to crops section
                 break;
             case 'complete':
                 this.completeTutorial();
@@ -5866,6 +5866,36 @@ class FarmGameUI {
             overlay.remove();
         }
         this.removeAllHighlights();
+    }
+
+    activateCropsSection() {
+        // Switch to crops view
+        this.switchView('crops');
+        this.updateDecisionPanel('crops');
+
+        // Highlight the crops tab
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.dataset.view === 'crops') {
+                tab.classList.add('active');
+            }
+        });
+
+        // Show a notification to guide the user
+        this.showNotification('🌱 Now click "Plant New Crop" to start growing your first crop with NASA satellite data!', 'info');
+
+        // Optional: Briefly highlight the Plant New Crop button
+        setTimeout(() => {
+            const plantBtn = document.querySelector('button[onclick*="plantNewCrop"]');
+            if (plantBtn) {
+                plantBtn.style.animation = 'pulse 2s ease-in-out 3';
+                plantBtn.style.boxShadow = '0 0 20px rgba(46, 150, 245, 0.8)';
+                setTimeout(() => {
+                    plantBtn.style.animation = '';
+                    plantBtn.style.boxShadow = '';
+                }, 6000);
+            }
+        }, 500);
     }
 
     highlightElement(selector) {
