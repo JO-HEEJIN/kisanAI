@@ -352,7 +352,13 @@
                                 <div class="ar-feature-icon">📱</div>
                                 <h3>AR Field Analysis</h3>
                                 <p>Point your camera at plants for instant identification</p>
-                                <button id="start-ar-btn" class="ar-action-btn ar-primary">Launch AR</button>
+                                <button id="start-ar-btn" class="ar-action-btn ar-primary"
+                                        style="background: linear-gradient(45deg, #0960E1, #2E96F5);
+                                               color: white; border: none; padding: 15px 30px;
+                                               border-radius: 8px; font-size: 16px; font-weight: bold;
+                                               cursor: pointer; touch-action: manipulation;
+                                               box-shadow: 0 4px 15px rgba(9, 96, 225, 0.3);
+                                               min-height: 50px; width: 100%;">Launch AR</button>
                             </div>
 
                             <div class="ar-feature-card">
@@ -571,6 +577,8 @@
     <!-- AR ChatGPT Framework -->
     <script src="src/ar/ARChatGPTCore.js"></script>
     <script src="src/ar/BabylonXRFramework.js"></script>
+    <script src="src/ar/ARIntelligenceEngine.js"></script>
+    <script src="src/ar/AROverlayDisplay.js"></script>
     <script src="src/ar/ConversationalAI.js"></script>
     <script src="src/ar/PlantIdentificationAI.js"></script>
     <script src="src/ar/ARGamification.js"></script>
@@ -3202,74 +3210,144 @@
             }
         }
 
+        // Alias for compatibility
+        function updateStatus(elementId, text, status) {
+            updateARStatus(elementId, status || 'ready', text);
+        }
+
         function setupAREventListeners() {
-            // Launch AR button
+            // Initialize Babylon AR Framework
+            initializeBabylonARFramework();
+
+            // Launch AR button with mobile touch support
             const startARBtn = document.getElementById('start-ar-btn');
             if (startARBtn) {
-                startARBtn.addEventListener('click', async () => {
+                // Add both click and touch events for mobile compatibility
+                const startARHandler = async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
                     try {
-                        await window.arChatGPTCore.startARSession();
+                        console.log('🚀 Starting AR session...');
+
+                        // Always ensure camera is started first
+                        if (window.babylonXRFramework) {
+                            // Attach AR overlay to DOM when AR starts
+                            if (window.babylonXRFramework.overlayDisplay) {
+                                window.babylonXRFramework.overlayDisplay.attachToDOM();
+                                console.log('📊 AR Soil Analysis overlay attached');
+                            }
+
+                            // Force camera setup
+                            await window.babylonXRFramework.setupCameraBackground();
+
+                            // Then start XR session
+                            await window.babylonXRFramework.startXRSession();
+                            updateStatus('webxr-status', 'AR Session Active', 'active');
+
+                            console.log('✅ AR session with camera started');
+                        } else {
+                            // Fallback to existing AR system
+                            await window.arChatGPTCore.startARSession();
+                        }
 
                         // Track gamification
                         if (window.arGamification) {
                             window.arGamification.trackActivity('ar_session_started');
                         }
                     } catch (error) {
-                        alert('Failed to start AR session: ' + error.message);
+                        console.error('AR session failed:', error);
+                        updateStatus('webxr-status', 'AR Failed', 'error');
+                        alert('AR 세션 시작 실패: ' + error.message + '\n\n카메라 권한을 허용했는지 확인해주세요.');
                     }
-                });
+                };
+
+                // Add multiple event listeners for better mobile support
+                startARBtn.addEventListener('click', startARHandler);
+                startARBtn.addEventListener('touchstart', startARHandler);
+                startARBtn.addEventListener('touchend', (e) => e.preventDefault());
+
+                // Improve button accessibility on mobile
+                startARBtn.style.cursor = 'pointer';
+                startARBtn.style.touchAction = 'manipulation';
+            }
+        }
+
+        async function initializeBabylonARFramework() {
+            // Initialize the enhanced Babylon AR framework
+            try {
+                console.log('🔧 Initializing Babylon AR Framework...');
+                console.log('📱 Mobile device detected:', /Mobi|Android/i.test(navigator.userAgent));
+                console.log('🔒 HTTPS:', window.location.protocol === 'https:');
+
+                if (typeof BabylonXRFramework !== 'undefined') {
+                    window.babylonXRFramework = new BabylonXRFramework();
+                    const success = await window.babylonXRFramework.initialize();
+
+                    if (success) {
+                        updateStatus('webxr-status', 'Ready', 'ready');
+                        updateStatus('ai-status', 'AI Engine Ready', 'ready');
+                        console.log('✅ Enhanced AR Framework initialized successfully');
+                    } else {
+                        updateStatus('webxr-status', 'WebXR Unavailable', 'warning');
+                        console.log('⚠️ WebXR not available, fallback mode active');
+                    }
+                } else {
+                    updateStatus('webxr-status', 'Framework Missing', 'error');
+                    console.warn('BabylonXRFramework not loaded');
+                }
+            } catch (error) {
+                console.error('Failed to initialize Babylon AR Framework:', error);
+                updateStatus('webxr-status', 'Init Failed', 'error');
             }
 
-            // Start Chat button - Show AR Overlay
+            // Start Chat button - Redirect to AI Farm Navigator
             const startChatBtn = document.getElementById('start-chat-btn');
             if (startChatBtn) {
-                startChatBtn.addEventListener('click', () => {
-                    console.log('Start Chat button clicked - showing AR overlay');
+                startChatBtn.addEventListener('click', async () => {
+                    console.log('Start Chat button clicked - redirecting to AI Farm Navigator');
 
-                    // Show AR overlay if WebXRFramework is available
-                    if (window.arChatGPTCore && window.arChatGPTCore.webXRFramework) {
-                        const arOverlay = document.getElementById('ar-overlay');
-                        if (arOverlay) {
-                            arOverlay.style.display = 'flex';
-                            console.log('AR overlay displayed');
+                    // Switch to Farmland Survey tab using the correct selector
+                    const farmlandSurveyTab = document.querySelector('.tab[data-tab="farmland-survey"]');
+                    if (farmlandSurveyTab) {
+                        console.log('Found farmland survey tab, clicking...');
+                        farmlandSurveyTab.click();
 
-                            // Initialize welcome message
-                            const chatMessages = document.getElementById('ar-chat-messages');
-                            if (chatMessages && chatMessages.children.length === 0) {
-                                const welcomeMessage = `🌾 **Welcome to AR ChatGPT Farm Assistant!**
+                        // Wait for tab transition
+                        await new Promise(resolve => setTimeout(resolve, 300));
 
-🤖 I'm your AI-powered agricultural expert, integrated with real-time NASA satellite data.
+                        // Click on AI Farm Navigator tab within Farmland Survey
+                        const aiNavigatorTab = document.querySelector('.tool-tab[data-tool="ai-navigator"]');
+                        if (aiNavigatorTab) {
+                            console.log('Found AI Navigator tab, clicking...');
+                            aiNavigatorTab.click();
+                            console.log('✅ Redirected to AI Farm Navigator');
 
-🛰️ **What I can help you with:**
-• Crop health analysis using NDVI data
-• Soil moisture recommendations (SMAP)
-• Irrigation timing and amounts
-• Plant identification and disease diagnosis
-• Growth stage monitoring
-• Weather-based farming advice
+                            // Wait for AI Navigator to load
+                            await new Promise(resolve => setTimeout(resolve, 500));
 
-💬 **Try asking me:**
-"What's my soil moisture level?"
-"Should I water my crops today?"
-"How is my crop health looking?"
-
-Ready to optimize your farm with space-age technology? Just type your question below! 🚀`;
-
-                                window.arChatGPTCore.webXRFramework.addChatMessage('assistant', welcomeMessage);
+                            // Focus on the AI chat input if available
+                            const aiChatInput = document.querySelector('#ai-copilot-interface input[type="text"], #ai-copilot-interface textarea');
+                            if (aiChatInput) {
+                                aiChatInput.focus();
+                                console.log('✅ Focused on chat input');
+                            } else {
+                                console.warn('AI chat input not found');
                             }
                         } else {
-                            console.warn('AR overlay not found, creating one');
-                            // Create AR overlay if it doesn't exist
-                            if (window.arChatGPTCore.webXRFramework) {
-                                window.arChatGPTCore.webXRFramework.createAROverlay();
-                            }
+                            console.warn('AI Navigator tab not found');
                         }
                     } else {
-                        console.warn('AR ChatGPT Core or WebXR Framework not available');
-                        // Fallback: focus on chat input
-                        const chatInput = document.getElementById('chat-preview-input');
-                        if (chatInput) {
-                            chatInput.focus();
+                        console.error('Farmland Survey tab not found!');
+
+                        // Fallback: Try to show the AR chat overlay as before
+                        const chatContainer = document.getElementById('chat-preview-container');
+                        if (chatContainer) {
+                            console.log('Using fallback: showing chat preview container');
+                            chatContainer.scrollIntoView({ behavior: 'smooth' });
+                            const chatInput = document.getElementById('chat-preview-input');
+                            if (chatInput) {
+                                chatInput.focus();
+                            }
                         }
                     }
                 });
@@ -3329,8 +3407,48 @@ Ready to optimize your farm with space-age technology? Just type your question b
                     window.arGamification.trackActivity('question_asked');
                 }
 
-                // Send to AR ChatGPT Core
-                const response = await window.arChatGPTCore.sendMessage(message, { type: 'preview-chat' });
+                let response;
+
+                // Try using the new AI Farm Navigator if available
+                if (window.aiCopilotUI && window.aiCopilotUI.copilotService) {
+                    console.log('Using AI Farm Navigator for chat');
+                    const aiResponse = await window.aiCopilotUI.copilotService.processQuery(message);
+
+                    if (aiResponse.type === 'agricultural') {
+                        // Format agricultural response
+                        let responseText = aiResponse.explanation || 'Processing your request...';
+
+                        if (aiResponse.recommendations && aiResponse.recommendations.length > 0) {
+                            responseText += '\n\n📋 Recommendations:\n' +
+                                aiResponse.recommendations.map(r => `• ${r}`).join('\n');
+                        }
+
+                        if (aiResponse.data) {
+                            responseText += '\n\n📊 Current Data:\n' +
+                                `• Soil Moisture: ${aiResponse.data.soilMoisture?.toFixed(1) || 'N/A'}%\n` +
+                                `• NDVI: ${aiResponse.data.ndvi?.toFixed(3) || 'N/A'}\n` +
+                                `• Temperature: ${aiResponse.data.temperature || 'N/A'}°C`;
+                        }
+
+                        if (aiResponse.source) {
+                            responseText += `\n\n[${aiResponse.source}]`;
+                        }
+
+                        response = { text: responseText };
+                    } else {
+                        response = { text: aiResponse.explanation || 'I found some results for your query.' };
+                    }
+
+                } else if (window.arChatGPTCore && window.arChatGPTCore.sendMessage) {
+                    // Fallback to original AR ChatGPT Core
+                    console.log('Using AR ChatGPT Core for chat');
+                    response = await window.arChatGPTCore.sendMessage(message, { type: 'preview-chat' });
+                } else {
+                    // Final fallback
+                    console.log('Using fallback response');
+                    response = { text: 'Chat system is initializing. Please refresh and try again.' };
+                }
+
                 addChatMessage({ text: response.text, type: 'assistant' });
             } catch (error) {
                 console.error('Chat message failed:', error);
@@ -3412,16 +3530,19 @@ Ready to optimize your farm with space-age technology? Just type your question b
             }
         }
 
-        // Initialize AR ChatGPT when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            // Delay initialization to ensure all scripts are loaded
-            setTimeout(initializeARChatGPT, 3000);
-        });
-
-        // Also initialize when AR ChatGPT tab is activated
+        // Only initialize when AR ChatGPT tab is activated
         document.addEventListener('click', (e) => {
             if (e.target && e.target.classList.contains('tab') && e.target.getAttribute('data-tab') === 'ar-chatgpt') {
-                setTimeout(initializeARChatGPT, 100);
+                // Check if we're actually switching to AR tab
+                const currentActiveTab = document.querySelector('.tab-content.active');
+                const arTab = document.getElementById('arChatGPTTab');
+
+                setTimeout(() => {
+                    // Only initialize if AR tab is actually visible
+                    if (arTab && arTab.classList.contains('active')) {
+                        initializeARChatGPT();
+                    }
+                }, 100);
             }
         });
     </script>

@@ -37,6 +37,9 @@ class AICopilotUI {
             this.setupEventListeners();
             this.setupVoiceRecognition();
 
+            // Check for OpenAI API key
+            this.checkOpenAIKey();
+
             console.log('🤖 AI Copilot UI initialized successfully');
         } catch (error) {
             console.error('Failed to initialize AI Copilot UI:', error);
@@ -57,6 +60,11 @@ class AICopilotUI {
                     </div>
                     <h2>🚀 AI Farm Navigator</h2>
                     <p>Ask me anything about farmland investment in natural language</p>
+
+                    <!-- OpenAI API Key Setup -->
+                    <div id="openai-setup" style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; display: none;">
+                        <p style="font-size: 12px; margin: 5px 0;">🔑 OpenAI API Key not set. <a href="#" id="setup-api-key" style="color: #2E96F5;">Set up now</a> for GPT-4 responses.</p>
+                    </div>
                 </div>
 
                 <!-- Search Interface -->
@@ -65,7 +73,7 @@ class AICopilotUI {
                         <input
                             type="text"
                             id="aiSearchInput"
-                            placeholder="Try: 'Find farmland under $3k/acre with water rights in Iowa'"
+                            placeholder="Ask me: 'What's my soil moisture?' or 'Should I irrigate today?' or 'Find corn-suitable land in Iowa'"
                             class="ai-search-input"
                         />
                         <button id="voiceSearchBtn" class="voice-search-btn ${!this.isVoiceSupported ? 'disabled' : ''}">
@@ -90,10 +98,37 @@ class AICopilotUI {
                 <div class="ai-chat-container" id="aiChatContainer">
                     <div class="welcome-message">
                         <div class="ai-message">
-                            <div class="message-avatar">🤖</div>
+                            <div class="message-avatar">🌾</div>
                             <div class="message-content">
-                                <p>Hi! I'm your AI Farm Navigator. I can help you find the perfect farmland for investment using natural language.</p>
-                                <p>Just tell me what you're looking for, and I'll search through available properties with NASA satellite data insights.</p>
+                                <h3>🌾 Welcome to AI Farm Assistant!</h3>
+                                <p>🤖 I'm your AI-powered agricultural expert, integrated with real-time NASA satellite data.</p>
+
+                                <div style="margin: 15px 0;">
+                                    <strong>🛰️ What I can help you with:</strong>
+                                    <ul style="margin: 10px 0; padding-left: 20px;">
+                                        <li>Crop health analysis using NDVI data</li>
+                                        <li>Soil moisture recommendations (SMAP)</li>
+                                        <li>Irrigation timing and amounts</li>
+                                        <li>Plant identification and disease diagnosis</li>
+                                        <li>Growth stage monitoring</li>
+                                        <li>Weather-based farming advice</li>
+                                        <li>Farmland investment opportunities</li>
+                                        <li>Climate risk assessment</li>
+                                    </ul>
+                                </div>
+
+                                <div style="margin: 15px 0;">
+                                    <strong>💬 Try asking me:</strong>
+                                    <ul style="margin: 10px 0; padding-left: 20px; font-style: italic;">
+                                        <li>"What's my soil moisture level?"</li>
+                                        <li>"Should I water my crops today?"</li>
+                                        <li>"How is my crop health looking?"</li>
+                                        <li>"Find farmland under $3k/acre with water rights"</li>
+                                        <li>"Show me climate-resilient areas for corn"</li>
+                                    </ul>
+                                </div>
+
+                                <p style="margin-top: 15px;">🚀 Ready to optimize your farm with space-age technology? Just type your question below!</p>
                             </div>
                         </div>
                     </div>
@@ -343,7 +378,54 @@ class AICopilotUI {
         messageDiv.className = 'ai-message';
 
         let additionalInfo = '';
-        if (data && data.totalResults > 0) {
+
+        // Handle agricultural/farming responses
+        if (data && data.type === 'agricultural') {
+            // Display NASA satellite data if available
+            if (data.data) {
+                additionalInfo = `
+                    <div class="message-summary">
+                        ${data.data.location ? `
+                        <div class="summary-stat location-info">
+                            <span class="stat-label">📍 Location:</span>
+                            <span class="stat-value">${data.data.location.latitude.toFixed(4)}°, ${data.data.location.longitude.toFixed(4)}° (${data.data.location.source})</span>
+                        </div>` : ''}
+                        <div class="summary-stat">
+                            <span class="stat-label">🛰️ Soil Moisture:</span>
+                            <span class="stat-value">${data.data.soilMoisture?.toFixed(1) || 'N/A'}%</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="stat-label">🌿 NDVI:</span>
+                            <span class="stat-value">${data.data.ndvi?.toFixed(3) || 'N/A'}</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="stat-label">🌡️ Temperature:</span>
+                            <span class="stat-value">${data.data.temperature || 'N/A'}°C</span>
+                        </div>
+                    </div>`;
+            }
+
+            // Display recommendations if available
+            if (data.recommendations && data.recommendations.length > 0) {
+                additionalInfo += `
+                    <div class="recommendations">
+                        <strong>📋 Recommendations:</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            // Show data source
+            if (data.source) {
+                additionalInfo += `
+                    <div class="data-source" style="margin-top: 10px; font-size: 0.9em; color: #888;">
+                        Source: ${data.source}
+                    </div>`;
+            }
+        }
+        // Handle farmland search results
+        else if (data && data.totalResults > 0) {
             additionalInfo = `
                 <div class="message-summary">
                     <div class="summary-stat">
@@ -385,9 +467,15 @@ class AICopilotUI {
         const resultsContent = document.getElementById('resultsContent');
         const resultsTitle = document.getElementById('resultsTitle');
 
-        this.currentResults = response.results;
+        // Hide results section for agricultural queries
+        if (response.type === 'agricultural') {
+            resultsSection.style.display = 'none';
+            return;
+        }
 
-        if (response.results.length === 0) {
+        this.currentResults = response.results || [];
+
+        if (!response.results || response.results.length === 0) {
             resultsSection.style.display = 'none';
             return;
         }
@@ -556,6 +644,54 @@ class AICopilotUI {
 
         console.log('Performing ROI analysis on all results');
         // This would integrate with advanced ROI analysis tools
+    }
+
+    /**
+     * Check for OpenAI API key and show setup prompt
+     */
+    checkOpenAIKey() {
+        const apiKey = localStorage.getItem('openai_api_key');
+        const setupDiv = document.getElementById('openai-setup');
+
+        if (!apiKey && setupDiv) {
+            setupDiv.style.display = 'block';
+
+            // Add setup link handler
+            const setupLink = document.getElementById('setup-api-key');
+            if (setupLink) {
+                setupLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.showAPIKeySetup();
+                });
+            }
+        } else if (apiKey && setupDiv) {
+            setupDiv.style.display = 'none';
+        }
+    }
+
+    /**
+     * Show API key setup dialog
+     */
+    showAPIKeySetup() {
+        const apiKey = prompt('Enter your OpenAI API key (sk-...):\n\nThis will enable GPT-4 responses with NASA satellite data integration.');
+
+        if (apiKey && apiKey.startsWith('sk-')) {
+            localStorage.setItem('openai_api_key', apiKey);
+            const setupDiv = document.getElementById('openai-setup');
+            if (setupDiv) {
+                setupDiv.style.display = 'none';
+            }
+            alert('✅ OpenAI API key saved! You can now get GPT-4 powered responses.');
+
+            // Update status
+            const status = document.getElementById('aiStatus');
+            if (status) {
+                status.textContent = 'GPT-4 Ready';
+                status.style.color = '#30D158';
+            }
+        } else if (apiKey) {
+            alert('❌ Invalid API key. Please enter a valid OpenAI API key starting with "sk-"');
+        }
     }
 }
 
