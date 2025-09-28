@@ -779,7 +779,10 @@ class BabylonXRFramework {
                 ndvi: ndvi,
                 temperature: temperature,
                 precipitation: 0,
-                source: 'Real NASA Satellite Data'
+                source: 'Real NASA Satellite Data',
+                quality: 'real',
+                smapQuality: smapResponse.status === 'fulfilled' && smapResponse.value.ok ? 'real' : 'fallback',
+                modisQuality: modisResponse.status === 'fulfilled' && modisResponse.value.ok ? 'real' : 'fallback'
             };
 
         } catch (error) {
@@ -791,7 +794,10 @@ class BabylonXRFramework {
                 ndvi: 0.2 + Math.random() * 0.6, // 0.2-0.8
                 temperature: 15 + Math.random() * 25, // 15-40°C
                 precipitation: Math.random() * 10,
-                source: 'Synthetic'
+                source: 'Synthetic Fallback Data',
+                quality: 'fallback',
+                smapQuality: 'fallback',
+                modisQuality: 'fallback'
             };
         }
     }
@@ -1748,7 +1754,7 @@ class BabylonXRFramework {
 
         const loading = document.createElement('div');
         loading.id = 'mobile-loading';
-        loading.innerHTML = '🔍 분석 중...';
+        loading.innerHTML = '🔍 Analyzing...';
         loading.style.cssText = `
             position: fixed !important;
             top: 50% !important;
@@ -1813,9 +1819,12 @@ class BabylonXRFramework {
                 cursor: pointer;
             ">×</button>
             <h3 style="color: #00ff88; margin: 0 0 15px 0;">🌱 AR Soil Analysis</h3>
-            <div><strong>Soil Moisture:</strong> ${result.soilMoisture || 'Loading...'}%</div>
-            <div><strong>NDVI:</strong> ${result.ndvi || 'Loading...'}</div>
-            <div><strong>Temperature:</strong> ${result.temperature || 'Loading...'}°C</div>
+            <div><strong>Soil Moisture:</strong> ${result.soilMoisture || 'Loading...'}% ${result.smapQuality === 'real' ? '🛰️' : '⚠️'}</div>
+            <div><strong>NDVI:</strong> ${result.ndvi || 'Loading...'} ${result.modisQuality === 'real' ? '🛰️' : '⚠️'}</div>
+            <div><strong>Temperature:</strong> ${result.temperature || 'Loading...'}°C ${result.smapQuality === 'real' ? '🛰️' : '⚠️'}</div>
+            <div style="margin-top: 10px; padding: 5px; background: rgba(0,255,136,0.1); border-radius: 3px;">
+                <strong>Data Source:</strong> ${result.source || 'Unknown'} ${result.quality === 'real' ? '✅' : '❌'}
+            </div>
             <div style="margin-top: 10px; font-size: 14px; color: #ccc;">
                 Touch Position: (${result.x || 0}, ${result.y || 0})
             </div>

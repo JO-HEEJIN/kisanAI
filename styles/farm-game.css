@@ -5702,6 +5702,43 @@
 
 /* === COMPREHENSIVE MOBILE OPTIMIZATION === */
 
+/* Desktop Layout Preservation (769px and above) */
+@media (min-width: 769px) {
+    .game-layout {
+        flex-direction: row !important;
+        gap: 20px !important;
+        height: 100% !important;
+    }
+
+    .game-main-area {
+        order: 1 !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .universal-decision-panel {
+        order: 2 !important;
+        flex: 0 0 350px !important;
+        width: 350px !important;
+        min-width: 300px !important;
+        max-height: none !important;
+        margin-top: 0 !important;
+    }
+
+    .decision-panel.fixed-panel {
+        position: sticky !important;
+        top: 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: fit-content !important;
+        max-height: calc(100vh - 40px) !important;
+        margin: 0 !important;
+        padding: 20px !important;
+        box-sizing: border-box !important;
+    }
+}
+
 /* Portrait Mobile Optimization */
 @media (max-width: 768px) and (orientation: portrait) {
     .farm-game-container {

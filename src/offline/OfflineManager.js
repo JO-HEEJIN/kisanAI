@@ -316,6 +316,11 @@ class OfflineManager {
      */
     async storeInIndexedDB(storeName, data) {
         return new Promise((resolve, reject) => {
+            if (!this.db) {
+                console.warn('IndexedDB not initialized, skipping cache operation');
+                resolve(null);
+                return;
+            }
             const transaction = this.db.transaction([storeName], 'readwrite');
             const store = transaction.objectStore(storeName);
             const request = store.add(data);
