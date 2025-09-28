@@ -88,6 +88,13 @@ class BabylonXRFramework {
 
     async initializeWebXR() {
         try {
+            // Check if WebXR is available before trying to initialize
+            if (!navigator.xr) {
+                console.log('WebXR not available, using fallback');
+                this.createFallbackScene();
+                return false;
+            }
+
             // Create WebXR experience with enhanced compatibility
             this.xrExperience = await this.scene.createDefaultXRExperienceAsync({
                 floorMeshes: [],
@@ -96,17 +103,19 @@ class BabylonXRFramework {
             });
 
             // Check if WebXR is supported
-            if (!this.xrExperience.baseExperience) {
-                throw new Error('WebXR not supported');
+            if (!this.xrExperience || !this.xrExperience.baseExperience) {
+                console.log('WebXR experience creation failed, using fallback');
+                this.createFallbackScene();
+                return false;
             }
 
             // Enable hit testing for AR placement
-            if (this.xrExperience.featuresManager.getEnabledFeature(BABYLON.WebXRFeatureName.HIT_TEST)) {
+            if (this.xrExperience.featuresManager && this.xrExperience.featuresManager.getEnabledFeature(BABYLON.WebXRFeatureName.HIT_TEST)) {
                 console.log('WebXR Hit Test enabled');
             }
 
             // Enable hand tracking if available
-            if (this.xrExperience.featuresManager.getEnabledFeature(BABYLON.WebXRFeatureName.HAND_TRACKING)) {
+            if (this.xrExperience.featuresManager && this.xrExperience.featuresManager.getEnabledFeature(BABYLON.WebXRFeatureName.HAND_TRACKING)) {
                 console.log('WebXR Hand Tracking enabled');
             }
 
@@ -374,4 +383,5 @@ const WebXRState = {
     EXITING_XR: 3
 };
 
-export default BabylonXRFramework;
+// Make BabylonXRFramework globally available
+window.BabylonXRFramework = BabylonXRFramework;

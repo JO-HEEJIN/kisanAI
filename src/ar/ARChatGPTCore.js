@@ -150,16 +150,21 @@ class ARChatGPTCore {
             if (this.webXRFramework) {
                 const xrStarted = await this.webXRFramework.startXRSession();
                 if (!xrStarted) {
+                    console.log('Babylon.js XR failed, switching to fallback mode');
                     return this.startFallbackMode('Babylon.js XR session failed');
                 }
                 this.xrSession = this.webXRFramework.xrExperience;
+                console.log('Babylon.js XR session started successfully');
+            } else {
+                console.log('No WebXR framework available, switching to fallback mode');
+                return this.startFallbackMode('WebXR framework not initialized');
             }
 
             document.dispatchEvent(new CustomEvent('ar-session-start', {
-                detail: { mode: sessionMode, fallback: supportInfo.fallback }
+                detail: { mode: 'babylon-xr', fallback: false }
             }));
 
-            return { success: true, mode: sessionMode };
+            return { success: true, mode: 'babylon-xr' };
 
         } catch (error) {
             console.error('Failed to start AR session:', error);
@@ -179,6 +184,11 @@ class ARChatGPTCore {
         // Show fallback UI instead of AR
         this.showARFallbackInterface(reason);
 
+        // Also dispatch ar-session-start event for compatibility
+        document.dispatchEvent(new CustomEvent('ar-session-start', {
+            detail: { mode: 'fallback', fallback: true, reason }
+        }));
+
         document.dispatchEvent(new CustomEvent('ar-fallback-start', {
             detail: { reason }
         }));
@@ -190,6 +200,7 @@ class ARChatGPTCore {
         const arOverlay = document.getElementById('ar-overlay');
         if (arOverlay) {
             arOverlay.style.display = 'block';
+            arOverlay.classList.add('active');
             arOverlay.innerHTML = `
                 <div class="ar-fallback-container">
                     <div class="ar-fallback-header">
@@ -532,6 +543,7 @@ class ARChatGPTCore {
         const overlay = document.getElementById('ar-overlay');
         if (overlay) {
             overlay.style.display = 'none';
+            overlay.classList.remove('active');
             overlay.innerHTML = '';
         }
     }
