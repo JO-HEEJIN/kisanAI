@@ -3229,25 +3229,41 @@
                     try {
                         console.log('🚀 Starting AR session...');
 
-                        // Always ensure camera is started first
-                        if (window.babylonXRFramework) {
+                        // Check for Babylon AR Framework with proper method validation
+                        if (window.babylonXRFramework && typeof window.babylonXRFramework.setupCameraBackground === 'function') {
+                            console.log('📱 Using Babylon AR Framework');
+
                             // Attach AR overlay to DOM when AR starts
-                            if (window.babylonXRFramework.overlayDisplay) {
+                            if (window.babylonXRFramework.overlayDisplay && typeof window.babylonXRFramework.overlayDisplay.attachToDOM === 'function') {
                                 window.babylonXRFramework.overlayDisplay.attachToDOM();
                                 console.log('📊 AR Soil Analysis overlay attached');
                             }
 
-                            // Force camera setup
-                            await window.babylonXRFramework.setupCameraBackground();
+                            // Force camera setup with error handling
+                            try {
+                                await window.babylonXRFramework.setupCameraBackground();
+                                console.log('🎥 Camera background setup completed');
+                            } catch (cameraError) {
+                                console.warn('⚠️ Camera setup failed, continuing without camera background:', cameraError);
+                            }
 
-                            // Then start XR session
-                            await window.babylonXRFramework.startXRSession();
-                            updateStatus('webxr-status', 'AR Session Active', 'active');
-
-                            console.log('✅ AR session with camera started');
+                            // Start XR session
+                            if (typeof window.babylonXRFramework.startXRSession === 'function') {
+                                await window.babylonXRFramework.startXRSession();
+                                updateStatus('webxr-status', 'AR Session Active', 'active');
+                                console.log('✅ Babylon AR session started');
+                            } else {
+                                throw new Error('startXRSession method not available');
+                            }
                         } else {
+                            console.log('🔄 Fallback to AR ChatGPT Core');
                             // Fallback to existing AR system
-                            await window.arChatGPTCore.startARSession();
+                            if (window.arChatGPTCore && typeof window.arChatGPTCore.startARSession === 'function') {
+                                await window.arChatGPTCore.startARSession();
+                                console.log('✅ AR ChatGPT Core session started');
+                            } else {
+                                throw new Error('No AR system available - neither Babylon framework nor AR ChatGPT Core');
+                            }
                         }
 
                         // Track gamification
@@ -3257,7 +3273,19 @@
                     } catch (error) {
                         console.error('AR session failed:', error);
                         updateStatus('webxr-status', 'AR Failed', 'error');
-                        alert('AR 세션 시작 실패: ' + error.message + '\n\n카메라 권한을 허용했는지 확인해주세요.');
+
+                        // More specific error messages for mobile users
+                        let errorMessage = 'AR 세션 시작 실패: ' + error.message;
+
+                        if (error.message.includes('setupCameraBackground')) {
+                            errorMessage = 'AR 시스템 초기화 실패\n\n가능한 해결방법:\n• 페이지를 새로고침하세요\n• 카메라 권한을 허용해주세요\n• HTTPS 연결을 확인하세요';
+                        } else if (error.message.includes('not available')) {
+                            errorMessage = 'AR 기능을 사용할 수 없습니다\n\n모바일에서는:\n• Chrome이나 Safari 최신 버전을 사용하세요\n• HTTPS 연결이 필요합니다\n• 카메라 권한을 허용해주세요';
+                        } else if (/Mobi|Android/i.test(navigator.userAgent)) {
+                            errorMessage += '\n\n모바일 장치에서는:\n• 브라우저를 업데이트하세요\n• 카메라 권한을 확인하세요\n• Wi-Fi 연결을 사용하세요';
+                        }
+
+                        alert(errorMessage);
                     }
                 };
 
@@ -3280,20 +3308,38 @@
                 console.log('🔒 HTTPS:', window.location.protocol === 'https:');
 
                 if (typeof BabylonXRFramework !== 'undefined') {
+                    console.log('🏗️ Creating new BabylonXRFramework instance...');
                     window.babylonXRFramework = new BabylonXRFramework();
-                    const success = await window.babylonXRFramework.initialize();
 
-                    if (success) {
-                        updateStatus('webxr-status', 'Ready', 'ready');
-                        updateStatus('ai-status', 'AI Engine Ready', 'ready');
-                        console.log('✅ Enhanced AR Framework initialized successfully');
+                    // Verify critical methods exist
+                    if (typeof window.babylonXRFramework.initialize === 'function') {
+                        const success = await window.babylonXRFramework.initialize();
+
+                        if (success) {
+                            // Verify setup methods are available
+                            if (typeof window.babylonXRFramework.setupCameraBackground === 'function' &&
+                                typeof window.babylonXRFramework.startXRSession === 'function') {
+                                updateStatus('webxr-status', 'Ready', 'ready');
+                                updateStatus('ai-status', 'AI Engine Ready', 'ready');
+                                console.log('✅ Enhanced AR Framework initialized successfully with all methods');
+                            } else {
+                                updateStatus('webxr-status', 'Methods Missing', 'warning');
+                                console.warn('⚠️ BabylonXRFramework missing required methods:', {
+                                    setupCameraBackground: typeof window.babylonXRFramework.setupCameraBackground,
+                                    startXRSession: typeof window.babylonXRFramework.startXRSession
+                                });
+                            }
+                        } else {
+                            updateStatus('webxr-status', 'WebXR Unavailable', 'warning');
+                            console.log('⚠️ WebXR not available, fallback mode active');
+                        }
                     } else {
-                        updateStatus('webxr-status', 'WebXR Unavailable', 'warning');
-                        console.log('⚠️ WebXR not available, fallback mode active');
+                        updateStatus('webxr-status', 'Initialize Missing', 'error');
+                        console.error('❌ BabylonXRFramework.initialize method not found');
                     }
                 } else {
                     updateStatus('webxr-status', 'Framework Missing', 'error');
-                    console.warn('BabylonXRFramework not loaded');
+                    console.warn('❌ BabylonXRFramework class not loaded');
                 }
             } catch (error) {
                 console.error('Failed to initialize Babylon AR Framework:', error);
