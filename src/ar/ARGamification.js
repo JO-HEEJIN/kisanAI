@@ -190,7 +190,7 @@ class ARGamification {
                 this.checkAchievement('first_ar_session');
                 this.checkAchievement('ar_enthusiast');
                 this.updateDailyChallengeProgress('ar_session', 1);
-                this.addExperience(10);
+                // Removed automatic experience for just launching AR - should earn XP through actual usage
                 break;
 
             case 'plant_identified':
