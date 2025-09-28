@@ -61,26 +61,6 @@
                 </div>
             </div>
 
-            <div class="header-center">
-                <nav class="main-navigation">
-                    <div class="nav-dropdown">
-                        <button class="nav-button">Advanced Tools ▼</button>
-                        <div class="nav-dropdown-content">
-                            <button id="navAICopilot" class="nav-item">🤖 AI Farm Navigator</button>
-                            <button id="navFarmGlobe3D" class="nav-item">🌍 3D Farm Globe</button>
-                            <button id="navMultiResolution" class="nav-item">Multi-Resolution Visualizer</button>
-                            <button id="navRealTimeComparison" class="nav-item">Real-Time Comparison</button>
-                            <button id="navROICalculator" class="nav-item">🎯 ROI Calculator</button>
-                            <button id="navClimateRisk" class="nav-item">🌍 Climate Risk Assessment</button>
-                            <button id="navSatelliteOrbit" class="nav-item">Satellite Orbit Viewer</button>
-                            <button id="navMissionTimeline" class="nav-item">Mission Timeline & Planner</button>
-                            <button id="navTemporalAnalysis" class="nav-item">Temporal Analysis</button>
-                            <button id="navTutorial" class="nav-item">Interactive Tutorial</button>
-                            <button id="navDemoScenarios" class="nav-item">Demo Scenarios</button>
-                        </div>
-                    </div>
-                </nav>
-            </div>
 
             <div class="header-right">
                 <!-- Achievement Button -->
@@ -161,12 +141,11 @@
         <!-- Tab Bar -->
         <div class="tab-bar">
             <div class="tab-container">
-                <button class="tab active" data-tab="education">Understanding Satellite Pixels</button>
+                <button class="tab" data-tab="education">Understanding Satellite Pixels</button>
                 <button class="tab" data-tab="pixel-hunt">Pixel Hunt Challenge</button>
                 <button class="tab" data-tab="data">Satellite Data Visualization</button>
-                <button class="tab" data-tab="farmland-survey">🛰️ Farmland Survey Tools</button>
-                <button class="tab" data-tab="farm-game">🚜 Farm Game</button>
-                <button class="tab" data-tab="sensor-fusion">🔬 Sensor Fusion</button>
+                <button class="tab" data-tab="farmland-survey">Agricultural Investment Intelligence</button>
+                <button class="tab active" data-tab="farm-game">🚜 Farm Game</button>
                 <button class="tab" data-tab="ar-chatgpt">🥽 AR ChatGPT</button>
                 <button class="tab" data-tab="achievements">Achievements</button>
             </div>
@@ -174,10 +153,6 @@
 
         <!-- Main Content Area -->
         <main class="app-main" id="mainContent">
-            <!-- Advanced Components Container (Initially Hidden) -->
-            <div id="advancedComponentsContainer" class="advanced-components" style="display: none;">
-                <!-- Dynamic advanced component content will be rendered here -->
-            </div>
 
             <!-- Tab Content Container -->
             <div id="tabContent" class="tab-content-container">
@@ -191,8 +166,28 @@
 
                 <!-- Data Visualization Tab Content -->
                 <div id="dataTab" class="tab-content" data-tab="data">
-                    <div id="dataDisplay" class="data-display">
-                        <!-- Dynamic data visualization -->
+                    <!-- Sub-tab navigation for Satellite Data -->
+                    <div class="satellite-data-nav">
+                        <button class="satellite-subtab active" data-subtab="satellite-cards">📡 Satellite Data Cards</button>
+                        <button class="satellite-subtab" data-subtab="sensor-fusion">🔬 Sensor Fusion</button>
+                    </div>
+
+                    <!-- Satellite Data Cards Sub-tab -->
+                    <div id="satelliteCardsSubtab" class="satellite-subtab-content active">
+                        <div id="dataDisplay" class="data-display">
+                            <!-- Dynamic data visualization -->
+                        </div>
+                    </div>
+
+                    <!-- Sensor Fusion Sub-tab -->
+                    <div id="sensorFusionSubtab" class="satellite-subtab-content">
+                        <div class="sensor-fusion-wrapper">
+                            <div class="section-header">
+                                <h2>🔬 Multi-Sensor Fusion Analysis</h2>
+                                <p>Combining NASA satellite data for smarter farming decisions</p>
+                            </div>
+                            <div id="sensorFusionTabDashboard"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -200,16 +195,16 @@
                 <div id="farmlandSurveyTab" class="tab-content" data-tab="farmland-survey">
                     <div class="farmland-survey-wrapper">
                         <div class="section-header">
-                            <h2>🛰️ Using NASA SATELLITE DATA to survey farmland for potential expansion or investment for farming companies</h2>
-                            <p>Comprehensive analysis tools combining ROI calculator, climate risk assessment, AI navigation, and 3D visualization</p>
+                            <h2>Agricultural Investment Intelligence</h2>
+                            <p>Leverage NASA satellite data for strategic farmland analysis, investment decisions, and risk assessment</p>
                         </div>
 
                         <!-- Tool Navigation -->
                         <div class="tool-navigation">
-                            <button class="tool-tab active" data-tool="roi">💰 ROI Calculator</button>
-                            <button class="tool-tab" data-tool="climate">🌡️ Climate Risk Assessment</button>
-                            <button class="tool-tab" data-tool="ai-navigator">🤖 AI Farm Navigator</button>
-                            <button class="tool-tab" data-tool="3d-globe">🌍 3D Farm Globe</button>
+                            <button class="tool-tab active" data-tool="roi"><span>ROI Calculator</span></button>
+                            <button class="tool-tab" data-tool="climate"><span>Climate Risk Assessment</span></button>
+                            <button class="tool-tab" data-tool="ai-navigator"><span>AI Farm Navigator</span></button>
+                            <button class="tool-tab" data-tool="3d-globe"><span>3D Farm Globe</span></button>
                         </div>
 
                         <!-- Tool Content Areas -->
@@ -270,16 +265,16 @@
                                         <div class="control-section">
                                             <h3>🗺️ View Mode</h3>
                                             <div class="view-mode-buttons">
-                                                <button class="mode-btn active" onclick="farmGlobe3D?.setViewMode('3D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">3D Globe</button>
-                                                <button class="mode-btn" onclick="farmGlobe3D?.setViewMode('2D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">2D Map</button>
+                                                <button class="mode-btn active" onclick="(window.app?.farmGlobe3D || window.farmGlobe3D)?.setViewMode('3D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">3D Globe</button>
+                                                <button class="mode-btn" onclick="(window.app?.farmGlobe3D || window.farmGlobe3D)?.setViewMode('2D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">2D Map</button>
                                             </div>
                                         </div>
 
                                         <div class="control-section">
                                             <h3>🎯 Quick Navigation</h3>
                                             <div class="view-mode-buttons">
-                                                <button class="mode-btn" onclick="farmGlobe3D?.flyToLocation([-93.5, 41.9], 500000)">Iowa Overview</button>
-                                                <button class="mode-btn" onclick="farmGlobe3D?.flyToLocation([-93.0, 41.8], 200000)">All Farms</button>
+                                                <button class="mode-btn" onclick="(window.app?.farmGlobe3D || window.farmGlobe3D)?.flyToLocation([-93.5, 41.9], 500000)">Iowa Overview</button>
+                                                <button class="mode-btn" onclick="(window.app?.farmGlobe3D || window.farmGlobe3D)?.flyToLocation([-93.0, 41.8], 200000)">All Farms</button>
                                             </div>
                                         </div>
 
@@ -334,17 +329,6 @@
                 <div id="farmGameTab" class="tab-content" data-tab="farm-game">
                     <div id="farmGameContainer" class="farm-game-wrapper">
                         <!-- Farm game will be rendered here -->
-                    </div>
-                </div>
-
-                <!-- Sensor Fusion Tab Content -->
-                <div id="sensorFusionTab" class="tab-content" data-tab="sensor-fusion">
-                    <div class="sensor-fusion-wrapper">
-                        <div class="section-header">
-                            <h2>🔬 Multi-Sensor Fusion Analysis</h2>
-                            <p>Combining NASA satellite data for smarter farming decisions</p>
-                        </div>
-                        <div id="sensorFusionTabDashboard"></div>
                     </div>
                 </div>
 
@@ -709,28 +693,60 @@
                                 console.error('window.app or initializeFarmGame not available');
                             }
                         }, 500);
-                    } else if (targetTab === 'sensor-fusion') {
-                        console.log('🔬 Sensor Fusion tab activated, initializing dashboard');
+                    } else if (targetTab === 'pixel-hunt') {
+                        console.log('Pixel Hunt Challenge tab activated, initializing game');
+                        setTimeout(() => {
+                            if (window.PixelHuntChallenge) {
+                                const container = document.getElementById('pixelHuntGameContainer');
+                                if (container && !window.pixelHunt) {
+                                    window.pixelHunt = new window.PixelHuntChallenge(container);
+                                    console.log('Pixel Hunt Challenge initialized');
+                                }
+                            } else {
+                                console.error('PixelHuntChallenge class not available');
+                            }
+                        }, 200);
+                    }
+                });
+            });
+        });
+
+        // Initialize satellite sub-tabs functionality
+        function initializeSatelliteSubtabs() {
+            const satelliteSubtabs = document.querySelectorAll('.satellite-subtab');
+            const satelliteSubtabContents = document.querySelectorAll('.satellite-subtab-content');
+
+            satelliteSubtabs.forEach(subtab => {
+                subtab.addEventListener('click', function() {
+                    const targetSubtab = this.getAttribute('data-subtab');
+
+                    // Remove active class from all satellite sub-tabs and content
+                    satelliteSubtabs.forEach(st => st.classList.remove('active'));
+                    satelliteSubtabContents.forEach(content => content.classList.remove('active'));
+
+                    // Add active class to clicked sub-tab and corresponding content
+                    this.classList.add('active');
+                    const targetContent = document.getElementById(targetSubtab === 'satellite-cards' ? 'satelliteCardsSubtab' : 'sensorFusionSubtab');
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
+
+                    // Initialize sensor fusion when its subtab is activated
+                    if (targetSubtab === 'sensor-fusion') {
+                        console.log('🔬 Sensor Fusion subtab activated, initializing dashboard');
 
                         // Function to check if all dependencies are loaded
-                        const checkDependencies = () => {
-                            return window.AdvancedDataDashboard && window.AdvancedNASAAnalysis;
-                        };
-
-                        // Retry mechanism for loading dependencies
-                        const initWithRetry = async (attempt = 1) => {
+                        const initWithRetry = async (attempt = 0) => {
                             const container = document.getElementById('sensorFusionTabDashboard');
 
-                            if (container && checkDependencies()) {
-                                if (!window.sensorFusionTabDashboard || typeof window.sensorFusionTabDashboard.refreshData !== 'function') {
+                            if (container && window.AdvancedDataDashboard && window.AdvancedNASAAnalysis) {
+                                if (!window.sensorFusionTabDashboard) {
+                                    console.log('🚀 Initializing new Sensor Fusion Dashboard instance');
                                     window.sensorFusionTabDashboard = new AdvancedDataDashboard(container);
-                                    console.log('🔬 Sensor Fusion Dashboard initialized for tab');
-
-                                    // Set default location (Arizona farm)
                                     const defaultLocation = { lat: 33.43, lon: -111.94 };
                                     await window.sensorFusionTabDashboard.setLocation(defaultLocation);
                                 } else {
-                                    // Refresh data when tab is switched to
+                                    // Refresh data when subtab is switched to
                                     try {
                                         console.log('🔄 Refreshing existing sensor fusion dashboard data');
                                         await window.sensorFusionTabDashboard.refreshData();
@@ -759,23 +775,13 @@
 
                         // Start the initialization with retry
                         setTimeout(() => initWithRetry(), 200);
-                    } else if (targetTab === 'pixel-hunt') {
-                        console.log('Pixel Hunt Challenge tab activated, initializing game');
-                        setTimeout(() => {
-                            if (window.PixelHuntChallenge) {
-                                const container = document.getElementById('pixelHuntGameContainer');
-                                if (container && !window.pixelHunt) {
-                                    window.pixelHunt = new window.PixelHuntChallenge(container);
-                                    console.log('Pixel Hunt Challenge initialized');
-                                }
-                            } else {
-                                console.error('PixelHuntChallenge class not available');
-                            }
-                        }, 200);
                     }
                 });
             });
-        });
+        }
+
+        // Initialize satellite subtabs when DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeSatelliteSubtabs);
 
         // Function to remove duplicate content
         function removeDuplicateContent() {
@@ -921,91 +927,6 @@
             position: relative;
         }
 
-        .nav-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .nav-button {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .nav-button:hover {
-            background: linear-gradient(45deg, #5a67d8, #6b46c1);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
-        }
-
-        .nav-dropdown-content {
-            display: none;
-            position: absolute;
-            background: rgba(255,255,255,0.98);
-            min-width: 320px;
-            box-shadow: 0px 8px 25px rgba(0,0,0,0.25);
-            z-index: 9999;
-            border-radius: 12px;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            margin-top: 8px;
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(102,126,234,0.3);
-            padding: 8px 0;
-        }
-
-        .nav-dropdown:hover .nav-dropdown-content {
-            display: block;
-            animation: fadeInDown 0.3s ease;
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-
-        .nav-item {
-            color: #333;
-            padding: 12px 20px;
-            text-decoration: none;
-            display: block;
-            background: none;
-            border: none;
-            width: 100%;
-            text-align: left;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 500;
-            transition: background-color 0.2s ease;
-        }
-
-        .nav-item:hover {
-            background-color: rgba(102,126,234,0.1);
-            color: #667eea;
-        }
-
-        .nav-item:first-child {
-            border-radius: 12px 12px 0 0;
-        }
-
-        .nav-item:last-child {
-            border-radius: 0 0 12px 12px;
-        }
 
         .advanced-components {
             width: 100%;
@@ -2876,6 +2797,80 @@
                 height: 25px;
             }
         }
+
+        /* Satellite Data Sub-tabs Styling */
+        .satellite-data-nav {
+            display: flex;
+            background: var(--nasa-deep-blue);
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(9, 96, 225, 0.2);
+        }
+
+        .satellite-subtab {
+            flex: 1;
+            padding: 15px 20px;
+            background: var(--nasa-deep-blue);
+            color: rgba(255, 255, 255, 0.8);
+            border: none;
+            font-weight: 600;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .satellite-subtab::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--nasa-neon-blue);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .satellite-subtab:hover {
+            background: rgba(46, 150, 245, 0.2);
+            color: var(--nasa-white);
+        }
+
+        .satellite-subtab.active {
+            background: var(--nasa-neon-blue);
+            color: var(--nasa-white);
+        }
+
+        .satellite-subtab.active::before {
+            transform: scaleX(1);
+        }
+
+        .satellite-subtab-content {
+            display: none;
+            min-height: 600px;
+            background: var(--nasa-white);
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 20px rgba(9, 96, 225, 0.15);
+        }
+
+        .satellite-subtab-content.active {
+            display: block;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 
     <script>
@@ -3552,49 +3547,10 @@ Ready to optimize your farm with space-age technology? Just type your question b
             console.log('🚨 Fusion Alert System started');
         }
 
-        // Advanced Tools Dropdown Handler
-        document.addEventListener('DOMContentLoaded', function() {
-            // Make dropdown clickable on mobile/touch devices
-            const navButton = document.querySelector('.nav-button');
-            const navDropdown = document.querySelector('.nav-dropdown');
-            const navDropdownContent = document.querySelector('.nav-dropdown-content');
-
-            if (navButton && navDropdownContent) {
-                // Toggle dropdown on button click
-                navButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    console.log('📱 Navigation button clicked');
-
-                    if (navDropdownContent.style.display === 'block') {
-                        navDropdownContent.style.display = 'none';
-                        console.log('📱 Dropdown closed');
-                    } else {
-                        navDropdownContent.style.display = 'block';
-                        console.log('📱 Dropdown opened');
-                    }
-                });
-
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!navDropdown.contains(e.target)) {
-                        navDropdownContent.style.display = 'none';
-                    }
-                });
-
-                // Prevent dropdown from closing when clicking inside
-                navDropdownContent.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
-            }
-
-
-            // Auto-initialize sensor fusion after a short delay
-            setTimeout(async () => {
-                await initializeSensorFusion();
-            }, 2000);
-        });
+        // Auto-initialize sensor fusion after a short delay
+        setTimeout(async () => {
+            await initializeSensorFusion();
+        }, 2000);
 
         // Add slide-in animation and enhanced dropdown styles
         const style = document.createElement('style');

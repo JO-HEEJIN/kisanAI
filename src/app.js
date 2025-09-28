@@ -5223,6 +5223,44 @@ class NASAFarmNavigatorsApp {
         if (this.ui.mainContainer) {
             this.ui.mainContainer.style.display = 'block';
         }
+
+        // Set Farm Game as the default active tab
+        setTimeout(() => {
+            this.switchTab('farm-game');
+        }, 100);
+
+        // Add debug function for ROI Calculator
+        window.debugROI = () => {
+            console.log('🔍 ROI Calculator Debug Info:', {
+                'typeof ROICalculator': typeof ROICalculator,
+                'typeof ROICalculatorUI': typeof ROICalculatorUI,
+                'window.roiCalculator': window.roiCalculator,
+                'window.roiCalculatorUI': window.roiCalculatorUI,
+                'container exists': !!document.getElementById('roiCalculatorInterface'),
+                'roiCalculatorUI.container': window.roiCalculatorUI?.container
+            });
+        };
+
+        // Add force render function for ROI Calculator
+        window.forceRenderROI = async () => {
+            const container = document.getElementById('roiCalculatorInterface');
+            if (!container) {
+                console.error('❌ ROI Container not found');
+                return;
+            }
+
+            if (window.roiCalculatorUI && window.roiCalculator) {
+                console.log('🔄 Force rendering ROI Calculator...');
+                try {
+                    await window.roiCalculatorUI.renderCalculator(container);
+                    console.log('✅ ROI Calculator force-rendered successfully');
+                } catch (error) {
+                    console.error('❌ Force render failed:', error);
+                }
+            } else {
+                console.error('❌ ROI Calculator instances not available');
+            }
+        };
     }
 
     /**
@@ -6715,19 +6753,27 @@ class NASAFarmNavigatorsApp {
 
         toolTabs.forEach(tab => {
             tab.addEventListener('click', async (e) => {
-                const toolName = e.target.dataset.tool;
+                // Find the actual button element (in case user clicked on span inside)
+                const button = e.target.closest('.tool-tab');
+                if (!button) return;
+
+                const toolName = button.dataset.tool;
+
+                console.log(`🔄 Tool tab clicked: ${toolName}`);
 
                 // Remove active class from all tabs and contents
                 toolTabs.forEach(t => t.classList.remove('active'));
                 toolContents.forEach(c => c.classList.remove('active'));
 
                 // Add active class to clicked tab
-                e.target.classList.add('active');
+                button.classList.add('active');
 
                 // Show corresponding content and initialize if needed
                 const targetContent = document.getElementById(`${toolName}-tool`);
                 if (targetContent) {
                     targetContent.classList.add('active');
+                } else {
+                    console.warn(`Target content not found for tool: ${toolName}`);
                 }
 
                 // Initialize the specific tool
@@ -6740,6 +6786,11 @@ class NASAFarmNavigatorsApp {
      * Initialize specific farmland survey tool
      */
     async initializeFarmlandSurveyTool(toolName) {
+        if (!toolName) {
+            console.warn('Tool name is undefined or empty');
+            return;
+        }
+
         console.log(`🔧 Initializing farmland survey tool: ${toolName}`);
 
         try {
@@ -6768,40 +6819,99 @@ class NASAFarmNavigatorsApp {
      * Initialize ROI Calculator in farmland survey
      */
     async initializeFarmlandSurveyROI() {
+        console.log('🔧 Starting ROI Calculator initialization...');
+
         const roiContainer = document.getElementById('roiCalculatorInterface');
         if (!roiContainer) {
-            console.warn('ROI Calculator container not found');
+            console.error('❌ ROI Calculator container not found');
             return;
         }
 
+        console.log('✅ ROI Calculator container found');
+
         try {
-            // Check if ROI Calculator is already initialized
-            if (window.roiCalculatorUI) {
-                console.log('ROI Calculator already initialized');
+            // Check current state
+            console.log('🔍 Checking current state:', {
+                'window.roiCalculatorUI': !!window.roiCalculatorUI,
+                'typeof ROICalculatorUI': typeof ROICalculatorUI,
+                'typeof ROICalculator': typeof ROICalculator,
+                'window.roiCalculator': !!window.roiCalculator
+            });
+
+            // Check if ROI Calculator is already initialized and properly rendered
+            if (window.roiCalculatorUI && window.roiCalculatorUI.container) {
+                console.log('✅ ROI Calculator already initialized and rendered');
                 return;
+            } else if (window.roiCalculatorUI && !window.roiCalculatorUI.container) {
+                console.log('🔄 ROI Calculator exists but not rendered, re-rendering...');
+                try {
+                    await window.roiCalculatorUI.renderCalculator(roiContainer);
+                    console.log('✅ ROI Calculator re-rendered successfully');
+                    return;
+                } catch (error) {
+                    console.warn('❌ Failed to re-render existing ROI Calculator:', error);
+                    // Continue to create new instance
+                }
+            }
+
+            // Wait for classes to be available if needed
+            if (typeof ROICalculatorUI === 'undefined' || !window.roiCalculator) {
+                console.log('⏳ Waiting for ROI Calculator classes to load...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                console.log('🔍 After waiting - Checking state again:', {
+                    'typeof ROICalculatorUI': typeof ROICalculatorUI,
+                    'typeof ROICalculator': typeof ROICalculator,
+                    'window.roiCalculator': !!window.roiCalculator
+                });
+            }
+
+            // Create ROICalculator instance if it doesn't exist
+            if (!window.roiCalculator && typeof ROICalculator !== 'undefined') {
+                console.log('🔨 Creating new ROICalculator instance...');
+                window.roiCalculator = new ROICalculator();
+                console.log('✅ Created new ROICalculator instance');
             }
 
             // Initialize ROI Calculator if available
             if (typeof ROICalculatorUI !== 'undefined' && window.roiCalculator) {
+                console.log('🚀 Initializing ROI Calculator UI...');
                 const roiCalculatorUI = new ROICalculatorUI(window.roiCalculator);
+
+                console.log('🎨 Rendering ROI Calculator...');
                 await roiCalculatorUI.renderCalculator(roiContainer);
+
                 window.roiCalculatorUI = roiCalculatorUI;
-                console.log('✅ ROI Calculator initialized in farmland survey');
+                console.log('✅ ROI Calculator initialized successfully in farmland survey');
             } else {
+                console.warn('❌ ROI Calculator classes not available:', {
+                    ROICalculatorUI: typeof ROICalculatorUI,
+                    ROICalculator: typeof ROICalculator,
+                    roiCalculator: !!window.roiCalculator
+                });
                 roiContainer.innerHTML = `
                     <div class="tool-placeholder">
                         <h3>💰 ROI Calculator</h3>
                         <p>Calculate return on investment for farmland purchases using NASA satellite data analysis.</p>
                         <p class="loading-message">Loading ROI Calculator components...</p>
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; font-size: 0.9em;">
+                            <strong>Debug Info:</strong><br>
+                            ROICalculatorUI: ${typeof ROICalculatorUI}<br>
+                            ROICalculator: ${typeof ROICalculator}<br>
+                            window.roiCalculator: ${!!window.roiCalculator}
+                        </div>
+                        <button onclick="window.app.initializeFarmlandSurveyROI()" style="margin-top: 10px; padding: 8px 16px; background: var(--nasa-electric-blue); color: white; border: none; border-radius: 5px; cursor: pointer;">Retry</button>
                     </div>
                 `;
             }
         } catch (error) {
-            console.error('Error initializing ROI Calculator:', error);
+            console.error('❌ Error initializing ROI Calculator:', error);
             roiContainer.innerHTML = `
                 <div class="error-message">
                     <h3>ROI Calculator Error</h3>
                     <p>Failed to load ROI Calculator: ${error.message}</p>
+                    <pre style="font-size: 0.8em; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; margin-top: 10px;">${error.stack}</pre>
+                    <button onclick="window.app.initializeFarmlandSurveyROI()" style="margin-top: 10px; padding: 8px 16px; background: var(--nasa-rocket-red); color: white; border: none; border-radius: 5px; cursor: pointer;">Retry</button>
                 </div>
             `;
         }
@@ -6824,6 +6934,12 @@ class NASAFarmNavigatorsApp {
                 return;
             }
 
+            // Wait for classes to be available if needed
+            if (typeof ClimateRiskUI === 'undefined') {
+                console.log('Waiting for Climate Risk Assessment classes to load...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
             // Initialize Climate Risk Assessment if available
             if (typeof ClimateRiskUI !== 'undefined') {
                 const climateRiskUI = new ClimateRiskUI();
@@ -6831,11 +6947,15 @@ class NASAFarmNavigatorsApp {
                 window.climateRiskUI = climateRiskUI;
                 console.log('✅ Climate Risk Assessment initialized in farmland survey');
             } else {
+                console.warn('Climate Risk Assessment classes not available:', {
+                    ClimateRiskUI: typeof ClimateRiskUI
+                });
                 climateContainer.innerHTML = `
                     <div class="tool-placeholder">
                         <h3>🌡️ Climate Risk Assessment</h3>
                         <p>Assess climate risks for agricultural investments using historical and predictive NASA data.</p>
                         <p class="loading-message">Loading Climate Risk Assessment components...</p>
+                        <button onclick="window.app.initializeFarmlandSurveyClimate()" style="margin-top: 10px; padding: 8px 16px; background: var(--nasa-electric-blue); color: white; border: none; border-radius: 5px; cursor: pointer;">Retry</button>
                     </div>
                 `;
             }
@@ -6845,6 +6965,7 @@ class NASAFarmNavigatorsApp {
                 <div class="error-message">
                     <h3>Climate Risk Assessment Error</h3>
                     <p>Failed to load Climate Risk Assessment: ${error.message}</p>
+                    <button onclick="window.app.initializeFarmlandSurveyClimate()" style="margin-top: 10px; padding: 8px 16px; background: var(--nasa-rocket-red); color: white; border: none; border-radius: 5px; cursor: pointer;">Retry</button>
                 </div>
             `;
         }
@@ -6861,6 +6982,18 @@ class NASAFarmNavigatorsApp {
         }
 
         try {
+            // Check if AI Copilot is already initialized
+            if (window.aiCopilotUI) {
+                console.log('AI Navigator already initialized');
+                return;
+            }
+
+            // Wait for classes to be available if needed
+            if (typeof AICopilotUI === 'undefined') {
+                console.log('Waiting for AI Copilot classes to load...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
             // Use the existing initializeAICopilot method
             await this.initializeAICopilot();
             console.log('✅ AI Navigator initialized in farmland survey');
@@ -6870,6 +7003,7 @@ class NASAFarmNavigatorsApp {
                 <div class="error-message">
                     <h3>AI Navigator Error</h3>
                     <p>Failed to load AI Navigator: ${error.message}</p>
+                    <button onclick="window.app.initializeFarmlandSurveyAI()" style="margin-top: 10px; padding: 8px 16px; background: var(--nasa-rocket-red); color: white; border: none; border-radius: 5px; cursor: pointer;">Retry</button>
                 </div>
             `;
         }
