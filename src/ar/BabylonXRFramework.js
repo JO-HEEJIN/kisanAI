@@ -586,8 +586,11 @@ class BabylonXRFramework {
                 },
                 gpsCoords: gpsCoords,
                 moisture: nasaData.soilMoisture || 25.0,
+                soilMoisture: nasaData.soilMoisture || 25.0, // For mobile display compatibility
                 ndvi: nasaData.ndvi || 0.45,
                 temperature: nasaData.temperature || 22.0,
+                x: Math.round(screenX), // For mobile display
+                y: Math.round(screenY), // For mobile display
                 type: terrainType,
                 crop: cropInfo?.crop || 'none',
                 cropConfidence: cropInfo?.confidence || 0,
@@ -688,25 +691,42 @@ class BabylonXRFramework {
     async fetchNASADataForLocation(gpsCoords) {
         // Fetch NASA data for the specified GPS coordinates
         try {
-            // Use current protocol (HTTP or HTTPS) for API calls
-            const protocol = window.location.protocol;
-            const apiUrl = protocol === 'https:' ?
-                `https://localhost:3444/api/comprehensive-data?lat=${gpsCoords.latitude}&lon=${gpsCoords.longitude}` :
-                `http://localhost:3001/api/comprehensive-data?lat=${gpsCoords.latitude}&lon=${gpsCoords.longitude}`;
+            console.log(`🛰️ Fetching NASA data for: ${gpsCoords.latitude}, ${gpsCoords.longitude}`);
 
-            const response = await fetch(apiUrl);
+            // Use NASA proxy server endpoints
+            const baseUrl = 'http://localhost:3001';
 
-            if (!response.ok) {
-                throw new Error('NASA data fetch failed');
+            // Fetch data from multiple NASA endpoints in parallel
+            const [smapResponse, modisResponse] = await Promise.allSettled([
+                fetch(`${baseUrl}/api/smap/soil-moisture?lat=${gpsCoords.latitude}&lon=${gpsCoords.longitude}`),
+                fetch(`${baseUrl}/api/modis/ndvi?lat=${gpsCoords.latitude}&lon=${gpsCoords.longitude}`)
+            ]);
+
+            let soilMoisture = 32; // default
+            let ndvi = 0.65; // default
+            let temperature = 25; // default
+
+            // Process SMAP soil moisture data
+            if (smapResponse.status === 'fulfilled' && smapResponse.value.ok) {
+                const smapData = await smapResponse.value.json();
+                soilMoisture = smapData.soilMoisture || soilMoisture;
+                console.log('✅ SMAP data loaded:', soilMoisture);
             }
 
-            const data = await response.json();
+            // Process MODIS NDVI data
+            if (modisResponse.status === 'fulfilled' && modisResponse.value.ok) {
+                const modisData = await modisResponse.value.json();
+                ndvi = modisData.ndvi || ndvi;
+                temperature = modisData.temperature || temperature;
+                console.log('✅ MODIS data loaded:', ndvi, temperature);
+            }
+
             return {
-                soilMoisture: data.smap?.soilMoisture || data.soilMoisture || 25.0,
-                ndvi: data.modis?.ndvi || data.ndvi || 0.45,
-                temperature: data.temperature || 22.0,
-                precipitation: data.precipitation || 0,
-                source: 'NASA API'
+                soilMoisture: soilMoisture,
+                ndvi: ndvi,
+                temperature: temperature,
+                precipitation: 0,
+                source: 'NASA Proxy Server'
             };
 
         } catch (error) {
@@ -1270,13 +1290,27 @@ class BabylonXRFramework {
                 console.log('🎨 Canvas removed');
             }
 
-            // 8. Notify other systems
+            // 8. Restore main app UI
+            const tabContent = document.getElementById('tabContent');
+            if (tabContent) {
+                tabContent.style.display = 'block';
+                console.log('🔄 Main tab content restored');
+            }
+
+            // Hide any AR containers that might still be visible
+            const arContainer = document.getElementById('ar-chat-container');
+            if (arContainer) {
+                arContainer.style.display = 'none';
+                console.log('📱 AR chat container hidden');
+            }
+
+            // 9. Notify other systems
             if (window.arChatGPTCore) {
                 window.arChatGPTCore.exitARMode();
                 console.log('📢 AR ChatGPT Core notified');
             }
 
-            // 9. Force reload location if nothing else works
+            // 10. Force reload location if nothing else works
             setTimeout(() => {
                 if (document.getElementById('ar-overlay') &&
                     document.getElementById('ar-overlay').style.display !== 'none') {
