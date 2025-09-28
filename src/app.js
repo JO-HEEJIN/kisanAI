@@ -5421,29 +5421,72 @@ class NASAFarmNavigatorsApp {
      * Initialize farm game when tab is activated (using dynamic imports)
      */
     async initializeFarmGame() {
+        console.log('🎮 Starting Farm Game initialization...');
         try {
-            if (!this.farmSimulation) {
-                const { FarmSimulationEngine } = await import('./game/FarmSimulationEngine.js');
-                this.farmSimulation = new FarmSimulationEngine();
-            }
             const farmGameContainer = document.getElementById('farmGameContainer');
+            if (!farmGameContainer) {
+                console.error('❌ farmGameContainer element not found!');
+                return;
+            }
+
+            // Check if classes are available globally first
+            if (!this.farmSimulation) {
+                console.log('📦 Loading FarmSimulationEngine...');
+                // Try to use globally loaded class first, fall back to dynamic import
+                if (window.FarmSimulationEngine) {
+                    this.farmSimulation = new window.FarmSimulationEngine();
+                    console.log('✅ FarmSimulationEngine loaded from global');
+                } else {
+                    console.log('📦 Attempting dynamic import of FarmSimulationEngine...');
+                    const { FarmSimulationEngine } = await import('./game/FarmSimulationEngine.js');
+                    this.farmSimulation = new FarmSimulationEngine();
+                    console.log('✅ FarmSimulationEngine loaded via import');
+                }
+            }
+
             if (!this.farmGameUI && farmGameContainer) {
-                const { FarmGameUI } = await import('./game/FarmGameUI.js');
-                this.farmGameUI = new FarmGameUI(this.farmSimulation, farmGameContainer);
+                console.log('📦 Loading FarmGameUI...');
+                // Try to use globally loaded class first, fall back to dynamic import
+                if (window.FarmGameUI) {
+                    this.farmGameUI = new window.FarmGameUI(this.farmSimulation, farmGameContainer);
+                    console.log('✅ FarmGameUI loaded from global');
+                } else {
+                    console.log('📦 Attempting dynamic import of FarmGameUI...');
+                    const { FarmGameUI } = await import('./game/FarmGameUI.js');
+                    this.farmGameUI = new FarmGameUI(this.farmSimulation, farmGameContainer);
+                    console.log('✅ FarmGameUI loaded via import');
+                }
+
                 // Make farmGameUI globally accessible
                 window.farmGameUI = this.farmGameUI;
+                console.log('🌍 FarmGameUI made globally accessible');
 
                 // Register Farm Game with GameEngine for location integration
                 if (this.gameEngine && this.gameEngine.setFarmGame) {
                     this.gameEngine.setFarmGame(this.farmGameUI);
-                    console.log('🚜 Farm Game registered with GameEngine during initialization');
+                    console.log('🚜 Farm Game registered with GameEngine');
                 }
+
+                console.log('🎉 Farm Game initialization completed successfully!');
             }
         } catch (error) {
-            console.error('Failed to initialize farm game:', error);
+            console.error('❌ Failed to initialize farm game:', error);
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
+
             const farmGameContainer = document.getElementById('farmGameContainer');
             if (farmGameContainer) {
-                farmGameContainer.innerHTML = '<div class="error-message">Farm game failed to load. Please refresh the page.</div>';
+                farmGameContainer.innerHTML = `
+                    <div class="error-message">
+                        <h3>⚠️ Farm game failed to load</h3>
+                        <p>Error: ${error.message}</p>
+                        <p>Please check the browser console for details.</p>
+                        <button onclick="location.reload()">Refresh Page</button>
+                    </div>
+                `;
             }
         }
     }
