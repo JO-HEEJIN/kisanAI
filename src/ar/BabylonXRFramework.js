@@ -435,6 +435,8 @@ class BabylonXRFramework {
         try {
             if (typeof AROverlayDisplay !== 'undefined') {
                 this.overlayDisplay = new AROverlayDisplay(this.scene, this.camera);
+                // Set reference to this framework instance for direct method calls
+                this.overlayDisplay.babylonXRFramework = this;
                 const success = this.overlayDisplay.initialize();
                 if (success) {
                     console.log('AR Overlay Display initialized successfully');
@@ -1182,6 +1184,12 @@ class BabylonXRFramework {
                 this.engine.dispose();
             }
 
+            // Remove mobile touch handler
+            if (this.videoElement && this.mobileTouchHandler) {
+                this.videoElement.removeEventListener('touchstart', this.mobileTouchHandler);
+                this.mobileTouchHandler = null;
+            }
+
             // Stop camera stream
             if (this.videoElement && this.videoElement.srcObject) {
                 const tracks = this.videoElement.srcObject.getTracks();
@@ -1278,26 +1286,71 @@ class BabylonXRFramework {
         console.log('🚨 Force exiting AR mode...');
 
         try {
-            // 1. Remove AR overlay from DOM
-            if (this.overlayDisplay) {
+            // 0. Force cleanup AR overlay display first
+            if (this.overlayDisplay && typeof this.overlayDisplay.forceCleanup === 'function') {
+                this.overlayDisplay.forceCleanup();
+                console.log('🔥 AR Overlay Display force cleaned');
+            } else if (this.overlayDisplay) {
                 this.overlayDisplay.detachFromDOM();
                 console.log('📊 AR Soil Analysis overlay removed');
             }
 
-            // 2. Stop all camera streams
+            // 2. Stop ALL camera streams - both mobile and desktop video elements
+            // Stop mobile video element (ar-camera-video)
+            const mobileVideo = document.getElementById('ar-camera-video');
+            if (mobileVideo && mobileVideo.srcObject) {
+                const mobileTracks = mobileVideo.srcObject.getTracks();
+                mobileTracks.forEach(track => {
+                    track.stop();
+                    console.log('📱 Mobile camera track stopped');
+                });
+                mobileVideo.srcObject = null;
+                if (mobileVideo.parentNode) {
+                    mobileVideo.parentNode.removeChild(mobileVideo);
+                    console.log('📱 Mobile video element removed');
+                }
+            }
+
+            // Remove mobile touch handlers that may be still active
+            if (mobileVideo && this.mobileTouchHandler) {
+                mobileVideo.removeEventListener('touchstart', this.mobileTouchHandler);
+                console.log('📱 Mobile touch handler removed from video');
+            }
+
+            // Stop desktop video element (this.videoElement)
             if (this.videoElement && this.videoElement.srcObject) {
                 const tracks = this.videoElement.srcObject.getTracks();
                 tracks.forEach(track => {
                     track.stop();
-                    console.log('🎥 Camera track stopped');
+                    console.log('🖥️ Desktop camera track stopped');
                 });
                 this.videoElement.srcObject = null;
+                if (this.videoElement.parentNode) {
+                    this.videoElement.parentNode.removeChild(this.videoElement);
+                    console.log('🖥️ Desktop video element removed');
+                }
             }
 
-            // 3. Remove video element
-            if (this.videoElement && this.videoElement.parentNode) {
-                this.videoElement.parentNode.removeChild(this.videoElement);
-                console.log('📹 Video element removed');
+            // Remove mobile touch handler from desktop video element
+            if (this.videoElement && this.mobileTouchHandler) {
+                this.videoElement.removeEventListener('touchstart', this.mobileTouchHandler);
+                console.log('🖥️ Mobile touch handler removed from desktop video');
+            }
+
+            // Clear mobile touch handler reference
+            if (this.mobileTouchHandler) {
+                this.mobileTouchHandler = null;
+                console.log('📱 Mobile touch handler reference cleared');
+            }
+
+            // Stop any camera stream reference
+            if (this.cameraStream) {
+                const streamTracks = this.cameraStream.getTracks();
+                streamTracks.forEach(track => {
+                    track.stop();
+                    console.log('🎥 Stream track stopped');
+                });
+                this.cameraStream = null;
             }
 
             // 3. Remove super exit button
@@ -1349,32 +1402,242 @@ class BabylonXRFramework {
                 console.log('🎨 Canvas removed');
             }
 
-            // 8. Restore main app UI
-            const tabContent = document.getElementById('tabContent');
-            if (tabContent) {
-                tabContent.style.display = 'block';
-                console.log('🔄 Main tab content restored');
-            }
+            // 8. Remove all AR-related overlays and backgrounds (especially for mobile)
+            const elementsToRemove = [
+                'ar-camera-video',
+                'mobile-loading',
+                'ar-overlay',
+                'ar-analysis-panel'
+            ];
+
+            elementsToRemove.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.remove();
+                    console.log(`🧹 Removed element: ${id}`);
+                }
+            });
+
+            // Remove any elements with AR-related classes
+            const arElements = document.querySelectorAll('[class*="ar-"], [id*="ar-"], [class*="mobile-ar"], video[autoplay]');
+            arElements.forEach(element => {
+                if (element.parentNode) {
+                    element.parentNode.removeChild(element);
+                    console.log('🧹 Removed AR element:', element.tagName, element.id || element.className);
+                }
+            });
+
+            // Clear any black backgrounds or overlays (more comprehensive)
+            const blackOverlays = document.querySelectorAll([
+                'div[style*="background: #000"]',
+                'div[style*="background-color: black"]',
+                'div[style*="background:#000"]',
+                'div[style*="background-color:#000"]',
+                'div[style*="background: black"]',
+                'div[style*="z-index: 999"]',
+                '.ar-camera-overlay',
+                '.ar-background',
+                '.babylon-overlay',
+                '.xr-overlay'
+            ].join(','));
+
+            blackOverlays.forEach(overlay => {
+                overlay.remove();
+                console.log('🧹 Removed black overlay:', overlay.className || overlay.id);
+            });
+
+            // Remove any style attributes that might be causing black backgrounds
+            document.querySelectorAll('*').forEach(element => {
+                const style = element.getAttribute('style');
+                if (style && (style.includes('background: #000') || style.includes('background-color: black') || style.includes('background:#000'))) {
+                    element.removeAttribute('style');
+                    console.log('🧹 Removed black background style from:', element.tagName);
+                }
+            });
+
+            // 9. Restore main app UI - more comprehensive restoration
+            const elementsToRestore = [
+                'tabContent',
+                'mainContent',
+                'mainContainer',
+                'dataTab'
+            ];
+
+            elementsToRestore.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.style.display = 'block';
+                    element.style.visibility = 'visible';
+                    element.style.opacity = '1';
+                    element.style.position = '';
+                    element.style.zIndex = '';
+                    element.style.background = '';
+                    element.style.backgroundColor = '';
+                    console.log(`🔄 Restored element: ${id}`);
+                }
+            });
 
             // Hide any AR containers that might still be visible
-            const arContainer = document.getElementById('ar-chat-container');
-            if (arContainer) {
-                arContainer.style.display = 'none';
-                console.log('📱 AR chat container hidden');
-            }
+            const arContainers = [
+                'ar-chat-container',
+                'ar-chatgpt',
+                'ar-overlay',
+                'ar-ui-overlay'
+            ];
 
-            // 9. Notify other systems
+            arContainers.forEach(id => {
+                const container = document.getElementById(id);
+                if (container) {
+                    container.style.display = 'none';
+                    console.log(`📱 Hidden AR container: ${id}`);
+                }
+            });
+
+            // Reset body and html styles that might have been modified
+            [document.body, document.documentElement].forEach(element => {
+                element.style.overflow = '';
+                element.style.position = '';
+                element.style.width = '';
+                element.style.height = '';
+                element.style.background = '';
+                element.style.backgroundColor = '';
+                element.style.margin = '';
+                element.style.padding = '';
+            });
+            console.log('🧹 Body and HTML styles reset');
+
+            // 9. Switch back to main app tab and hide AR tab
+            setTimeout(() => {
+                // Hide AR ChatGPT tab content
+                const arChatContent = document.getElementById('ar-chatgpt');
+                if (arChatContent) {
+                    arChatContent.style.display = 'none';
+                    arChatContent.classList.remove('active');
+                    console.log('🔄 Hidden AR ChatGPT tab content');
+                }
+
+                // Remove active class from AR tab button
+                const arTabBtn = document.querySelector('[data-tab="ar-chatgpt"]');
+                if (arTabBtn) {
+                    arTabBtn.classList.remove('active');
+                }
+
+                // Switch to main app
+                if (window.nasaFarmNavigatorsApp && typeof window.nasaFarmNavigatorsApp.switchTab === 'function') {
+                    window.nasaFarmNavigatorsApp.switchTab('data');
+                    console.log('🔄 Switched back to main data tab');
+                } else {
+                    // Fallback: manually trigger tab switch to the correct data tab
+                    const dataTab = document.querySelector('[data-tab="data"]');
+                    if (dataTab) {
+                        dataTab.click();
+                        console.log('🔄 Clicked data tab as fallback');
+                    } else {
+                        // Show data content directly
+                        const dataContent = document.getElementById('dataTab');
+                        if (dataContent) {
+                            dataContent.style.display = 'block';
+                            dataContent.classList.add('active');
+                            console.log('🔄 Showed data content directly');
+                        }
+
+                        // Last resort: show the main container
+                        const mainContainer = document.getElementById('mainContainer');
+                        if (mainContainer) {
+                            mainContainer.style.display = 'block';
+                            console.log('🔄 Showed main container as last resort');
+                        }
+                    }
+                }
+            }, 100);
+
+            // 10. Notify other systems
             if (window.arChatGPTCore) {
                 window.arChatGPTCore.exitARMode();
                 console.log('📢 AR ChatGPT Core notified');
             }
 
-            // 10. Force reload location if nothing else works
+            // 10. Mobile-specific cleanup (force cleanup after delay)
             setTimeout(() => {
-                if (document.getElementById('ar-overlay') &&
-                    document.getElementById('ar-overlay').style.display !== 'none') {
-                    console.log('🔄 Force reloading page...');
-                    window.location.reload();
+                // Additional mobile cleanup
+                console.log('📱 Running additional mobile cleanup...');
+
+                // Remove any remaining video elements
+                const videos = document.querySelectorAll('video');
+                videos.forEach(video => {
+                    if (video.srcObject) {
+                        const tracks = video.srcObject.getTracks();
+                        tracks.forEach(track => track.stop());
+                        video.srcObject = null;
+                    }
+                    video.remove();
+                    console.log('🎥 Removed remaining video element');
+                });
+
+                // Remove any fixed position elements with high z-index (likely AR overlays)
+                const fixedElements = document.querySelectorAll('[style*="position: fixed"], [style*="position:fixed"]');
+                fixedElements.forEach(element => {
+                    const zIndex = parseInt(getComputedStyle(element).zIndex);
+                    if (zIndex > 100 && element.id !== 'main-content') {
+                        element.remove();
+                        console.log('🧹 Removed high z-index fixed element');
+                    }
+                });
+
+                // Clear any Babylon.js canvases
+                const canvases = document.querySelectorAll('canvas');
+                canvases.forEach(canvas => {
+                    if (canvas.id.includes('babylon') || canvas.className.includes('babylon')) {
+                        canvas.remove();
+                        console.log('🎨 Removed Babylon canvas');
+                    }
+                });
+
+                // Ensure main app is visible
+                const arChatTab = document.getElementById('ar-chatgpt');
+                if (arChatTab) {
+                    arChatTab.style.background = '';
+                    arChatTab.style.backgroundColor = '';
+                }
+
+                console.log('📱 Mobile cleanup completed');
+            }, 500);
+
+            // 11. Emergency fallback - reload if cleanup fails
+            setTimeout(() => {
+                // Check if there are still problematic elements
+                const problematicElements = document.querySelectorAll('video[autoplay], canvas[id*="babylon"]');
+                const blackOverlays = document.querySelectorAll('div[style*="background: #000"]');
+
+                if (problematicElements.length > 0 || blackOverlays.length > 0) {
+                    console.log('⚠️ Still found problematic elements, offering page reload...');
+
+                    // Show a user-friendly reload button instead of auto-reload
+                    const reloadBtn = document.createElement('button');
+                    reloadBtn.innerHTML = '🔄 새로고침';
+                    reloadBtn.style.cssText = `
+                        position: fixed !important;
+                        top: 50% !important;
+                        left: 50% !important;
+                        transform: translate(-50%, -50%) !important;
+                        z-index: 999999 !important;
+                        background: #E43700 !important;
+                        color: white !important;
+                        border: none !important;
+                        padding: 15px 30px !important;
+                        border-radius: 10px !important;
+                        font-size: 16px !important;
+                        cursor: pointer !important;
+                    `;
+                    reloadBtn.onclick = () => window.location.reload();
+                    document.body.appendChild(reloadBtn);
+
+                    // Auto-remove the button after 5 seconds
+                    setTimeout(() => {
+                        if (reloadBtn.parentNode) {
+                            reloadBtn.parentNode.removeChild(reloadBtn);
+                        }
+                    }, 5000);
                 }
             }, 2000);
 

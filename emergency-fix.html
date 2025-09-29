@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚨 Emergency AR Fix</title>
+    <style>
+        body { background: #000; color: #ff0000; font-family: monospace; padding: 20px; }
+        button { background: #ff0000; color: #fff; border: none; padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; }
+        .log { background: #111; padding: 10px; margin: 10px 0; border: 1px solid #ff0000; }
+    </style>
+</head>
+<body>
+    <h1>🚨 EMERGENCY AR FIX</h1>
+    <button onclick="emergencyCleanup()">🆘 EMERGENCY CLEANUP</button>
+    <button onclick="fixTabNavigation()">🔧 FIX TAB NAVIGATION</button>
+    <button onclick="killAllAR()">💀 KILL ALL AR</button>
+
+    <div class="log" id="log"></div>
+
+    <script>
+        const log = (msg) => {
+            document.getElementById('log').innerHTML += msg + '<br>';
+            console.log(msg);
+        };
+
+        function emergencyCleanup() {
+            log('🚨 EMERGENCY CLEANUP STARTED');
+
+            // 1. Force remove ALL AR elements
+            const selectors = [
+                '[id*="ar"]', '[class*="ar"]', '[id*="AR"]', '[class*="AR"]',
+                'canvas', 'video', '[style*="position: fixed"]', '[style*="z-index: 1"]'
+            ];
+
+            let removed = 0;
+            selectors.forEach(sel => {
+                document.querySelectorAll(sel).forEach(el => {
+                    try {
+                        el.remove();
+                        removed++;
+                    } catch(e) {}
+                });
+            });
+            log(`🗑️ Removed ${removed} elements`);
+
+            // 2. Clear all AR globals
+            ['arSystem', 'arSystemExtension', 'arIntegrationManager', 'arInterfaceManager', 'tabGuard'].forEach(v => {
+                if (window[v]) {
+                    try {
+                        if (window[v].cleanup) window[v].cleanup();
+                        if (window[v].emergencyCleanup) window[v].emergencyCleanup();
+                        window[v] = null;
+                        log(`✓ Cleared ${v}`);
+                    } catch(e) {
+                        log(`❌ Failed to clear ${v}: ${e.message}`);
+                    }
+                }
+            });
+
+            // 3. Reset page navigation
+            document.body.style.overflow = 'auto';
+            document.documentElement.style.overflow = 'auto';
+
+            log('✅ EMERGENCY CLEANUP COMPLETE');
+        }
+
+        function fixTabNavigation() {
+            log('🔧 FIXING TAB NAVIGATION...');
+
+            // Reset tab system
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.style.pointerEvents = 'auto';
+                tab.style.opacity = '1';
+                tab.disabled = false;
+                log(`✓ Fixed tab: ${tab.textContent}`);
+            });
+
+            contents.forEach(content => {
+                content.style.display = 'block';
+                content.style.visibility = 'visible';
+            });
+
+            // Force enable app navigation
+            if (window.app && window.app.switchTab) {
+                window.app.tabNavigationEnabled = true;
+                log('✓ Re-enabled app.switchTab');
+            }
+
+            // Remove any blocking event listeners
+            document.removeEventListener('beforeunload', () => {});
+            window.removeEventListener('beforeunload', () => {});
+
+            log('✅ TAB NAVIGATION FIXED');
+        }
+
+        function killAllAR() {
+            log('💀 KILLING ALL AR PROCESSES...');
+
+            emergencyCleanup();
+            fixTabNavigation();
+
+            // Additional aggressive cleanup
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+
+            log('💀 AR KILLED - PAGE WILL RELOAD IN 2 SECONDS');
+        }
+
+        // Auto-run emergency cleanup on load
+        window.addEventListener('load', () => {
+            setTimeout(emergencyCleanup, 1000);
+        });
+    </script>
+</body>
+</html>

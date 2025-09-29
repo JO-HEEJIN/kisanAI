@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛑 AR Exit Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #222;
+            color: #0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        button {
+            background: #333;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #0f0;
+            color: #222;
+        }
+        button:disabled {
+            background: #666;
+            color: #999;
+            cursor: not-allowed;
+        }
+        .status {
+            background: #000;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #0f0;
+            border-radius: 5px;
+            min-height: 200px;
+            white-space: pre-wrap;
+            text-align: left;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-y: auto;
+        }
+        .success { color: #00ff88; }
+        .error { color: #ff4444; }
+        .warning { color: #ffaa00; }
+        .info { color: #00aaff; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🛑 AR Exit Test</h1>
+        <p>Simple test for AR system exit functionality</p>
+
+        <div>
+            <button onclick="quickARTest()" id="quick-test-btn">Quick AR Test</button>
+            <button onclick="findExitButton()" id="find-exit-btn">Find Exit Button</button>
+            <button onclick="simulateExit()" id="simulate-exit-btn">Simulate Exit</button>
+            <button onclick="forceCleanAll()" id="force-clean-btn">Force Clean All</button>
+            <button onclick="clearLog()" id="clear-btn">Clear Log</button>
+        </div>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <!-- Load AR components -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="src/ar/ARSystem.js"></script>
+    <script src="src/ar/ARIntegrationManager.js"></script>
+    <script src="src/ar/TabNavigationGuard.js"></script>
+    <script src="src/ar/ARInterfaceManager.js"></script>
+    <script src="src/ar/ARSystemExtension.js"></script>
+
+    <script>
+        const log = (message, type = 'info') => {
+            const statusEl = document.getElementById('status');
+            const time = new Date().toTimeString().split(' ')[0];
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : type === 'info' ? 'info' : '';
+            statusEl.innerHTML += `<span class="${className}">[${time}] ${message}</span>\n`;
+            statusEl.scrollTop = statusEl.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        };
+
+        const clearLog = () => {
+            document.getElementById('status').innerHTML = '';
+        };
+
+        let testArSystem = null;
+
+        const quickARTest = async () => {
+            try {
+                log('🚀 Starting quick AR test...', 'info');
+
+                if (!window.ARSystem) {
+                    throw new Error('ARSystem not loaded');
+                }
+
+                // Create basic AR system
+                testArSystem = new window.ARSystem();
+                log('✓ ARSystem created', 'success');
+
+                // Initialize but don't start full AR (avoid WebXR requirements)
+                await testArSystem.loadBabylonJS();
+                log('✓ Babylon.js loaded', 'success');
+
+                testArSystem.createCanvas();
+                log('✓ Canvas created', 'success');
+
+                // Check if exit button exists
+                const exitBtn = document.getElementById('exit-ar-btn');
+                if (exitBtn) {
+                    log('✓ Exit button found!', 'success');
+                    log(`Exit button text: "${exitBtn.textContent}"`, 'info');
+                    log(`Exit button onclick: ${exitBtn.onclick ? 'YES' : 'NO'}`, 'info');
+
+                    // Check if it has event listeners
+                    const listeners = getEventListeners ? getEventListeners(exitBtn) : 'Cannot check listeners';
+                    log(`Event listeners: ${JSON.stringify(listeners)}`, 'info');
+                } else {
+                    log('❌ Exit button NOT found!', 'error');
+                }
+
+                log('🎉 Quick AR test completed', 'success');
+
+            } catch (error) {
+                log(`❌ Quick AR test failed: ${error.message}`, 'error');
+                if (error.stack) {
+                    log(`Stack: ${error.stack}`, 'error');
+                }
+            }
+        };
+
+        const findExitButton = () => {
+            log('🔍 Searching for exit buttons...', 'info');
+
+            const selectors = [
+                '#exit-ar-btn',
+                'button[id*="exit"]',
+                'button[onclick*="stop"]',
+                'button[onclick*="exit"]',
+                '[id*="ar-"][onclick]',
+                'button:contains("Exit")',
+                'button:contains("exit")',
+                'button:contains("❌")'
+            ];
+
+            let found = false;
+            selectors.forEach(selector => {
+                try {
+                    const elements = document.querySelectorAll(selector);
+                    if (elements.length > 0) {
+                        elements.forEach((el, i) => {
+                            log(`✓ Found: ${selector} [${i}] - "${el.textContent}" - onclick: ${el.onclick ? 'YES' : 'NO'}`, 'success');
+                            found = true;
+                        });
+                    }
+                } catch (e) {
+                    // Skip invalid selectors
+                }
+            });
+
+            if (!found) {
+                log('❌ No exit buttons found', 'error');
+            }
+
+            // Also check for any hidden elements
+            const allButtons = document.querySelectorAll('button');
+            log(`Total buttons on page: ${allButtons.length}`, 'info');
+
+            allButtons.forEach((btn, i) => {
+                if (btn.textContent.toLowerCase().includes('exit') ||
+                    btn.textContent.includes('❌') ||
+                    btn.id.includes('exit')) {
+                    const style = window.getComputedStyle(btn);
+                    log(`Button ${i}: "${btn.textContent}" - display:${style.display} visibility:${style.visibility}`, 'info');
+                }
+            });
+        };
+
+        const simulateExit = async () => {
+            log('🛑 Simulating exit button click...', 'warning');
+
+            const exitBtn = document.getElementById('exit-ar-btn');
+            if (!exitBtn) {
+                log('❌ Exit button not found - cannot simulate', 'error');
+                return;
+            }
+
+            log('📱 Exit button found, attempting click...', 'info');
+
+            try {
+                // Try multiple ways to trigger the exit
+
+                // Method 1: Direct click
+                log('Method 1: Direct click()', 'info');
+                exitBtn.click();
+
+                setTimeout(() => {
+                    // Method 2: Dispatch click event
+                    log('Method 2: Dispatch click event', 'info');
+                    const clickEvent = new MouseEvent('click', {
+                        view: window,
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    exitBtn.dispatchEvent(clickEvent);
+                }, 500);
+
+                setTimeout(() => {
+                    // Method 3: Manual function call if available
+                    log('Method 3: Check if manual cleanup available', 'info');
+                    if (window.arSystemExtension && window.arSystemExtension.stopEnhancedAR) {
+                        log('Calling arSystemExtension.stopEnhancedAR()', 'info');
+                        window.arSystemExtension.stopEnhancedAR();
+                    } else if (testArSystem && testArSystem.forceCleanupUI) {
+                        log('Calling testArSystem.forceCleanupUI()', 'info');
+                        testArSystem.forceCleanupUI();
+                    }
+                }, 1000);
+
+                log('✓ Exit simulation completed', 'success');
+
+            } catch (error) {
+                log(`❌ Exit simulation failed: ${error.message}`, 'error');
+            }
+        };
+
+        const forceCleanAll = () => {
+            log('🧹 Force cleaning ALL AR elements...', 'warning');
+
+            // Ultra-aggressive cleanup
+            const selectors = [
+                '[id*="ar"]', '[class*="ar"]', 'canvas', 'video',
+                '[id*="AR"]', '[class*="AR"]',
+                '[style*="position: fixed"]',
+                '[style*="z-index: 10"]'
+            ];
+
+            let removedCount = 0;
+            selectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => {
+                    // Skip our test page elements
+                    if (el.closest('.test-container')) return;
+
+                    try {
+                        el.style.cssText = `
+                            display: none !important;
+                            visibility: hidden !important;
+                            opacity: 0 !important;
+                            pointer-events: none !important;
+                            z-index: -99999 !important;
+                        `;
+                        el.remove();
+                        removedCount++;
+                    } catch (e) {
+                        // Element might be needed
+                    }
+                });
+            });
+
+            // Clear globals
+            ['arSystem', 'arSystemExtension', 'arIntegrationManager', 'arInterfaceManager'].forEach(varName => {
+                if (window[varName]) {
+                    try {
+                        if (typeof window[varName].cleanup === 'function') {
+                            window[varName].cleanup();
+                        }
+                        window[varName] = null;
+                        log(`✓ Cleared ${varName}`, 'success');
+                    } catch (e) {
+                        log(`⚠️ Failed to clear ${varName}: ${e.message}`, 'warning');
+                    }
+                }
+            });
+
+            log(`🗑️ Force cleaned ${removedCount} elements`, 'success');
+        };
+
+        // Auto-monitor for AR elements
+        setInterval(() => {
+            const arElements = document.querySelectorAll('[id*="ar-"], [class*="ar-"]');
+            if (arElements.length > 0) {
+                const visibleCount = Array.from(arElements).filter(el => {
+                    const style = window.getComputedStyle(el);
+                    return style.display !== 'none' && style.visibility !== 'hidden';
+                }).length;
+
+                if (visibleCount > 0) {
+                    log(`⚠️ ${visibleCount} visible AR elements detected`, 'warning');
+                }
+            }
+        }, 3000);
+
+        // Error monitoring
+        window.addEventListener('error', (e) => {
+            log(`💥 Global error: ${e.message}`, 'error');
+        });
+
+        // Load status
+        window.addEventListener('load', () => {
+            log('🌟 AR Exit Test loaded successfully', 'success');
+            log('Available global objects:', 'info');
+            ['ARSystem', 'ARIntegrationManager', 'ARSystemExtension', 'ARInterfaceManager'].forEach(name => {
+                log(`  - ${name}: ${window[name] ? '✓ Available' : '❌ Missing'}`, 'info');
+            });
+        });
+    </script>
+</body>
+</html>

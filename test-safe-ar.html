@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safe AR System Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1e1e3f 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .test-button {
+            background: linear-gradient(45deg, #2E96F5, #0960E1);
+            border: none;
+            color: white;
+            padding: 15px 25px;
+            margin: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+        }
+        .test-results {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background: #2ecc71; }
+        .status-error { background: #e74c3c; }
+        .status-warning { background: #f39c12; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🛡️ Safe AR System Test</h1>
+        <p>새로운 WebXR DOM Overlay 기반 Safe AR 시스템 테스트</p>
+
+        <div class="test-controls">
+            <button class="test-button" onclick="testSystemAvailability()">
+                🔍 시스템 가용성 확인
+            </button>
+            <button class="test-button" onclick="testSafeARIntegration()">
+                🚀 Safe AR Integration 테스트
+            </button>
+            <button class="test-button" onclick="testWebXRSupport()">
+                🥽 WebXR 지원 확인
+            </button>
+            <button class="test-button" onclick="testCleanupSafety()">
+                🧹 정리 안전성 테스트
+            </button>
+            <button class="test-button" onclick="runFullTest()">
+                ⚡ 전체 테스트 실행
+            </button>
+        </div>
+
+        <div id="test-results" class="test-results">
+테스트 결과가 여기에 표시됩니다...
+        </div>
+    </div>
+
+    <!-- Safe AR System Scripts -->
+    <script src="src/ar/MinimalWebXRAR.js"></script>
+    <script src="src/ar/SafeARIntegration.js"></script>
+    <script src="src/ar/SafeARStub.js"></script>
+
+    <script>
+        let testResults = '';
+
+        function logTest(message, status = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = status === 'success' ? '✅' : status === 'error' ? '❌' : status === 'warning' ? '⚠️' : 'ℹ️';
+            testResults += `[${timestamp}] ${icon} ${message}\n`;
+            document.getElementById('test-results').textContent = testResults;
+        }
+
+        function clearResults() {
+            testResults = '';
+            document.getElementById('test-results').textContent = '테스트 결과가 여기에 표시됩니다...';
+        }
+
+        async function testSystemAvailability() {
+            clearResults();
+            logTest('시스템 가용성 확인 시작...');
+
+            // MinimalWebXRAR 클래스 확인
+            if (typeof MinimalWebXRAR !== 'undefined') {
+                logTest('MinimalWebXRAR 클래스 로드됨', 'success');
+                try {
+                    const arSystem = new MinimalWebXRAR();
+                    logTest(`MinimalWebXRAR 인스턴스 생성 성공: ${arSystem.constructor.name}`, 'success');
+
+                    // 메서드 확인
+                    const methods = ['startAR', 'stopAR', 'cleanup', 'getStatus'];
+                    methods.forEach(method => {
+                        if (typeof arSystem[method] === 'function') {
+                            logTest(`- ${method}() 메서드 사용 가능`, 'success');
+                        } else {
+                            logTest(`- ${method}() 메서드 누락`, 'error');
+                        }
+                    });
+                } catch (error) {
+                    logTest(`MinimalWebXRAR 인스턴스 생성 실패: ${error.message}`, 'error');
+                }
+            } else {
+                logTest('MinimalWebXRAR 클래스 로드 실패', 'error');
+            }
+
+            // SafeARIntegration 클래스 확인
+            if (typeof SafeARIntegration !== 'undefined') {
+                logTest('SafeARIntegration 클래스 로드됨', 'success');
+                try {
+                    const integration = new SafeARIntegration();
+                    logTest(`SafeARIntegration 인스턴스 생성 성공`, 'success');
+
+                    // 메서드 확인
+                    const methods = ['startSafeAR', 'cleanup', 'getStatus', 'getDebugInfo'];
+                    methods.forEach(method => {
+                        if (typeof integration[method] === 'function') {
+                            logTest(`- ${method}() 메서드 사용 가능`, 'success');
+                        } else {
+                            logTest(`- ${method}() 메서드 누락`, 'error');
+                        }
+                    });
+                } catch (error) {
+                    logTest(`SafeARIntegration 인스턴스 생성 실패: ${error.message}`, 'error');
+                }
+            } else {
+                logTest('SafeARIntegration 클래스 로드 실패', 'error');
+            }
+
+            // SafeARStub 확인
+            if (typeof SafeARStub !== 'undefined') {
+                logTest('SafeARStub 클래스 로드됨 (Fallback 준비됨)', 'success');
+            } else {
+                logTest('SafeARStub 클래스 로드 실패', 'warning');
+            }
+        }
+
+        async function testSafeARIntegration() {
+            clearResults();
+            logTest('Safe AR Integration 테스트 시작...');
+
+            if (typeof SafeARIntegration === 'undefined') {
+                logTest('SafeARIntegration 클래스가 로드되지 않음', 'error');
+                return;
+            }
+
+            try {
+                const integration = new SafeARIntegration();
+                logTest('SafeARIntegration 인스턴스 생성됨', 'success');
+
+                // 상태 확인
+                const status = integration.getStatus();
+                logTest(`초기 상태: ${JSON.stringify(status, null, 2)}`, 'info');
+
+                // 디버그 정보 확인
+                const debugInfo = integration.getDebugInfo();
+                logTest(`디버그 정보: ${JSON.stringify(debugInfo, null, 2)}`, 'info');
+
+                // 긴급 정리 테스트 (실제 DOM 요소 없이)
+                logTest('긴급 정리 기능 테스트 중...', 'info');
+                await integration.emergencyCleanupAll();
+                logTest('긴급 정리 기능 테스트 완료', 'success');
+
+                // 알림 시스템 테스트
+                logTest('알림 시스템 테스트 중...', 'info');
+                integration.showSafeNotification('테스트 알림입니다', 'info');
+                logTest('알림 시스템 테스트 완료', 'success');
+
+            } catch (error) {
+                logTest(`Safe AR Integration 테스트 실패: ${error.message}`, 'error');
+                console.error('Safe AR Integration 테스트 에러:', error);
+            }
+        }
+
+        async function testWebXRSupport() {
+            clearResults();
+            logTest('WebXR 지원 확인 시작...');
+
+            // navigator.xr 확인
+            if ('xr' in navigator) {
+                logTest('navigator.xr 사용 가능', 'success');
+
+                try {
+                    // immersive-ar 세션 지원 확인
+                    const arSupported = await navigator.xr.isSessionSupported('immersive-ar');
+                    if (arSupported) {
+                        logTest('immersive-ar 세션 지원됨', 'success');
+                    } else {
+                        logTest('immersive-ar 세션 지원되지 않음', 'warning');
+                    }
+                } catch (error) {
+                    logTest(`WebXR 세션 지원 확인 실패: ${error.message}`, 'error');
+                }
+
+                try {
+                    // inline 세션 지원 확인
+                    const inlineSupported = await navigator.xr.isSessionSupported('inline');
+                    if (inlineSupported) {
+                        logTest('inline 세션 지원됨', 'success');
+                    } else {
+                        logTest('inline 세션 지원되지 않음', 'warning');
+                    }
+                } catch (error) {
+                    logTest(`inline 세션 지원 확인 실패: ${error.message}`, 'error');
+                }
+            } else {
+                logTest('navigator.xr 사용 불가 (WebXR 미지원)', 'error');
+            }
+
+            // HTTPS 확인
+            if (location.protocol === 'https:') {
+                logTest('HTTPS 연결 확인됨', 'success');
+            } else {
+                logTest('HTTPS 연결 필요 (WebXR는 HTTPS에서만 작동)', 'warning');
+            }
+
+            // 브라우저 확인
+            const userAgent = navigator.userAgent;
+            if (userAgent.includes('Chrome') || userAgent.includes('Chromium')) {
+                logTest('Chrome 브라우저 감지됨 (WebXR 지원 양호)', 'success');
+            } else if (userAgent.includes('Safari')) {
+                logTest('Safari 브라우저 감지됨 (제한적 WebXR 지원)', 'warning');
+            } else {
+                logTest(`브라우저: ${userAgent.split(' ')[0]} (WebXR 지원 확인 필요)`, 'warning');
+            }
+        }
+
+        async function testCleanupSafety() {
+            clearResults();
+            logTest('정리 안전성 테스트 시작...');
+
+            // 테스트용 DOM 요소 생성
+            const testElements = [
+                { id: 'ar-system-canvas', tag: 'canvas' },
+                { id: 'ar-control-panel', tag: 'div' },
+                { id: 'minimal-ar-overlay', tag: 'div' }
+            ];
+
+            // 테스트 요소 생성
+            testElements.forEach(({ id, tag }) => {
+                const element = document.createElement(tag);
+                element.id = id;
+                element.textContent = `Test ${id}`;
+                element.style.cssText = 'position: fixed; top: 10px; left: 10px; z-index: 1000; background: red; color: white; padding: 5px;';
+                document.body.appendChild(element);
+                logTest(`테스트 요소 생성됨: ${id}`, 'info');
+            });
+
+            // SafeARIntegration으로 안전한 정리 테스트
+            if (typeof SafeARIntegration !== 'undefined') {
+                const integration = new SafeARIntegration();
+
+                // 긴급 정리 실행
+                await integration.emergencyCleanupAll();
+
+                // 정리 결과 확인
+                let cleanedCount = 0;
+                testElements.forEach(({ id }) => {
+                    const element = document.getElementById(id);
+                    if (!element) {
+                        cleanedCount++;
+                        logTest(`테스트 요소 안전하게 제거됨: ${id}`, 'success');
+                    } else {
+                        logTest(`테스트 요소 남아있음: ${id}`, 'warning');
+                    }
+                });
+
+                if (cleanedCount === testElements.length) {
+                    logTest('모든 AR 관련 요소가 안전하게 정리됨', 'success');
+                } else {
+                    logTest(`${cleanedCount}/${testElements.length} 요소가 정리됨`, 'warning');
+                }
+
+                // 메인 앱 요소들이 보존되는지 확인
+                const mainElements = ['body', 'head', 'html'];
+                let preservedCount = 0;
+                mainElements.forEach(tag => {
+                    const element = document.querySelector(tag);
+                    if (element) {
+                        preservedCount++;
+                        logTest(`메인 요소 보존됨: ${tag}`, 'success');
+                    } else {
+                        logTest(`메인 요소 손실됨: ${tag}`, 'error');
+                    }
+                });
+
+                if (preservedCount === mainElements.length) {
+                    logTest('모든 메인 앱 요소가 안전하게 보존됨', 'success');
+                } else {
+                    logTest('일부 메인 앱 요소가 손실됨', 'error');
+                }
+            } else {
+                logTest('SafeARIntegration 클래스를 찾을 수 없음', 'error');
+            }
+        }
+
+        async function runFullTest() {
+            clearResults();
+            logTest('=== 전체 테스트 실행 시작 ===');
+
+            await testSystemAvailability();
+            logTest('--- 시스템 가용성 테스트 완료 ---');
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testWebXRSupport();
+            logTest('--- WebXR 지원 테스트 완료 ---');
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testSafeARIntegration();
+            logTest('--- Safe AR Integration 테스트 완료 ---');
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testCleanupSafety();
+            logTest('--- 정리 안전성 테스트 완료 ---');
+
+            logTest('=== 전체 테스트 실행 완료 ===');
+        }
+
+        // 페이지 로드 시 자동으로 기본 테스트 실행
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                logTest('Safe AR 시스템 테스트 페이지 로드됨');
+                logTest('테스트 버튼을 클릭하여 시작하세요.');
+            }, 100);
+        });
+    </script>
+</body>
+</html>

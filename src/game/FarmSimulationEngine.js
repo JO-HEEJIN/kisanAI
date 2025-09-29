@@ -1206,6 +1206,12 @@ class FarmSimulationEngine {
         }
 
         try {
+            // Check if location exists before destructuring
+            if (!this.farmState.location || typeof this.farmState.location !== 'object') {
+                console.warn('⚠️ Farm location not set, using default coordinates');
+                this.farmState.location = { lat: 40.7128, lon: -74.0060 }; // Default to NYC
+            }
+
             const { lat, lon } = this.farmState.location;
             const currentDate = new Date().toISOString().split('T')[0];
 

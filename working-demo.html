@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Working AR Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0c1426, #1e3c72);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        h1 {
+            color: #2E96F5;
+            margin-bottom: 30px;
+        }
+        .status-card {
+            background: rgba(7, 23, 63, 0.8);
+            border: 1px solid #2E96F5;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .demo-button {
+            background: linear-gradient(45deg, #0960E1, #2E96F5);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s;
+        }
+        .demo-button:hover {
+            transform: translateY(-2px);
+        }
+        .demo-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .data-item {
+            background: rgba(46, 150, 245, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .data-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2E96F5;
+        }
+        .data-label {
+            font-size: 12px;
+            color: #ccc;
+            margin-top: 5px;
+        }
+        .log-area {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            text-align: left;
+            margin-top: 20px;
+        }
+        .success { color: #00ff88; }
+        .error { color: #ff4444; }
+        .warning { color: #ffaa00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🥽 Working AR Interface Demo</h1>
+
+        <div class="status-card">
+            <h3>System Status</h3>
+            <div id="system-status">Initializing...</div>
+        </div>
+
+        <div class="status-card">
+            <h3>NASA Real-time Data</h3>
+            <div class="data-grid">
+                <div class="data-item">
+                    <div class="data-value" id="soil-moisture">--</div>
+                    <div class="data-label">Soil Moisture (%)</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="ndvi-value">--</div>
+                    <div class="data-label">NDVI Index</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="temperature">--</div>
+                    <div class="data-label">Temperature (°C)</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="data-quality">--</div>
+                    <div class="data-label">Data Quality</div>
+                </div>
+            </div>
+            <button class="demo-button" onclick="fetchNASAData()">🛰️ Refresh NASA Data</button>
+        </div>
+
+        <div class="status-card">
+            <h3>AR Interface Demo</h3>
+            <p>Experience the enhanced AR interface with real NASA satellite data integration</p>
+
+            <button class="demo-button" id="init-btn" onclick="initializeAR()">🔧 Initialize AR System</button>
+            <button class="demo-button" id="demo-btn" onclick="startARDemo()" disabled>🚀 Start AR Demo</button>
+            <button class="demo-button" id="interface-btn" onclick="testInterface()" disabled>🎨 Test Interface</button>
+            <button class="demo-button" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+
+        <div class="log-area" id="log"></div>
+    </div>
+
+    <!-- Load AR Components -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="src/ar/ARSystem.js"></script>
+    <script src="src/ar/ARIntegrationManager.js"></script>
+    <script src="src/ar/TabNavigationGuard.js"></script>
+    <script src="src/ar/ARInterfaceManager.js"></script>
+    <script src="src/ar/ARSystemExtension.js"></script>
+
+    <script>
+        // Global variables
+        let arIntegrationManager = null;
+        let arSystemExtension = null;
+        let arInterface = null;
+        let tabNavigationGuard = null;
+
+        // Logging
+        const log = (message, type = 'info') => {
+            const logEl = document.getElementById('log');
+            const time = new Date().toTimeString().split(' ')[0];
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            logEl.innerHTML += `<span class="${className}">[${time}] ${message}</span>\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        };
+
+        const clearLog = () => {
+            document.getElementById('log').innerHTML = '';
+        };
+
+        // Update system status
+        const updateStatus = (message, type = 'info') => {
+            const statusEl = document.getElementById('system-status');
+            statusEl.textContent = message;
+            statusEl.className = type;
+        };
+
+        // NASA Data Functions
+        const fetchNASAData = async () => {
+            try {
+                log('🛰️ Fetching NASA data...', 'info');
+
+                // Test NASA proxy health
+                const healthResponse = await fetch('http://localhost:3001/api/health');
+                if (!healthResponse.ok) {
+                    throw new Error('NASA proxy server not responding');
+                }
+
+                // Fetch SMAP data
+                const smapResponse = await fetch('http://localhost:3001/api/smap/soil-moisture?lat=33.43&lon=-111.94');
+                const smapData = await smapResponse.json();
+
+                // Fetch MODIS data
+                const modisResponse = await fetch('http://localhost:3001/api/modis/ndvi?lat=33.43&lon=-111.94');
+                const modisData = await modisResponse.json();
+
+                // Update UI
+                document.getElementById('soil-moisture').textContent =
+                    ((smapData.surface_moisture || 0) * 100).toFixed(1);
+                document.getElementById('ndvi-value').textContent =
+                    (modisData.ndvi || 0).toFixed(3);
+                document.getElementById('temperature').textContent =
+                    (smapData.surface_temperature || 0).toFixed(1);
+                document.getElementById('data-quality').textContent =
+                    smapData.quality || 'Unknown';
+
+                log(`✅ NASA data updated: Soil ${((smapData.surface_moisture || 0) * 100).toFixed(1)}%, NDVI ${(modisData.ndvi || 0).toFixed(3)}`, 'success');
+
+            } catch (error) {
+                log(`❌ NASA data fetch failed: ${error.message}`, 'error');
+            }
+        };
+
+        // AR System Functions
+        const initializeAR = async () => {
+            try {
+                log('🔧 Initializing AR system...', 'info');
+                updateStatus('Initializing AR system...', 'warning');
+
+                // Mock app for tab navigation
+                const mockApp = {
+                    switchTab: (tabName) => {
+                        log(`📋 Tab switch to: ${tabName}`, 'info');
+                        return true;
+                    }
+                };
+
+                // Initialize TabNavigationGuard
+                log('Creating TabNavigationGuard...');
+                tabNavigationGuard = new window.TabNavigationGuard();
+                await tabNavigationGuard.initialize(mockApp);
+                log('✅ TabNavigationGuard initialized', 'success');
+
+                // Initialize ARIntegrationManager
+                log('Creating ARIntegrationManager...');
+                arIntegrationManager = new window.ARIntegrationManager();
+                window.arIntegrationManager = arIntegrationManager;
+                await arIntegrationManager.initialize(tabNavigationGuard);
+                log('✅ ARIntegrationManager initialized', 'success');
+
+                // Initialize ARSystemExtension
+                if (arIntegrationManager.arSystem) {
+                    log('Creating ARSystemExtension...');
+                    arSystemExtension = new window.ARSystemExtension(arIntegrationManager.arSystem);
+                    window.arSystemExtension = arSystemExtension;
+                    await arSystemExtension.extendARSystem();
+                    log('✅ ARSystemExtension initialized', 'success');
+                } else {
+                    throw new Error('ARSystem not available');
+                }
+
+                // Initialize ARInterfaceManager
+                log('Creating ARInterfaceManager...');
+                arInterface = new window.ARInterfaceManager();
+                await arInterface.initialize();
+                log('✅ ARInterfaceManager initialized', 'success');
+
+                // Enable buttons
+                document.getElementById('demo-btn').disabled = false;
+                document.getElementById('interface-btn').disabled = false;
+                document.getElementById('init-btn').disabled = true;
+
+                updateStatus('AR System Ready! 🎉', 'success');
+                log('🎉 AR system fully initialized and ready!', 'success');
+
+            } catch (error) {
+                log(`❌ AR initialization failed: ${error.message}`, 'error');
+                updateStatus('AR initialization failed', 'error');
+            }
+        };
+
+        const startARDemo = async () => {
+            try {
+                log('🚀 Starting AR demo...', 'info');
+
+                if (!arSystemExtension) {
+                    throw new Error('AR system not initialized');
+                }
+
+                // Start enhanced AR
+                await arSystemExtension.startEnhancedAR();
+                log('✅ Enhanced AR started', 'success');
+
+                // Simulate AR session
+                log('🥽 AR session running... (will auto-stop in 5 seconds)', 'info');
+                updateStatus('AR Demo Running...', 'warning');
+
+                setTimeout(async () => {
+                    await arSystemExtension.stopEnhancedAR();
+                    log('🛑 AR demo stopped', 'success');
+                    updateStatus('AR Demo Complete', 'success');
+                }, 5000);
+
+            } catch (error) {
+                log(`❌ AR demo failed: ${error.message}`, 'error');
+                updateStatus('AR demo failed', 'error');
+            }
+        };
+
+        const testInterface = async () => {
+            try {
+                log('🎨 Testing AR interface...', 'info');
+
+                if (!arInterface) {
+                    throw new Error('AR interface not initialized');
+                }
+
+                // Test NASA data refresh
+                await arInterface.refreshNASAData();
+                log('✅ NASA data refresh test passed', 'success');
+
+                // Test voice recognition availability
+                if (arInterface.speechRecognition) {
+                    log('✅ Voice recognition available', 'success');
+                } else {
+                    log('⚠️ Voice recognition not supported', 'warning');
+                }
+
+                // Test UI components
+                const components = ['controlPanel', 'dataOverlay', 'voiceIndicator'];
+                components.forEach(comp => {
+                    if (arInterface[comp]) {
+                        log(`✅ ${comp} component created`, 'success');
+                    } else {
+                        log(`❌ ${comp} component missing`, 'error');
+                    }
+                });
+
+                log('🎨 Interface test completed', 'success');
+
+            } catch (error) {
+                log(`❌ Interface test failed: ${error.message}`, 'error');
+            }
+        };
+
+        // Auto-start
+        window.addEventListener('load', () => {
+            log('🌟 AR Interface Demo loaded', 'success');
+            updateStatus('Ready to initialize', 'info');
+
+            // Auto-fetch NASA data
+            setTimeout(fetchNASAData, 1000);
+        });
+
+        // Error handling
+        window.addEventListener('error', (e) => {
+            log(`💥 Global error: ${e.message}`, 'error');
+        });
+    </script>
+</body>
+</html>

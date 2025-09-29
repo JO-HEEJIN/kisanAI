@@ -195,19 +195,23 @@ class AROverlayDisplay {
     setupEventHandlers() {
         // Setup click/touch handlers for analysis
         if (this.hudContainer) {
-            document.addEventListener('click', (event) => {
+            // Store event handlers for cleanup
+            this.clickHandler = (event) => {
                 if (event.target.closest('#ar-hud-container')) {
                     return; // Don't trigger analysis if clicking on UI
                 }
                 this.handleScreenTouch(event.clientX, event.clientY);
-            });
+            };
 
-            document.addEventListener('touchend', (event) => {
+            this.touchEndHandler = (event) => {
                 if (event.changedTouches.length > 0) {
                     const touch = event.changedTouches[0];
                     this.handleScreenTouch(touch.clientX, touch.clientY);
                 }
-            });
+            };
+
+            document.addEventListener('click', this.clickHandler);
+            document.addEventListener('touchend', this.touchEndHandler);
         }
     }
 
@@ -215,8 +219,12 @@ class AROverlayDisplay {
         // Trigger AR analysis at touch/click point
         try {
             console.log('🎯 Starting AR analysis at:', x, y);
-            if (window.babylonXRFramework && window.babylonXRFramework.performARAnalysis) {
-                const result = await window.babylonXRFramework.performARAnalysis(x, y);
+
+            // Try to get babylonXRFramework from multiple sources
+            let framework = this.babylonXRFramework || window.babylonXRFramework;
+
+            if (framework && framework.performARAnalysis) {
+                const result = await framework.performARAnalysis(x, y);
                 console.log('📊 AR analysis result:', result);
                 if (result) {
                     // Use normal display methods only (no emergency modal)
@@ -227,6 +235,11 @@ class AROverlayDisplay {
                 }
             } else {
                 console.error('❌ babylonXRFramework not available');
+                console.log('Debug info:', {
+                    thisInstance: !!this.babylonXRFramework,
+                    windowInstance: !!window.babylonXRFramework,
+                    hasMethod: !!(framework && framework.performARAnalysis)
+                });
             }
         } catch (error) {
             console.error('AR analysis failed:', error);
@@ -464,10 +477,81 @@ class AROverlayDisplay {
         });
     }
 
+    forceCleanup() {
+        console.log('🚨 FORCE CLEANUP - AR Overlay Display');
+
+        // 1. 모든 이벤트 리스너 제거
+        if (this.clickHandler) {
+            document.removeEventListener('click', this.clickHandler);
+            this.clickHandler = null;
+            console.log('🔥 Click handler force removed');
+        }
+
+        if (this.touchEndHandler) {
+            document.removeEventListener('touchend', this.touchEndHandler);
+            this.touchEndHandler = null;
+            console.log('🔥 TouchEnd handler force removed');
+        }
+
+        // 2. DOM 요소들 강제 제거
+        this.detachFromDOM();
+
+        // 3. 추가적인 이벤트 리스너 제거 (안전장치)
+        this.removeAllEventListeners();
+
+        // 4. 인스턴스 참조 제거
+        if (window.arOverlayDisplay === this) {
+            window.arOverlayDisplay = null;
+        }
+    }
+
+    removeAllEventListeners() {
+        // 모든 가능한 이벤트 타입에 대한 리스너 제거
+        const events = ['click', 'touchstart', 'touchend', 'touchmove', 'mousedown', 'mouseup'];
+        events.forEach(eventType => {
+            // 현재 인스턴스에 바인딩된 핸들러가 있다면 제거
+            if (this[`${eventType}Handler`]) {
+                document.removeEventListener(eventType, this[`${eventType}Handler`]);
+                this[`${eventType}Handler`] = null;
+                console.log(`🔥 ${eventType} handler removed`);
+            }
+        });
+    }
+
+    // 기존 detachFromDOM 메서드 강화
+    detachFromDOM() {
+        if (this.isAttachedToDOM && this.hudContainer) {
+            if (this.hudContainer.parentNode) {
+                this.hudContainer.parentNode.removeChild(this.hudContainer);
+            }
+            this.isAttachedToDOM = false;
+            console.log('🔥 AR Overlay detached from DOM');
+        }
+
+        // Crosshair도 제거
+        if (this.crosshair && this.crosshair.parentNode) {
+            this.crosshair.parentNode.removeChild(this.crosshair);
+            console.log('🔥 Crosshair removed from DOM');
+        }
+    }
+
     dispose() {
         // Cleanup all resources
         try {
             this.clearAllOverlays();
+
+            // Remove global document event listeners
+            if (this.clickHandler) {
+                document.removeEventListener('click', this.clickHandler);
+                this.clickHandler = null;
+                console.log('🔥 Global click handler removed');
+            }
+
+            if (this.touchEndHandler) {
+                document.removeEventListener('touchend', this.touchEndHandler);
+                this.touchEndHandler = null;
+                console.log('🔥 Global touchend handler removed');
+            }
 
             if (this.hudContainer && this.hudContainer.parentNode) {
                 this.hudContainer.parentNode.removeChild(this.hudContainer);

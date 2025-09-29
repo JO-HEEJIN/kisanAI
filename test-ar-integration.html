@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Interface Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #0c1426;
+            color: white;
+        }
+        .test-section {
+            background: rgba(7, 23, 63, 0.8);
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #2E96F5;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .success { background: rgba(46, 150, 245, 0.2); color: #2E96F5; }
+        .error { background: rgba(231, 55, 0, 0.2); color: #E43700; }
+        .warning { background: rgba(234, 254, 7, 0.2); color: #EAFE07; }
+        button {
+            background: #2E96F5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0960E1; }
+        #console-output {
+            background: #000;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🥽 AR Interface Integration Test</h1>
+
+    <div class="test-section">
+        <h2>🔧 Component Loading Tests</h2>
+        <div id="component-tests"></div>
+        <button onclick="testComponents()">Test Components</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🛰️ NASA Data Integration Tests</h2>
+        <div id="nasa-tests"></div>
+        <button onclick="testNASAIntegration()">Test NASA APIs</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 AR System Tests</h2>
+        <div id="ar-tests"></div>
+        <button onclick="testARSystem()">Test AR System</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Interface Features Tests</h2>
+        <div id="interface-tests"></div>
+        <button onclick="testInterfaceFeatures()">Test Interface</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🖥️ Console Output</h2>
+        <div id="console-output"></div>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <!-- Load the AR components -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="src/ar/ARSystem.js"></script>
+    <script src="src/ar/ARIntegrationManager.js"></script>
+    <script src="src/ar/TabNavigationGuard.js"></script>
+    <script src="src/ar/ARInterfaceManager.js"></script>
+    <script src="src/ar/ARSystemExtension.js"></script>
+
+    <script>
+        // Test utilities
+        function log(message, type = 'info') {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            output.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+
+        function addResult(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            container.appendChild(div);
+        }
+
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        function clearConsole() {
+            document.getElementById('console-output').textContent = '';
+        }
+
+        // Component Tests
+        async function testComponents() {
+            clearResults('component-tests');
+            log('Starting component tests...');
+
+            try {
+                // Test ARSystem
+                if (window.ARSystem) {
+                    addResult('component-tests', '✅ ARSystem class loaded', 'success');
+                    const arSystem = new window.ARSystem();
+                    addResult('component-tests', '✅ ARSystem instantiation successful', 'success');
+                } else {
+                    addResult('component-tests', '❌ ARSystem class not found', 'error');
+                }
+
+                // Test ARIntegrationManager
+                if (window.ARIntegrationManager) {
+                    addResult('component-tests', '✅ ARIntegrationManager class loaded', 'success');
+                } else {
+                    addResult('component-tests', '❌ ARIntegrationManager class not found', 'error');
+                }
+
+                // Test TabNavigationGuard
+                if (window.TabNavigationGuard) {
+                    addResult('component-tests', '✅ TabNavigationGuard class loaded', 'success');
+                } else {
+                    addResult('component-tests', '❌ TabNavigationGuard class not found', 'error');
+                }
+
+                // Test ARInterfaceManager
+                if (window.ARInterfaceManager) {
+                    addResult('component-tests', '✅ ARInterfaceManager class loaded', 'success');
+                    const arInterface = new window.ARInterfaceManager();
+                    addResult('component-tests', '✅ ARInterfaceManager instantiation successful', 'success');
+                } else {
+                    addResult('component-tests', '❌ ARInterfaceManager class not found', 'error');
+                }
+
+                // Test ARSystemExtension
+                if (window.ARSystemExtension) {
+                    addResult('component-tests', '✅ ARSystemExtension class loaded', 'success');
+                } else {
+                    addResult('component-tests', '❌ ARSystemExtension class not found', 'error');
+                }
+
+                // Test Babylon.js
+                if (window.BABYLON) {
+                    addResult('component-tests', '✅ Babylon.js loaded', 'success');
+                } else {
+                    addResult('component-tests', '❌ Babylon.js not found', 'error');
+                }
+
+                log('Component tests completed', 'success');
+            } catch (error) {
+                log(`Component test error: ${error.message}`, 'error');
+                addResult('component-tests', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // NASA Data Tests
+        async function testNASAIntegration() {
+            clearResults('nasa-tests');
+            log('Starting NASA integration tests...');
+
+            try {
+                // Test NASA proxy health
+                const healthResponse = await fetch('http://localhost:3001/api/health');
+                if (healthResponse.ok) {
+                    addResult('nasa-tests', '✅ NASA proxy server responsive', 'success');
+                    const healthData = await healthResponse.json();
+                    log(`NASA proxy status: ${healthData.status}, endpoints: ${healthData.endpoints.length}`);
+                } else {
+                    addResult('nasa-tests', '❌ NASA proxy server not responding', 'error');
+                    return;
+                }
+
+                // Test SMAP data
+                const smapResponse = await fetch('http://localhost:3001/api/smap/soil-moisture?lat=33.43&lon=-111.94');
+                if (smapResponse.ok) {
+                    const smapData = await smapResponse.json();
+                    addResult('nasa-tests', `✅ SMAP data: ${smapData.surface_moisture?.toFixed(3)} moisture`, 'success');
+                    log(`SMAP soil moisture: ${smapData.surface_moisture}, quality: ${smapData.quality}`);
+                } else {
+                    addResult('nasa-tests', '❌ SMAP data fetch failed', 'error');
+                }
+
+                // Test MODIS data
+                const modisResponse = await fetch('http://localhost:3001/api/modis/ndvi?lat=33.43&lon=-111.94');
+                if (modisResponse.ok) {
+                    const modisData = await modisResponse.json();
+                    addResult('nasa-tests', `✅ MODIS data: ${modisData.ndvi?.toFixed(3)} NDVI`, 'success');
+                    log(`MODIS NDVI: ${modisData.ndvi}, EVI: ${modisData.evi}`);
+                } else {
+                    addResult('nasa-tests', '❌ MODIS data fetch failed', 'error');
+                }
+
+                log('NASA integration tests completed', 'success');
+            } catch (error) {
+                log(`NASA integration test error: ${error.message}`, 'error');
+                addResult('nasa-tests', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // AR System Tests
+        async function testARSystem() {
+            clearResults('ar-tests');
+            log('Starting AR system tests...');
+
+            try {
+                // Create mock app object
+                const mockApp = {
+                    switchTab: (tabName) => {
+                        log(`Mock app switching to tab: ${tabName}`);
+                        return true;
+                    }
+                };
+
+                // Test TabNavigationGuard
+                const tabGuard = new window.TabNavigationGuard();
+                await tabGuard.initialize(mockApp);
+                addResult('ar-tests', '✅ TabNavigationGuard initialized', 'success');
+
+                // Test AR Integration Manager
+                const arIntegration = new window.ARIntegrationManager();
+                await arIntegration.initialize(tabGuard);
+                addResult('ar-tests', '✅ ARIntegrationManager initialized', 'success');
+
+                // Test AR System Extension
+                if (arIntegration.arSystem) {
+                    const arExtension = new window.ARSystemExtension(arIntegration.arSystem);
+                    await arExtension.extendARSystem();
+                    addResult('ar-tests', '✅ ARSystemExtension initialized', 'success');
+
+                    // Test status methods
+                    const status = arExtension.getExtensionStatus();
+                    addResult('ar-tests', `✅ Extension status: ${status.isExtended ? 'Extended' : 'Basic'}`, 'success');
+                } else {
+                    addResult('ar-tests', '⚠️ AR System not available for extension', 'warning');
+                }
+
+                log('AR system tests completed', 'success');
+            } catch (error) {
+                log(`AR system test error: ${error.message}`, 'error');
+                addResult('ar-tests', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Interface Features Tests
+        async function testInterfaceFeatures() {
+            clearResults('interface-tests');
+            log('Starting interface features tests...');
+
+            try {
+                // Test ARInterfaceManager initialization
+                const arInterface = new window.ARInterfaceManager();
+                await arInterface.initialize();
+                addResult('interface-tests', '✅ ARInterfaceManager initialized', 'success');
+
+                // Test NASA data fetching
+                await arInterface.refreshNASAData();
+                addResult('interface-tests', '✅ NASA data refresh completed', 'success');
+
+                // Test voice recognition detection
+                if (arInterface.speechRecognition) {
+                    addResult('interface-tests', '✅ Voice recognition available', 'success');
+                } else {
+                    addResult('interface-tests', '⚠️ Voice recognition not supported', 'warning');
+                }
+
+                // Test UI components creation
+                if (arInterface.controlPanel) {
+                    addResult('interface-tests', '✅ Control panel created', 'success');
+                } else {
+                    addResult('interface-tests', '❌ Control panel not created', 'error');
+                }
+
+                if (arInterface.dataOverlay) {
+                    addResult('interface-tests', '✅ Data overlay created', 'success');
+                } else {
+                    addResult('interface-tests', '❌ Data overlay not created', 'error');
+                }
+
+                // Test status reporting
+                const status = arInterface.getStatus();
+                addResult('interface-tests', `✅ Interface status: ${status.isInitialized ? 'Ready' : 'Not Ready'}`,
+                    status.isInitialized ? 'success' : 'warning');
+
+                log('Interface features tests completed', 'success');
+            } catch (error) {
+                log(`Interface features test error: ${error.message}`, 'error');
+                addResult('interface-tests', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic tests on load
+        window.addEventListener('load', () => {
+            log('AR Interface Integration Test Started');
+            setTimeout(() => {
+                testComponents();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

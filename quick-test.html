@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick AR Test</title>
+    <style>
+        body { background: #222; color: #0f0; font-family: monospace; padding: 20px; }
+        button { background: #333; color: #0f0; border: 1px solid #0f0; padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #log { background: #000; padding: 10px; margin: 10px 0; height: 400px; overflow-y: auto; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Quick AR Test</h1>
+    <button onclick="testAR()">Test AR Launch</button>
+    <button onclick="clearLog()">Clear</button>
+    <div id="log"></div>
+
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="src/ar/ARSystem.js"></script>
+    <script src="src/ar/ARIntegrationManager.js"></script>
+    <script src="src/ar/TabNavigationGuard.js"></script>
+    <script src="src/ar/ARInterfaceManager.js"></script>
+    <script src="src/ar/ARSystemExtension.js"></script>
+
+    <script>
+        const log = (msg) => {
+            const el = document.getElementById('log');
+            el.textContent += `[${new Date().toTimeString().split(' ')[0]}] ${msg}\n`;
+            el.scrollTop = el.scrollHeight;
+            console.log(msg);
+        };
+
+        const clearLog = () => document.getElementById('log').textContent = '';
+
+        let arSystemExtension, arIntegrationManager, tabNavigationGuard;
+
+        const testAR = async () => {
+            try {
+                log('🚀 Starting AR test...');
+
+                // Mock app
+                const mockApp = { switchTab: (tab) => { log(`Switching to ${tab}`); return true; }};
+
+                // Initialize components
+                log('1. Initializing TabNavigationGuard...');
+                tabNavigationGuard = new window.TabNavigationGuard();
+                await tabNavigationGuard.initialize(mockApp);
+                log('✓ TabNavigationGuard ready');
+
+                log('2. Initializing ARIntegrationManager...');
+                arIntegrationManager = new window.ARIntegrationManager();
+                window.arIntegrationManager = arIntegrationManager;
+                await arIntegrationManager.initialize(tabNavigationGuard);
+                log('✓ ARIntegrationManager ready');
+
+                log('3. Initializing ARSystemExtension...');
+                if (arIntegrationManager.arSystem) {
+                    arSystemExtension = new window.ARSystemExtension(arIntegrationManager.arSystem);
+                    window.arSystemExtension = arSystemExtension;
+                    await arSystemExtension.extendARSystem();
+                    log('✓ ARSystemExtension ready');
+                } else {
+                    log('✗ ARSystem not available');
+                    return;
+                }
+
+                log('4. Testing Enhanced AR start...');
+                await arSystemExtension.startEnhancedAR();
+                log('✓ Enhanced AR started');
+
+                log('5. Waiting 3 seconds then stopping...');
+                setTimeout(async () => {
+                    await arSystemExtension.stopEnhancedAR();
+                    log('✓ Enhanced AR stopped');
+                    log('🎉 AR test completed successfully!');
+                }, 3000);
+
+            } catch (error) {
+                log(`❌ AR test failed: ${error.message}`);
+                log(`Stack: ${error.stack}`);
+            }
+        };
+
+        window.addEventListener('error', (e) => {
+            log(`💥 Global error: ${e.message} at ${e.filename}:${e.lineno}`);
+        });
+    </script>
+</body>
+</html>

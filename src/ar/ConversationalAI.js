@@ -501,14 +501,14 @@ class ConversationalAI {
 
         // Advanced agricultural question patterns
         const patterns = {
-            weather: ['weather', 'rain', 'temperature', 'climate', 'forecast', '날씨', '비', '온도'],
-            growth: ['growth', 'growing', 'develop', 'mature', 'stage', '성장', '발육'],
-            pest: ['pest', 'insect', 'disease', 'bug', 'problem', '해충', '병해충', '질병'],
-            fertilizer: ['fertilizer', 'nutrient', 'nitrogen', 'phosphorus', 'potassium', '비료', '영양'],
-            harvest: ['harvest', 'yield', 'production', 'crop', '수확', '생산량'],
-            timing: ['when', 'time', 'schedule', '언제', '시기', '타이밍'],
-            how: ['how', 'what', 'why', 'which', 'where', '어떻게', '무엇', '왜', '어디'],
-            general_farming: ['farm', 'agriculture', 'farming', 'field', '농업', '농장', '밭']
+            weather: ['weather', 'rain', 'temperature', 'climate', 'forecast', 'sunny', 'cloudy', 'humid'],
+            growth: ['growth', 'growing', 'develop', 'mature', 'stage', 'development', 'sprouting'],
+            pest: ['pest', 'insect', 'disease', 'bug', 'problem', 'infestation', 'fungus', 'blight'],
+            fertilizer: ['fertilizer', 'nutrient', 'nitrogen', 'phosphorus', 'potassium', 'compost', 'organic'],
+            harvest: ['harvest', 'yield', 'production', 'crop', 'output', 'gathering'],
+            timing: ['when', 'time', 'schedule', 'timing', 'season', 'period'],
+            how: ['how', 'what', 'why', 'which', 'where', 'guide', 'method', 'technique'],
+            general_farming: ['farm', 'agriculture', 'farming', 'field', 'cultivation', 'planting', 'agricultural']
         };
 
         // Find matching patterns

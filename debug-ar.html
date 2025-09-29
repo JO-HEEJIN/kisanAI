@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AR System Debug</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: #0f0;
+            font-family: monospace;
+            padding: 20px;
+        }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+        .warning { color: #ff0; }
+        button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        #log {
+            background: #000;
+            padding: 10px;
+            margin-top: 20px;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 AR System Debug Console</h1>
+
+    <div>
+        <button onclick="checkComponents()">Check Components</button>
+        <button onclick="testARInit()">Test AR Init</button>
+        <button onclick="testInterface()">Test Interface</button>
+        <button onclick="clearLog()">Clear</button>
+    </div>
+
+    <div id="log"></div>
+
+    <!-- Load AR components -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="src/ar/ARSystem.js"></script>
+    <script src="src/ar/ARIntegrationManager.js"></script>
+    <script src="src/ar/TabNavigationGuard.js"></script>
+    <script src="src/ar/ARInterfaceManager.js"></script>
+    <script src="src/ar/ARSystemExtension.js"></script>
+
+    <script>
+        const log = (msg, type = 'info') => {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toTimeString().split(' ')[0];
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            logDiv.innerHTML += `<span class="${className}">[${time}] ${msg}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(msg);
+        };
+
+        const clearLog = () => {
+            document.getElementById('log').innerHTML = '';
+        };
+
+        const checkComponents = () => {
+            log('=== Checking Components ===');
+
+            // Check Babylon.js
+            if (window.BABYLON) {
+                log('✓ Babylon.js loaded', 'success');
+            } else {
+                log('✗ Babylon.js NOT loaded', 'error');
+            }
+
+            // Check AR components
+            const components = [
+                'ARSystem',
+                'ARIntegrationManager',
+                'TabNavigationGuard',
+                'ARInterfaceManager',
+                'ARSystemExtension'
+            ];
+
+            components.forEach(comp => {
+                if (window[comp]) {
+                    log(`✓ ${comp} loaded`, 'success');
+                    try {
+                        const instance = new window[comp]();
+                        log(`  → ${comp} instantiation OK`, 'success');
+                    } catch (e) {
+                        log(`  → ${comp} instantiation failed: ${e.message}`, 'error');
+                    }
+                } else {
+                    log(`✗ ${comp} NOT loaded`, 'error');
+                }
+            });
+        };
+
+        const testARInit = async () => {
+            log('=== Testing AR Initialization ===');
+
+            try {
+                // Create mock app
+                const mockApp = {
+                    switchTab: (tab) => {
+                        log(`Mock app: switching to ${tab}`);
+                        return true;
+                    }
+                };
+
+                // Initialize TabNavigationGuard
+                log('Initializing TabNavigationGuard...');
+                const tabGuard = new window.TabNavigationGuard();
+                await tabGuard.initialize(mockApp);
+                log('✓ TabNavigationGuard initialized', 'success');
+
+                // Initialize ARIntegrationManager
+                log('Initializing ARIntegrationManager...');
+                const arManager = new window.ARIntegrationManager();
+                await arManager.initialize(tabGuard);
+                log('✓ ARIntegrationManager initialized', 'success');
+
+                // Check AR System
+                if (arManager.arSystem) {
+                    log('✓ AR System created', 'success');
+                    const status = arManager.arSystem.getStatus();
+                    log(`AR System status: ${JSON.stringify(status)}`);
+                } else {
+                    log('✗ AR System not created', 'error');
+                }
+
+            } catch (e) {
+                log(`✗ AR Init failed: ${e.message}`, 'error');
+                log(`Stack: ${e.stack}`, 'error');
+            }
+        };
+
+        const testInterface = async () => {
+            log('=== Testing AR Interface ===');
+
+            try {
+                // Initialize ARInterfaceManager
+                log('Creating ARInterfaceManager...');
+                const arInterface = new window.ARInterfaceManager();
+                log('✓ ARInterfaceManager created', 'success');
+
+                log('Initializing ARInterfaceManager...');
+                await arInterface.initialize();
+                log('✓ ARInterfaceManager initialized', 'success');
+
+                // Check components
+                if (arInterface.controlPanel) {
+                    log('✓ Control panel created', 'success');
+                } else {
+                    log('✗ Control panel not created', 'error');
+                }
+
+                if (arInterface.dataOverlay) {
+                    log('✓ Data overlay created', 'success');
+                } else {
+                    log('✗ Data overlay not created', 'error');
+                }
+
+                if (arInterface.voiceIndicator) {
+                    log('✓ Voice indicator created', 'success');
+                } else {
+                    log('✗ Voice indicator not created', 'error');
+                }
+
+                // Test NASA data fetch
+                log('Testing NASA data fetch...');
+                try {
+                    await arInterface.refreshNASAData();
+                    log('✓ NASA data fetch completed', 'success');
+                    log(`NASA data: ${JSON.stringify(arInterface.nasaData)}`);
+                } catch (e) {
+                    log(`✗ NASA data fetch failed: ${e.message}`, 'error');
+                }
+
+            } catch (e) {
+                log(`✗ Interface test failed: ${e.message}`, 'error');
+                log(`Stack: ${e.stack}`, 'error');
+            }
+        };
+
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('AR Debug Console Ready', 'success');
+                checkComponents();
+            }, 1000);
+        });
+
+        // Catch global errors
+        window.addEventListener('error', (e) => {
+            log(`Global error: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`, 'error');
+        });
+    </script>
+</body>
+</html>

@@ -95,6 +95,19 @@ class NASAFarmNavigatorsApp {
             // Make app globally accessible for tab switching
             window.app = this;
 
+            // Make AR debugging functions globally accessible
+            window.emergencyCleanupAR = () => this.emergencyCleanupAR();
+            window.debugEventListeners = () => this.debugEventListeners();
+            window.forceRemoveARCanvas = () => {
+                console.log('🔥 EMERGENCY: Removing all Babylon canvases');
+                const canvases = document.querySelectorAll('#babylon-ar-canvas, canvas[id*="babylon"]');
+                canvases.forEach(canvas => {
+                    console.log('🔥 Removing canvas:', canvas.id);
+                    if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+                });
+                console.log('✅ All AR canvases removed');
+            };
+
             this.isInitialized = true;
             console.log('NASA Farm Navigators Ready!');
 
@@ -822,10 +835,216 @@ class NASAFarmNavigatorsApp {
     }
 
     /**
+     * Emergency AR cleanup to remove all AR-related event listeners and elements
+     */
+    emergencyCleanupAR(preserveARCore = false) {
+        console.log('🚨 EMERGENCY AR CLEANUP INITIATED', preserveARCore ? '(preserving AR Core)' : '');
+
+        const emergencyCleanup = () => {
+            // 1. AROverlayDisplay 인스턴스 강제 정리
+            if (window.arOverlayDisplay && typeof window.arOverlayDisplay.forceCleanup === 'function') {
+                window.arOverlayDisplay.forceCleanup();
+                window.arOverlayDisplay = null;
+                console.log('🔥 AROverlayDisplay force cleaned');
+            }
+
+            // 2. BabylonXRFramework 정리 (AR Core 보존 시에는 부분적으로만)
+            if (!preserveARCore && window.babylonXRFramework && typeof window.babylonXRFramework.forceExitAR === 'function') {
+                window.babylonXRFramework.forceExitAR();
+                console.log('🔥 BabylonXRFramework force exited');
+            }
+
+            // 3. 전역 AR 관련 이벤트 리스너 제거 (fallback)
+            const removeGlobalARListeners = () => {
+                ['click', 'touchend', 'touchstart', 'touchmove'].forEach(eventType => {
+                    const oldHandler = window[`ar${eventType.charAt(0).toUpperCase()}${eventType.slice(1)}Handler`];
+                    if (oldHandler) {
+                        document.removeEventListener(eventType, oldHandler);
+                        window[`ar${eventType.charAt(0).toUpperCase()}${eventType.slice(1)}Handler`] = null;
+                        console.log(`🔥 Global AR ${eventType} handler removed`);
+                    }
+                });
+            };
+            removeGlobalARListeners();
+
+            // 4. 남아있는 AR 관련 DOM 요소 제거 (AR Core 보존 시에는 선택적으로)
+            if (preserveARCore) {
+                // When preserving AR Core, only remove problematic overlays
+                const arElements = document.querySelectorAll(`
+                    #ar-hud-container,
+                    #emergency-ar-display,
+                    .ar-overlay,
+                    #ar-camera-video
+                `);
+                arElements.forEach(el => {
+                    if (el.parentNode) {
+                        el.parentNode.removeChild(el);
+                        console.log(`🔥 Removed AR overlay element: ${el.tagName} ${el.className || el.id}`);
+                    }
+                });
+            } else {
+                // Full cleanup when not preserving AR Core
+                const arElements = document.querySelectorAll(`
+                    #ar-hud-container,
+                    #emergency-ar-display,
+                    .ar-overlay,
+                    #ar-camera-video,
+                    #babylon-ar-canvas,
+                    canvas[id*="babylon"],
+                    [id*="ar-"],
+                    [class*="ar-overlay"]
+                `);
+                arElements.forEach(el => {
+                    // Launch AR 버튼은 보호
+                    if (el.id === 'start-ar-btn') {
+                        console.log(`🛡️ Protected Launch AR button from cleanup`);
+                        return;
+                    }
+
+                    if (el.parentNode) {
+                        el.parentNode.removeChild(el);
+                        console.log(`🔥 Removed AR element: ${el.tagName} ${el.className || el.id}`);
+                    }
+                });
+            }
+
+            // 5. 전역 참조 정리 (AR Core 보존 시에는 선택적으로)
+            const referencesToClear = preserveARCore ?
+                ['arOverlayDisplay', 'babylonXRFramework'] :
+                ['arOverlayDisplay', 'babylonXRFramework', 'arChatGPTCore'];
+
+            referencesToClear.forEach(ref => {
+                if (window[ref]) {
+                    window[ref] = null;
+                    console.log(`🔥 Global reference ${ref} cleared`);
+                }
+            });
+
+            console.log('✅ Emergency AR cleanup completed');
+        };
+
+        // 즉시 실행 및 100ms 후 다시 실행 (이중 안전장치)
+        emergencyCleanup();
+        setTimeout(emergencyCleanup, 100);
+        setTimeout(emergencyCleanup, 500); // 추가 안전장치
+    }
+
+    /**
+     * Debug function to check current event listeners
+     */
+    debugEventListeners() {
+        console.log('🔍 CURRENT EVENT LISTENERS:');
+
+        // AR 관련 전역 변수 상태 확인
+        console.log('🏷️ AR Global States:', {
+            arOverlayDisplay: !!window.arOverlayDisplay,
+            babylonXRFramework: !!window.babylonXRFramework,
+            arChatGPTCore: !!window.arChatGPTCore,
+            hasClickHandler: !!(window.arOverlayDisplay && window.arOverlayDisplay.clickHandler),
+            hasTouchHandler: !!(window.arOverlayDisplay && window.arOverlayDisplay.touchEndHandler)
+        });
+
+        // Chrome DevTools의 getEventListeners 사용 (가능한 경우)
+        if (typeof getEventListeners === 'function') {
+            const listeners = getEventListeners(document);
+            Object.keys(listeners).forEach(eventType => {
+                console.log(`📢 ${eventType}: ${listeners[eventType].length} listeners`);
+            });
+        } else {
+            console.log('⚠️ getEventListeners not available - use Chrome DevTools Console');
+        }
+    }
+
+    /**
+     * Clean up any blocking overlays or elements that might interfere with navigation
+     */
+    cleanupBlockingElements() {
+        try {
+            // 첫번째 우선순위: 긴급 AR cleanup 실행
+            this.emergencyCleanupAR();
+
+            // Remove any fixed position overlays with high z-index
+            const potentialBlockers = document.querySelectorAll(`
+                .modal-overlay,
+                .tutorial-overlay,
+                .achievement-modal,
+                .demo-preview-modal,
+                .cesium-viewer,
+                .cesium-widget
+            `);
+
+            potentialBlockers.forEach(element => {
+                const computedStyle = window.getComputedStyle(element);
+                const zIndex = parseInt(computedStyle.zIndex) || 0;
+                const position = computedStyle.position;
+
+                // Only remove non-AR modal overlays and Cesium elements
+                if (element.classList.contains('modal-overlay') ||
+                    element.classList.contains('cesium-viewer') ||
+                    element.classList.contains('cesium-widget') ||
+                    (position === 'fixed' && zIndex > 1000 && !element.id.includes('ar') && !element.className.includes('ar'))) {
+                    console.log('🧹 Removing potential blocking element:', element.className || element.tagName);
+                    element.remove();
+                }
+            });
+
+            // Remove any elements with pointer-events: none that might be left behind (but not AR elements)
+            const noPointerEvents = document.querySelectorAll('[style*="pointer-events: none"]');
+            noPointerEvents.forEach(element => {
+                if (element.style.position === 'fixed' &&
+                    !element.id.includes('ar') &&
+                    !element.className.includes('ar') &&
+                    !element.id.includes('babylon') &&
+                    !element.className.includes('babylon')) {
+                    console.log('🧹 Removing no-pointer-events element:', element.className || element.tagName);
+                    element.remove();
+                }
+            });
+
+            // Ensure body is scrollable and clickable
+            document.body.style.overflow = '';
+            document.body.style.pointerEvents = '';
+
+            console.log('✨ Cleanup completed - navigation should be restored');
+
+        } catch (error) {
+            console.error('Error during cleanup:', error);
+        }
+    }
+
+    /**
      * Switch to specified tab
      */
     switchTab(tabName) {
         console.log(`Switching to tab: ${tabName}`);
+
+        // Get current active tab before switching
+        const currentActiveTab = document.querySelector('.tab.active');
+        const currentTabName = currentActiveTab ? currentActiveTab.getAttribute('data-tab') : null;
+
+        // Handle AR system integration for tab switching
+        if (window.arIntegrationManager && typeof window.arIntegrationManager.handleTabSwitch === 'function') {
+            // Use new AR integration manager
+            try {
+                window.arIntegrationManager.handleTabSwitch(currentTabName, tabName);
+            } catch (error) {
+                console.error('❌ AR Integration Manager tab switch error:', error);
+            }
+        } else {
+            // Fallback to old cleanup logic
+            if (tabName === 'ar-chatgpt') {
+                // Going TO AR ChatGPT tab - preserve AR Core components during cleanup
+                this.emergencyCleanupAR(true); // preserveARCore = true
+            } else if (currentTabName === 'ar-chatgpt') {
+                // Leaving FROM AR ChatGPT tab - do full cleanup to remove all AR event listeners
+                console.log('🚨 Leaving AR ChatGPT tab - performing full AR cleanup');
+                this.emergencyCleanupAR(false); // preserveARCore = false (full cleanup)
+                this.forceRemoveAllARListeners(); // Additional cleanup for stubborn listeners
+            } else {
+                // Normal tab switching - standard cleanup
+                this.cleanupBlockingElements();
+            }
+        }
 
         // Remove active class from all tabs and tab contents
         document.querySelectorAll('.tab').forEach(tab => {
@@ -841,9 +1060,24 @@ class NASAFarmNavigatorsApp {
 
         if (selectedTab) {
             selectedTab.classList.add('active');
+            console.log(`✅ Tab button activated: ${tabName}`);
+        } else {
+            console.warn(`❌ Tab button not found: ${tabName}`);
         }
+
         if (selectedContent) {
             selectedContent.classList.add('active');
+            console.log(`✅ Tab content activated: ${tabName}`, selectedContent);
+
+            // Special handling for AR ChatGPT tab display issues
+            if (tabName === 'ar-chatgpt') {
+                selectedContent.style.display = 'block';
+                selectedContent.style.visibility = 'visible';
+                selectedContent.style.opacity = '1';
+                console.log('🔧 Applied explicit display styles to AR ChatGPT tab');
+            }
+        } else {
+            console.warn(`❌ Tab content not found: ${tabName}`);
         }
 
         // Handle special tab initialization
@@ -863,8 +1097,599 @@ class NASAFarmNavigatorsApp {
             case 'achievements':
                 this.displayNASAAchievements();
                 break;
+            case 'ar-chatgpt':
+                this.initializeSafeAR();
+                break;
             // Add other tab cases as needed
         }
+    }
+
+    /**
+     * Initialize Safe AR System for AR ChatGPT tab
+     */
+    initializeSafeAR() {
+        console.log('🛡️ Initializing Safe AR System...');
+
+        try {
+            // Check if Safe AR classes are loaded
+            if (typeof MinimalWebXRAR === 'undefined' || typeof SafeARIntegration === 'undefined') {
+                console.error('❌ Safe AR classes not loaded');
+                this.createSafeARFallback();
+                return;
+            }
+
+            // Create or get existing Safe AR integration
+            if (!window.safeARIntegration) {
+                window.safeARIntegration = new SafeARIntegration();
+                console.log('✅ Safe AR Integration 생성됨');
+            }
+
+            // Create Safe AR interface
+            this.createSafeARInterface();
+
+            console.log('✅ Safe AR System 초기화 완료');
+
+        } catch (error) {
+            console.error('❌ Safe AR 초기화 실패:', error);
+            this.createSafeARFallback();
+        }
+    }
+
+    /**
+     * Create Safe AR Interface
+     */
+    createSafeARInterface() {
+        console.log('🎨 Safe AR 인터페이스 생성');
+
+        // AR ChatGPT 탭 컨텐츠 가져오기
+        const arTabContent = document.getElementById('arChatGPTTab');
+        if (!arTabContent) {
+            console.error('❌ AR ChatGPT 탭 컨텐츠를 찾을 수 없음 (arChatGPTTab)');
+            // 재시도: data-tab 속성으로 찾기
+            const arTabContentByDataTab = document.querySelector('[data-tab="ar-chatgpt"]');
+            if (arTabContentByDataTab) {
+                console.log('✅ AR ChatGPT 탭을 data-tab으로 찾음');
+                this.createSafeARButtons(arTabContentByDataTab);
+                return;
+            }
+            console.error('❌ AR ChatGPT 탭을 어떤 방법으로도 찾을 수 없음');
+            return;
+        }
+
+        this.createSafeARButtons(arTabContent);
+    }
+
+    createSafeARButtons(arTabContent) {
+        console.log('🔧 Creating Safe AR buttons...');
+
+        // 먼저 기존 Launch AR 버튼 확인
+        let existingLaunchBtn = document.getElementById('start-ar-btn');
+        if (existingLaunchBtn) {
+            console.log('✅ 기존 Launch AR 버튼 발견, 이벤트 리스너 확인 중...');
+            this.ensureLaunchARButtonWorks(existingLaunchBtn);
+            return;
+        }
+
+        console.log('🔧 Launch AR 버튼이 없음, 새로 생성합니다...');
+        this.recreateLaunchARButton(arTabContent);
+    }
+
+    ensureLaunchARButtonWorks(button) {
+        // 기존 이벤트 리스너 제거하고 새로 추가
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+
+        newButton.addEventListener('click', async () => {
+            console.log('🚀 Launch AR clicked - Safe AR System');
+            try {
+                if (window.safeARIntegration) {
+                    console.log('🛡️ Starting Safe AR...');
+                    await window.safeARIntegration.startSafeAR();
+                } else {
+                    console.error('❌ SafeARIntegration not available');
+                    alert('AR 시스템이 준비되지 않았습니다. 페이지를 새로고침해 주세요.');
+                }
+            } catch (error) {
+                console.error('❌ Safe AR start failed:', error);
+                alert(`AR 시작 실패: ${error.message}`);
+            }
+        });
+
+        console.log('✅ Launch AR 버튼 이벤트 리스너 재설정 완료');
+    }
+
+    recreateLaunchARButton(arTabContent) {
+        // AR Field Analysis 카드 찾기
+        const fieldAnalysisCard = arTabContent.querySelector('.ar-feature-card h3');
+        let parentCard = null;
+
+        if (fieldAnalysisCard && fieldAnalysisCard.textContent.includes('AR Field Analysis')) {
+            parentCard = fieldAnalysisCard.closest('.ar-feature-card');
+        }
+
+        if (!parentCard) {
+            console.log('🔧 AR Field Analysis 카드를 찾을 수 없음, 새로운 카드 생성...');
+            parentCard = this.createNewARCard(arTabContent);
+        }
+
+        // Launch AR 버튼 생성
+        const launchButton = document.createElement('button');
+        launchButton.id = 'start-ar-btn';
+        launchButton.className = 'ar-action-btn ar-primary';
+        launchButton.textContent = 'Launch AR';
+        launchButton.style.cssText = `
+            background: linear-gradient(45deg, #0960E1, #2E96F5);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: manipulation;
+            box-shadow: 0 4px 15px rgba(9, 96, 225, 0.3);
+            min-height: 50px;
+            width: 100%;
+            margin-top: 15px;
+        `;
+
+        // 이벤트 리스너 추가
+        launchButton.addEventListener('click', async () => {
+            console.log('🚀 Launch AR clicked - Safe AR System (New Button)');
+            try {
+                if (window.safeARIntegration) {
+                    console.log('🛡️ Starting Safe AR...');
+                    await window.safeARIntegration.startSafeAR();
+                } else {
+                    console.error('❌ SafeARIntegration not available');
+                    alert('AR 시스템이 준비되지 않았습니다. 페이지를 새로고침해 주세요.');
+                }
+            } catch (error) {
+                console.error('❌ Safe AR start failed:', error);
+                alert(`AR 시작 실패: ${error.message}`);
+            }
+        });
+
+        // 버튼을 카드에 추가
+        parentCard.appendChild(launchButton);
+        console.log('✅ 새로운 Launch AR 버튼 생성 완료');
+    }
+
+    createNewARCard(arTabContent) {
+        const newCard = document.createElement('div');
+        newCard.className = 'ar-feature-card';
+        newCard.style.cssText = `
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px;
+            text-align: center;
+        `;
+
+        newCard.innerHTML = `
+            <div class="ar-feature-icon">📱</div>
+            <h3>AR Field Analysis</h3>
+            <p>Point your camera at plants for instant identification</p>
+        `;
+
+        // AR ChatGPT 래퍼에 추가
+        const arWrapper = arTabContent.querySelector('.ar-chatgpt-wrapper');
+        if (arWrapper) {
+            arWrapper.appendChild(newCard);
+        } else {
+            arTabContent.appendChild(newCard);
+        }
+
+        return newCard;
+    }
+
+    createSafeARInterface_OLD() {
+        // 기존 AR 인터페이스 제거
+        const existingInterface = arTabContent.querySelector('.safe-ar-interface');
+        if (existingInterface) {
+            existingInterface.remove();
+        }
+
+        // 새로운 Safe AR 인터페이스 생성
+        const safeInterface = document.createElement('div');
+        safeInterface.className = 'safe-ar-interface';
+        safeInterface.style.cssText = `
+            padding: 20px;
+            text-align: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        `;
+
+        safeInterface.innerHTML = `
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 15px; margin-bottom: 20px; color: white;">
+                    <h2 style="margin: 0 0 15px 0; font-size: 24px;">🥽 안전한 AR 시스템</h2>
+                    <p style="margin: 0; opacity: 0.9; font-size: 16px;">
+                        개선된 WebXR 기반 AR 시스템으로 안정적인 농업 데이터 시각화를 경험하세요
+                    </p>
+                </div>
+
+                <div style="display: grid; gap: 15px; margin-bottom: 25px;">
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #2ecc71;">
+                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">✨ 새로운 기능</h3>
+                        <ul style="text-align: left; margin: 0; padding-left: 20px; color: #5a6c7d;">
+                            <li>DOM 간섭 없는 안전한 AR 렌더링</li>
+                            <li>WebXR DOM Overlay 표준 준수</li>
+                            <li>실시간 NASA 위성 데이터 통합</li>
+                            <li>자동 메모리 관리 및 정리</li>
+                        </ul>
+                    </div>
+
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                        <p style="margin: 0; color: #856404; font-size: 14px;">
+                            <strong>💡 권장사항:</strong> 최적의 AR 경험을 위해 휴대폰을 세로 모드로 사용하고 충분한 조명이 있는 환경에서 이용하세요.
+                        </p>
+                    </div>
+                </div>
+
+                <button id="safe-ar-launch" style="
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border: none;
+                    color: white;
+                    padding: 15px 40px;
+                    border-radius: 25px;
+                    font-size: 18px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+                    transition: all 0.3s ease;
+                    margin: 10px;
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 25px rgba(102, 126, 234, 0.6)'"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(102, 126, 234, 0.4)'">
+                    🚀 안전한 AR 시작
+                </button>
+
+                <button id="safe-ar-test" style="
+                    background: #6c757d;
+                    border: none;
+                    color: white;
+                    padding: 12px 30px;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    cursor: pointer;
+                    margin: 10px;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
+                    🔍 WebXR 지원 확인
+                </button>
+
+                <div id="safe-ar-status" style="
+                    margin-top: 20px;
+                    padding: 15px;
+                    background: #e9ecef;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    color: #495057;
+                    display: none;
+                "></div>
+            </div>
+        `;
+
+        // 탭 컨텐츠에 추가
+        arTabContent.appendChild(safeInterface);
+
+        // 이벤트 리스너 설정
+        this.setupSafeAREventListeners();
+    }
+
+    /**
+     * Setup Safe AR Event Listeners
+     */
+    setupSafeAREventListeners() {
+        const launchButton = document.getElementById('safe-ar-launch');
+        const testButton = document.getElementById('safe-ar-test');
+        const statusDiv = document.getElementById('safe-ar-status');
+
+        if (launchButton) {
+            launchButton.addEventListener('click', async () => {
+                console.log('🚀 Safe AR 시작 버튼 클릭됨');
+
+                launchButton.disabled = true;
+                launchButton.textContent = '🔄 AR 시작 중...';
+
+                try {
+                    const success = await window.safeARIntegration.startSafeAR();
+
+                    if (success) {
+                        this.showSafeARStatus('✅ AR started successfully', 'success');
+                        launchButton.textContent = '🛑 Stop AR';
+                        launchButton.onclick = () => {
+                            window.safeARIntegration.cleanup();
+                            launchButton.textContent = '🚀 Launch AR';
+                            launchButton.onclick = null;
+                            launchButton.addEventListener('click', arguments.callee);
+                            this.showSafeARStatus('', 'hidden');
+                        };
+                    } else {
+                        this.showSafeARStatus('❌ AR failed to start. Please check WebXR support.', 'error');
+                        launchButton.textContent = '🚀 Launch AR';
+                    }
+                } catch (error) {
+                    console.error('❌ Safe AR start error:', error);
+                    this.showSafeARStatus('❌ Error occurred while starting AR', 'error');
+                    launchButton.textContent = '🚀 안전한 AR 시작';
+                }
+
+                launchButton.disabled = false;
+            });
+        }
+
+        if (testButton) {
+            testButton.addEventListener('click', async () => {
+                console.log('🔍 WebXR 지원 확인 버튼 클릭됨');
+
+                testButton.disabled = true;
+                testButton.textContent = '🔄 확인 중...';
+
+                try {
+                    if (!navigator.xr) {
+                        this.showSafeARStatus('❌ 이 브라우저는 WebXR을 지원하지 않습니다', 'error');
+                    } else {
+                        const supported = await navigator.xr.isSessionSupported('immersive-ar');
+                        if (supported) {
+                            this.showSafeARStatus('✅ WebXR AR이 지원됩니다! AR을 시작할 수 있습니다.', 'success');
+                        } else {
+                            this.showSafeARStatus('⚠️ WebXR은 지원되지만 AR 모드는 사용할 수 없습니다. Fallback 모드가 사용됩니다.', 'warning');
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ WebXR support check error:', error);
+                    this.showSafeARStatus('❌ Error occurred while checking WebXR support', 'error');
+                }
+
+                testButton.disabled = false;
+                testButton.textContent = '🔍 Check WebXR Support';
+            });
+        }
+    }
+
+    /**
+     * Show Safe AR Status
+     */
+    showSafeARStatus(message, type) {
+        const statusDiv = document.getElementById('safe-ar-status');
+        if (!statusDiv) return;
+
+        if (type === 'hidden' || !message) {
+            statusDiv.style.display = 'none';
+            return;
+        }
+
+        const colors = {
+            success: { bg: '#d4edda', border: '#c3e6cb', text: '#155724' },
+            error: { bg: '#f8d7da', border: '#f5c6cb', text: '#721c24' },
+            warning: { bg: '#fff3cd', border: '#ffeaa7', text: '#856404' },
+            info: { bg: '#d1ecf1', border: '#bee5eb', text: '#0c5460' }
+        };
+
+        const color = colors[type] || colors.info;
+
+        statusDiv.style.cssText = `
+            margin-top: 20px;
+            padding: 15px;
+            background: ${color.bg};
+            border: 1px solid ${color.border};
+            border-radius: 8px;
+            font-size: 14px;
+            color: ${color.text};
+            display: block;
+        `;
+
+        statusDiv.textContent = message;
+    }
+
+    /**
+     * Create Safe AR Fallback (when Safe AR classes are not available)
+     */
+    createSafeARFallback() {
+        console.log('🔄 Safe AR Fallback 생성');
+
+        const arTabContent = document.getElementById('ar-chatgpt');
+        if (!arTabContent) return;
+
+        arTabContent.innerHTML = `
+            <div style="padding: 20px; text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
+                <div style="background: #fff3cd; padding: 20px; border-radius: 10px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 10px 0; color: #856404;">⚠️ AR 시스템 로딩 중</h3>
+                    <p style="margin: 0; color: #856404;">
+                        AR 시스템을 로딩하고 있습니다. 잠시 후 다시 시도해주세요.
+                    </p>
+                </div>
+                <button onclick="location.reload()" style="
+                    background: #007bff;
+                    border: none;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                ">🔄 페이지 새로고침</button>
+            </div>
+        `;
+    }
+
+    /**
+     * Ensure AR interface buttons exist and are visible
+     */
+    ensureARInterfaceButtons() {
+        console.log('🔧 Checking AR interface buttons...');
+
+        const startARBtn = document.getElementById('start-ar-btn');
+        if (!startARBtn) {
+            console.log('🔄 Launch AR button missing, recreating...');
+            this.recreateARButtons();
+        } else {
+            console.log('✅ Launch AR button exists');
+        }
+    }
+
+    /**
+     * Recreate missing AR interface buttons
+     */
+    recreateARButtons() {
+        console.log('🔄 Recreating AR interface buttons...');
+
+        // Find the AR Field Analysis card
+        const arFeatureCards = document.querySelectorAll('.ar-feature-card');
+        let fieldAnalysisCard = null;
+
+        arFeatureCards.forEach(card => {
+            const heading = card.querySelector('h3');
+            if (heading && heading.textContent.includes('AR Field Analysis')) {
+                fieldAnalysisCard = card;
+            }
+        });
+
+        if (fieldAnalysisCard) {
+            // Check if Launch AR button exists
+            let startARBtn = fieldAnalysisCard.querySelector('#start-ar-btn');
+
+            if (!startARBtn) {
+                // Create the Launch AR button
+                startARBtn = document.createElement('button');
+                startARBtn.id = 'start-ar-btn';
+                startARBtn.className = 'ar-action-btn ar-primary';
+                startARBtn.textContent = 'Launch AR';
+                startARBtn.style.cssText = `
+                    background: linear-gradient(45deg, #0960E1, #2E96F5);
+                    color: white;
+                    border: none;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    touch-action: manipulation;
+                    box-shadow: 0 4px 15px rgba(9, 96, 225, 0.3);
+                    min-height: 50px;
+                    width: 100%;
+                `;
+
+                // Add event listener for Safe AR System
+                startARBtn.addEventListener('click', async () => {
+                    console.log('🚀 Launch AR clicked - Safe AR System');
+                    try {
+                        // Use new SafeARIntegration system
+                        if (window.safeARIntegration) {
+                            console.log('🛡️ Starting Safe AR...');
+                            await window.safeARIntegration.startSafeAR();
+                        } else {
+                            console.error('❌ SafeARIntegration not available');
+                            alert('AR 시스템이 준비되지 않았습니다. 페이지를 새로고침해 주세요.');
+                        }
+                    } catch (error) {
+                        console.error('❌ Safe AR start failed:', error);
+                        alert(`AR 시작 실패: ${error.message}`);
+                    }
+                });
+
+                fieldAnalysisCard.appendChild(startARBtn);
+                console.log('✅ Launch AR button recreated');
+            }
+        } else {
+            console.error('❌ AR Field Analysis card not found');
+        }
+    }
+
+    /**
+     * Force remove all AR-related event listeners (nuclear option)
+     */
+    forceRemoveAllARListeners() {
+        console.log('🔥 FORCE REMOVING ALL AR EVENT LISTENERS');
+
+        // 1. PRIORITY: Remove all Babylon AR canvases that are blocking the screen
+        const babylonCanvases = document.querySelectorAll('#babylon-ar-canvas, canvas[id*="babylon"], canvas[class*="babylon"]');
+        babylonCanvases.forEach(canvas => {
+            console.log('🔥 Removing blocking Babylon canvas:', canvas.id || canvas.className);
+            if (canvas.parentNode) {
+                canvas.parentNode.removeChild(canvas);
+            }
+        });
+
+        // 2. Remove any other AR blocking elements
+        const blockingElements = document.querySelectorAll(`
+            #ar-hud-container,
+            #emergency-ar-display,
+            .ar-overlay,
+            #ar-camera-video,
+            [id*="babylon-ar"],
+            [class*="ar-blocking"],
+            canvas[style*="position: absolute"],
+            canvas[style*="position: fixed"]
+        `);
+        blockingElements.forEach(el => {
+            console.log('🔥 Removing AR blocking element:', el.tagName, el.id || el.className);
+            if (el.parentNode) {
+                el.parentNode.removeChild(el);
+            }
+        });
+
+        // Get all event types that AR might use
+        const eventTypes = [
+            'click', 'touchstart', 'touchend', 'touchmove',
+            'mousedown', 'mouseup', 'mousemove', 'pointermove',
+            'pointerdown', 'pointerup'
+        ];
+
+        // Create a new document to replace event listeners (nuclear option)
+        eventTypes.forEach(eventType => {
+            // Clone the document to remove all event listeners
+            const oldDocument = document;
+            try {
+                // Remove all listeners by cloning nodes (only for document)
+                console.log(`🔥 Clearing all ${eventType} listeners`);
+
+                // Alternative approach: stop propagation for all events temporarily
+                const killSwitch = (e) => {
+                    // Only block events that seem AR-related
+                    const target = e.target;
+                    if (target && (
+                        target.classList.contains('ar-') ||
+                        target.id.includes('ar') ||
+                        e.target.closest('.ar-feature-card') ||
+                        e.target.closest('#arChatGPTTab')
+                    )) {
+                        e.stopImmediatePropagation();
+                        e.preventDefault();
+                        console.log(`🛑 Blocked AR event: ${eventType} on`, target);
+                    }
+                };
+
+                // Add temporary kill switch
+                document.addEventListener(eventType, killSwitch, true);
+
+                // Remove after a short delay
+                setTimeout(() => {
+                    document.removeEventListener(eventType, killSwitch, true);
+                    console.log(`✅ Removed kill switch for ${eventType}`);
+                }, 1000);
+
+            } catch (error) {
+                console.warn(`⚠️ Could not clear ${eventType} listeners:`, error);
+            }
+        });
+
+        // Force clear any AR-related intervals or timeouts
+        // Clear any AR animation frames
+        if (window.arAnimationFrameId) {
+            cancelAnimationFrame(window.arAnimationFrameId);
+            window.arAnimationFrameId = null;
+        }
+
+        // Clear AR-related intervals (if any exist)
+        for (let i = 1; i < 9999; i++) {
+            try {
+                clearInterval(i);
+                clearTimeout(i);
+            } catch (e) {
+                // Ignore errors for non-existent intervals
+            }
+        }
+
+        console.log('✅ Force cleanup of AR listeners completed');
     }
 
     /**
@@ -2927,10 +3752,7 @@ class NASAFarmNavigatorsApp {
                 console.log('fetchDataBtn event listener attached');
             } else {
                 console.error('fetchDataBtn element not found');
-                // Retry after a short delay
-                setTimeout(() => {
-                    this.setupDataVisualizationEvents();
-                }, 500);
+                // Stop retrying to prevent infinite loop
                 return;
             }
 
@@ -5472,33 +6294,19 @@ class NASAFarmNavigatorsApp {
                 return;
             }
 
-            // Check if classes are available globally first
+            // Load FarmSimulationEngine via ES6 import
             if (!this.farmSimulation) {
-                console.log('📦 Loading FarmSimulationEngine...');
-                // Try to use globally loaded class first, fall back to dynamic import
-                if (window.FarmSimulationEngine) {
-                    this.farmSimulation = new window.FarmSimulationEngine();
-                    console.log('✅ FarmSimulationEngine loaded from global');
-                } else {
-                    console.log('📦 Attempting dynamic import of FarmSimulationEngine...');
-                    const { FarmSimulationEngine } = await import('./game/FarmSimulationEngine.js');
-                    this.farmSimulation = new FarmSimulationEngine();
-                    console.log('✅ FarmSimulationEngine loaded via import');
-                }
+                console.log('📦 Loading FarmSimulationEngine via ES6 import...');
+                const { FarmSimulationEngine } = await import('./game/FarmSimulationEngine.js');
+                this.farmSimulation = new FarmSimulationEngine();
+                console.log('✅ FarmSimulationEngine loaded successfully');
             }
 
             if (!this.farmGameUI && farmGameContainer) {
-                console.log('📦 Loading FarmGameUI...');
-                // Try to use globally loaded class first, fall back to dynamic import
-                if (window.FarmGameUI) {
-                    this.farmGameUI = new window.FarmGameUI(this.farmSimulation, farmGameContainer);
-                    console.log('✅ FarmGameUI loaded from global');
-                } else {
-                    console.log('📦 Attempting dynamic import of FarmGameUI...');
-                    const { FarmGameUI } = await import('./game/FarmGameUI.js');
-                    this.farmGameUI = new FarmGameUI(this.farmSimulation, farmGameContainer);
-                    console.log('✅ FarmGameUI loaded via import');
-                }
+                console.log('📦 Loading FarmGameUI via ES6 import...');
+                const { FarmGameUI } = await import('./game/FarmGameUI.js');
+                this.farmGameUI = new FarmGameUI(this.farmSimulation, farmGameContainer);
+                console.log('✅ FarmGameUI loaded successfully');
 
                 // Make farmGameUI globally accessible
                 window.farmGameUI = this.farmGameUI;
