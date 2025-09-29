@@ -38,10 +38,20 @@ class MinimalWebXRAR {
         try {
             console.log('🚀 MinimalWebXRAR: AR start requested');
 
+            // 모바일 환경 확인 및 최적화
+            await this.prepareMobileEnvironment();
+
+            // HTTPS 확인
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                console.warn('⚠️ WebXR requires HTTPS');
+                return this.startFallbackMode('HTTPS required for WebXR');
+            }
+
             // WebXR 지원 확인
             const supported = await this.checkWebXRSupport();
             if (!supported) {
-                throw new Error('WebXR AR이 지원되지 않습니다');
+                console.warn('⚠️ WebXR not supported, using fallback');
+                return this.startFallbackMode('WebXR not supported');
             }
 
             // 기존 세션 정리
@@ -50,7 +60,7 @@ class MinimalWebXRAR {
             // DOM 오버레이 생성
             this.createDOMOverlay();
 
-            // Request AR session
+            // Request AR session with user gesture
             await this.requestARSession();
 
             // Setup rendering
@@ -69,8 +79,90 @@ class MinimalWebXRAR {
             await this.cleanup();
 
             // Fallback 모드로 시작
-            return this.startFallbackMode();
+            return this.startFallbackMode(error.message);
         }
+    }
+
+    // 모바일 환경 최적화
+    async prepareMobileEnvironment() {
+        console.log('📱 Preparing mobile environment for AR');
+
+        // 화면 회전 요청 (가로모드)
+        try {
+            if (screen.orientation && screen.orientation.lock) {
+                await screen.orientation.lock('landscape');
+                console.log('🔄 Screen locked to landscape');
+            } else if (screen.lockOrientation) {
+                screen.lockOrientation('landscape');
+                console.log('🔄 Screen locked to landscape (fallback)');
+            }
+        } catch (error) {
+            console.warn('⚠️ Could not lock screen orientation:', error.message);
+
+            // CSS로 회전 권장 메시지 표시
+            this.showOrientationGuide();
+        }
+
+        // 모바일 브라우저 최적화
+        if (this.isMobile()) {
+            // 줌 비활성화
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+            }
+
+            // 터치 이벤트 최적화
+            document.body.style.touchAction = 'manipulation';
+        }
+    }
+
+    // 모바일 디바이스 감지
+    isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               window.innerWidth <= 768;
+    }
+
+    // 화면 회전 가이드 표시
+    showOrientationGuide() {
+        const guide = document.createElement('div');
+        guide.id = 'ar-orientation-guide';
+        guide.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(46, 150, 245, 0.95);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 99999;
+            font-size: 16px;
+            max-width: 300px;
+        `;
+        guide.innerHTML = `
+            <div style="font-size: 48px; margin-bottom: 15px;">📱➡️📱</div>
+            <div style="font-weight: bold; margin-bottom: 10px;">Better AR Experience</div>
+            <div style="margin-bottom: 15px;">Please rotate your device to landscape mode for optimal AR experience</div>
+            <button onclick="this.parentElement.remove()" style="
+                background: white;
+                color: #2E96F5;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: bold;
+            ">Continue</button>
+        `;
+
+        document.body.appendChild(guide);
+
+        // 자동 제거
+        setTimeout(() => {
+            if (guide.parentNode) {
+                guide.remove();
+            }
+        }, 8000);
     }
 
     // DOM 오버레이 생성 (WebXR DOM Overlay 스펙 준수)
@@ -345,25 +437,58 @@ class MinimalWebXRAR {
     }
 
     // Fallback 모드 (WebXR 미지원 시)
-    async startFallbackMode() {
-        console.log('📱 Fallback 모드로 시작');
+    async startFallbackMode(reason = 'Unknown') {
+        console.log('📱 Fallback 모드로 시작:', reason);
 
         try {
-            // DOM 오버레이만 표시
+            // 모바일 환경 최적화 (화면 회전 등)
+            await this.prepareMobileEnvironment();
+
+            // DOM 오버레이 생성 및 표시
             this.createDOMOverlay();
             this.overlayElement.style.display = 'block';
 
-            // 카메라 스트림 요청
-            const stream = await navigator.mediaDevices.getUserMedia({
+            // 카메라 접근 권한 요청 및 스트림 시작
+            await this.startCameraStream();
+
+            // NASA 데이터 주기적 업데이트 시작
+            this.startDataUpdateLoop();
+
+            this.isActive = true;
+            console.log('✅ Fallback AR 모드 활성화됨');
+
+            // 사용자에게 Fallback 모드 알림
+            this.showFallbackNotification(reason);
+
+            return true;
+
+        } catch (error) {
+            console.error('❌ Fallback 모드 실패:', error);
+
+            // 카메라 실패시 정적 AR 인터페이스 표시
+            return this.startStaticARInterface(error.message);
+        }
+    }
+
+    // 카메라 스트림 시작
+    async startCameraStream() {
+        try {
+            console.log('📷 Starting camera stream...');
+
+            const constraints = {
                 video: {
-                    facingMode: 'environment',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    facingMode: 'environment', // 후면 카메라 사용
+                    width: { ideal: 1920, max: 1920 },
+                    height: { ideal: 1080, max: 1080 },
+                    frameRate: { ideal: 30, max: 60 }
                 }
-            });
+            };
+
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
             // 비디오 요소 생성
             const video = document.createElement('video');
+            video.id = 'ar-camera-stream';
             video.style.cssText = `
                 position: fixed;
                 top: 0;
@@ -372,30 +497,157 @@ class MinimalWebXRAR {
                 height: 100vh;
                 object-fit: cover;
                 z-index: 99997;
+                background: #000;
             `;
             video.srcObject = stream;
             video.autoplay = true;
             video.playsInline = true;
             video.muted = true;
 
+            // 비디오 로드 이벤트
+            video.addEventListener('loadedmetadata', () => {
+                console.log('📹 Camera stream loaded:', video.videoWidth, 'x', video.videoHeight);
+            });
+
             document.body.appendChild(video);
 
             // 클린업 콜백 등록
             this.cleanupCallbacks.push(() => {
-                stream.getTracks().forEach(track => track.stop());
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                    console.log('📷 Camera track stopped');
+                });
                 if (video.parentNode) {
                     video.parentNode.removeChild(video);
                 }
             });
 
+            console.log('✅ Camera stream started successfully');
+
+        } catch (error) {
+            console.error('❌ Camera stream failed:', error);
+            throw new Error(`Camera access failed: ${error.message}`);
+        }
+    }
+
+    // 정적 AR 인터페이스 (카메라 없이)
+    async startStaticARInterface(reason) {
+        console.log('🖼️ Starting static AR interface:', reason);
+
+        try {
+            // DOM 오버레이 생성
+            this.createDOMOverlay();
+            this.overlayElement.style.display = 'block';
+
+            // 정적 배경 이미지 또는 그라디언트
+            const background = document.createElement('div');
+            background.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                z-index: 99997;
+            `;
+
+            // AR 시뮬레이션 오버레이
+            const arSimulation = document.createElement('div');
+            arSimulation.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(46, 150, 245, 0.1);
+                border: 2px dashed #2E96F5;
+                border-radius: 20px;
+                padding: 40px;
+                text-align: center;
+                color: white;
+                font-size: 18px;
+                z-index: 99999;
+                backdrop-filter: blur(10px);
+            `;
+            arSimulation.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 20px;">🌾📡</div>
+                <div style="font-weight: bold; margin-bottom: 15px;">AR Field Analysis</div>
+                <div style="margin-bottom: 20px; opacity: 0.8;">${reason}</div>
+                <div style="font-size: 14px; opacity: 0.6;">Using satellite data simulation mode</div>
+            `;
+
+            document.body.appendChild(background);
+            document.body.appendChild(arSimulation);
+
+            // NASA 데이터 업데이트 시작
+            this.startDataUpdateLoop();
+
+            // 클린업 콜백
+            this.cleanupCallbacks.push(() => {
+                if (background.parentNode) background.parentNode.removeChild(background);
+                if (arSimulation.parentNode) arSimulation.parentNode.removeChild(arSimulation);
+            });
+
             this.isActive = true;
-            console.log('✅ Fallback 모드 활성화됨');
+            console.log('✅ Static AR interface activated');
             return true;
 
         } catch (error) {
-            console.error('❌ Fallback 모드 실패:', error);
+            console.error('❌ Static AR interface failed:', error);
             return false;
         }
+    }
+
+    // Fallback 모드 알림
+    showFallbackNotification(reason) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 152, 0, 0.95);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-size: 14px;
+            z-index: 99999;
+            text-align: center;
+            max-width: 90%;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        `;
+        notification.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 5px;">📱 AR Simulation Mode</div>
+            <div style="font-size: 12px; opacity: 0.9;">${reason}</div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // 자동 제거
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+
+    // 데이터 업데이트 루프 시작
+    startDataUpdateLoop() {
+        // 즉시 한번 업데이트
+        this.updateNASAData();
+
+        // 5초마다 업데이트
+        this.dataUpdateInterval = setInterval(() => {
+            this.updateNASAData();
+        }, 5000);
+
+        // 클린업 콜백 등록
+        this.cleanupCallbacks.push(() => {
+            if (this.dataUpdateInterval) {
+                clearInterval(this.dataUpdateInterval);
+                this.dataUpdateInterval = null;
+            }
+        });
     }
 
     // Update NASA data
