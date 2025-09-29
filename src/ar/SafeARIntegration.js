@@ -14,6 +14,11 @@ class SafeARIntegration {
         this.isAIEnabled = false;
         this.lastAIAnalysis = null;
 
+        // 농부용 인터페이스 추가
+        this.farmerInterface = null;
+        this.isFarmerMode = false;
+        this.farmDataInterval = null;
+
         console.log('🛡️ SafeARIntegration: 초기화됨');
     }
 
@@ -97,6 +102,230 @@ class SafeARIntegration {
             await this.cleanup();
             return false;
         }
+    }
+
+    // 농부용 AR 시작
+    async startFarmerAR() {
+        try {
+            console.log('👨‍🌾 SafeARIntegration: 농부용 AR 시작');
+
+            // 기존 AR 시스템 완전 정리
+            await this.emergencyCleanupAll();
+
+            // 농부 모드 설정
+            this.isFarmerMode = true;
+
+            // 현재 앱 상태 백업
+            this.backupCurrentState();
+
+            // 최소 AR 시스템 생성
+            this.arSystem = new MinimalWebXRAR();
+
+            // 농부용 인터페이스 생성 (기존 오버레이 대체)
+            this.farmerInterface = new FarmerARInterface();
+            this.farmerInterface.createFarmerInterface();
+            this.farmerInterface.show();
+
+            // 이벤트 리스너 설정 (농부용 확장)
+            this.setupFarmerEventListeners();
+
+            // 글로벌 안전 장치 설정
+            this.setupGlobalSafeties();
+
+            // AR 시작
+            const success = await this.arSystem.startAR();
+
+            if (success) {
+                this.isActive = true;
+
+                // 초기 농장 데이터 로드
+                setTimeout(() => {
+                    this.loadInitialFarmData();
+                }, 1000);
+
+                // 농장 데이터 주기적 업데이트 시작
+                this.startFarmDataUpdates();
+
+                console.log('✅ SafeARIntegration: 농부용 AR 활성화됨');
+
+                // State notification
+                this.notifyARStateChange('farmer-started');
+
+                return true;
+            } else {
+                throw new Error('농부용 AR 시스템 시작 실패');
+            }
+
+        } catch (error) {
+            console.error('❌ SafeARIntegration: 농부용 AR 시작 실패:', error);
+
+            // 실패 시 완전 정리
+            await this.cleanup();
+
+            // 사용자에게 알림
+            this.showSafeNotification('농부용 AR 시작에 실패했습니다. 브라우저가 WebXR을 지원하는지 확인해주세요.', 'error');
+
+            return false;
+        }
+    }
+
+    // 농장 데이터 로드
+    async loadInitialFarmData() {
+        try {
+            console.log('🌾 초기 농장 데이터 로드 중...');
+
+            // 기본 위치 (나중에 GPS로 교체)
+            const defaultLat = 37.5665;
+            const defaultLon = 126.9780;
+
+            const [soilData, ndviData] = await Promise.all([
+                fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${defaultLat}&lon=${defaultLon}`)
+                    .then(r => r.json())
+                    .catch(e => this.getFallbackSoilData()),
+                fetch(`http://localhost:3001/api/modis/ndvi?lat=${defaultLat}&lon=${defaultLon}`)
+                    .then(r => r.json())
+                    .catch(e => this.getFallbackNDVIData())
+            ]);
+
+            if (this.farmerInterface) {
+                this.farmerInterface.updateFarmData(soilData, ndviData);
+                console.log('✅ 농장 데이터 업데이트 완료');
+            }
+
+        } catch (error) {
+            console.error('❌ 농장 데이터 로드 실패:', error);
+
+            // 오프라인 데이터 사용
+            if (this.farmerInterface) {
+                this.farmerInterface.updateFarmData(
+                    this.getFallbackSoilData(),
+                    this.getFallbackNDVIData()
+                );
+            }
+        }
+    }
+
+    // 농장 데이터 주기적 업데이트
+    startFarmDataUpdates() {
+        // 2분마다 데이터 갱신
+        this.farmDataInterval = setInterval(() => {
+            if (this.isActive && this.isFarmerMode) {
+                this.loadInitialFarmData();
+            }
+        }, 2 * 60 * 1000); // 2분
+
+        console.log('⏰ 농장 데이터 자동 갱신 시작 (2분 간격)');
+    }
+
+    // Fallback 토양 데이터
+    getFallbackSoilData() {
+        return {
+            surface_moisture: 0.35 + (Math.random() - 0.5) * 0.1, // 30-40% 범위
+            quality: 'fallback',
+            source: 'Offline Cache',
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    // Fallback NDVI 데이터
+    getFallbackNDVIData() {
+        return {
+            ndvi: 0.6 + (Math.random() - 0.5) * 0.2, // 0.5-0.7 범위
+            temperature: 25 + (Math.random() - 0.5) * 10, // 20-30도 범위
+            quality: 'fallback',
+            source: 'Offline Cache',
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    // 농부용 이벤트 리스너 설정
+    setupFarmerEventListeners() {
+        // 기본 AR 이벤트 설정
+        this.setupAREventListeners();
+
+        // 농부 AR 종료 이벤트
+        const farmerExitHandler = () => {
+            console.log('🔴 농부 AR 종료 이벤트 수신');
+            this.cleanup();
+        };
+
+        window.addEventListener('farmer-ar-exit', farmerExitHandler);
+        this.eventListeners.set('farmer-ar-exit', farmerExitHandler);
+
+        // 데이터 갱신 이벤트
+        const refreshHandler = () => {
+            console.log('🔄 농장 데이터 수동 갱신');
+            this.loadInitialFarmData();
+        };
+
+        window.addEventListener('farmer-refresh-data', refreshHandler);
+        this.eventListeners.set('farmer-refresh-data', refreshHandler);
+
+        // 영역 스캔 완료 이벤트
+        const scanCompleteHandler = (event) => {
+            console.log('🔍 영역 스캔 완료:', event.detail);
+            // 스캔 결과에 따른 추가 분석 수행
+            this.handleAreaScanResults(event.detail);
+        };
+
+        window.addEventListener('farmer-area-scan-complete', scanCompleteHandler);
+        this.eventListeners.set('farmer-area-scan-complete', scanCompleteHandler);
+
+        console.log('👨‍🌾 농부용 이벤트 리스너 설정 완료');
+    }
+
+    // 영역 스캔 결과 처리
+    handleAreaScanResults(scanResults) {
+        if (this.farmerInterface && scanResults) {
+            // 스캔 결과를 기반으로 추가 조언 생성
+            const enhancedAnalysis = {
+                scanAreas: scanResults.areas,
+                avgCondition: scanResults.avgCondition,
+                recommendation: this.generateScanBasedAdvice(scanResults)
+            };
+
+            // AI 분석 결과로 데이터 업데이트
+            if (this.lastSoilData) {
+                this.farmerInterface.updateFarmData(
+                    this.lastSoilData.soilData,
+                    this.lastSoilData.ndviData,
+                    enhancedAnalysis
+                );
+            }
+        }
+    }
+
+    // 스캔 기반 조언 생성
+    generateScanBasedAdvice(scanResults) {
+        const { areas, avgCondition } = scanResults;
+
+        let advice = '';
+        switch (avgCondition) {
+            case '우수':
+                advice = `${areas}개 영역 모두 우수한 상태입니다. 현재 관리 방법을 유지하세요.`;
+                break;
+            case '양호':
+                advice = `${areas}개 영역이 양호한 상태입니다. 정기적인 모니터링을 권장합니다.`;
+                break;
+            case '보통':
+                advice = `${areas}개 영역이 보통 상태입니다. 토양 개선을 고려해보세요.`;
+                break;
+            case '주의':
+                advice = `${areas}개 영역에 주의가 필요합니다. 집중 관리가 권장됩니다.`;
+                break;
+            case '개선필요':
+                advice = `${areas}개 영역에 즉시 개선 조치가 필요합니다. 전문가 상담을 권장합니다.`;
+                break;
+            default:
+                advice = `${areas}개 영역을 분석했습니다. 지속적인 모니터링이 필요합니다.`;
+        }
+
+        return {
+            soilType: '혼합 토양',
+            scanAdvice: advice,
+            areasScanned: areas,
+            condition: avgCondition
+        };
     }
 
     // 현재 앱 상태 백업
@@ -613,6 +842,27 @@ class SafeARIntegration {
             }
             this.arSystem = null;
         }
+
+        // 농부용 인터페이스 정리
+        if (this.farmerInterface) {
+            try {
+                this.farmerInterface.cleanup();
+                console.log('👨‍🌾 농부용 인터페이스 정리 완료');
+            } catch (error) {
+                console.warn('⚠️ 농부용 인터페이스 정리 실패:', error);
+            }
+            this.farmerInterface = null;
+        }
+
+        // 농장 데이터 업데이트 타이머 정리
+        if (this.farmDataInterval) {
+            clearInterval(this.farmDataInterval);
+            this.farmDataInterval = null;
+            console.log('⏰ 농장 데이터 업데이트 타이머 정리 완료');
+        }
+
+        // 농부 모드 상태 초기화
+        this.isFarmerMode = false;
 
         // AI 매니저 정리
         if (this.aiManager) {

@@ -358,7 +358,17 @@
                                                border-radius: 8px; font-size: 16px; font-weight: bold;
                                                cursor: pointer; touch-action: manipulation;
                                                box-shadow: 0 4px 15px rgba(9, 96, 225, 0.3);
-                                               min-height: 50px; width: 100%;">Launch AR</button>
+                                               min-height: 50px; width: 100%; margin-bottom: 10px;">Launch AR</button>
+
+                                <button id="start-farmer-ar-btn" class="ar-action-btn ar-farmer"
+                                        style="background: linear-gradient(45deg, #27ae60, #229954);
+                                               color: white; border: none; padding: 15px 30px;
+                                               border-radius: 8px; font-size: 16px; font-weight: bold;
+                                               cursor: pointer; touch-action: manipulation;
+                                               box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+                                               min-height: 50px; width: 100%;">
+                                    👨‍🌾 농부용 AR 시작
+                                </button>
                             </div>
 
                             <div class="ar-feature-card">
@@ -586,7 +596,6 @@
         window.THREE = THREE;
         window.OrbitControls = OrbitControls;
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.0.0/dist/tf.min.js"></script>
 
     <!-- Babylon.js Core -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -596,6 +605,9 @@
     <!-- Safe AR System - WebXR DOM Overlay Compliant -->
     <script src="src/ar/MinimalWebXRAR.js"></script>
     <script src="src/ar/SafeARIntegration.js"></script>
+
+    <!-- Farmer-Optimized AR Interface -->
+    <script src="src/ar/FarmerARInterface.js"></script>
 
     <!-- Agricultural AI Manager -->
     <script src="src/ar/AgriculturalAIManager.js"></script>
@@ -3797,6 +3809,15 @@
                 testPlantBtn.addEventListener('click', testPlantIdentification);
             }
 
+            // Farmer AR button
+            const startFarmerARBtn = document.getElementById('start-farmer-ar-btn');
+            if (startFarmerARBtn) {
+                startFarmerARBtn.addEventListener('click', startFarmerAR);
+                startFarmerARBtn.addEventListener('touchstart', startFarmerAR);
+                startFarmerARBtn.addEventListener('touchend', (e) => e.preventDefault());
+                console.log('👨‍🌾 농부용 AR 버튼 이벤트 리스너 설정 완료');
+            }
+
             // Chat send button
             const sendChatBtn = document.getElementById('send-chat-btn');
             if (sendChatBtn) {
@@ -4094,6 +4115,58 @@
             } finally {
                 testBtn.disabled = false;
                 testBtn.textContent = '🛰️ Test NASA Data';
+            }
+        }
+
+        // 농부용 AR 시작 함수
+        async function startFarmerAR() {
+            console.log('👨‍🌾 농부용 AR 시작 요청');
+
+            try {
+                // 기존 AR 시스템 정리
+                if (window.safeAR) {
+                    await window.safeAR.cleanup();
+                }
+
+                // 새로운 SafeARIntegration 인스턴스 생성
+                window.safeAR = new SafeARIntegration();
+
+                // 농부용 AR 시작
+                const success = await window.safeAR.startFarmerAR();
+
+                if (success) {
+                    console.log('✅ 농부용 AR 성공적으로 시작됨');
+
+                    // 버튼 상태 업데이트
+                    const farmerBtn = document.getElementById('start-farmer-ar-btn');
+                    if (farmerBtn) {
+                        farmerBtn.textContent = '🟢 농부 AR 활성화됨';
+                        farmerBtn.style.background = 'linear-gradient(45deg, #16a085, #1abc9c)';
+                        farmerBtn.disabled = true;
+                    }
+
+                    // 성공 알림
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate([200, 100, 200]);
+                    }
+
+                } else {
+                    throw new Error('농부용 AR 시작 실패');
+                }
+
+            } catch (error) {
+                console.error('❌ 농부용 AR 시작 실패:', error);
+
+                // 에러 알림
+                alert(`농부용 AR 시작에 실패했습니다.\n\n${error.message}\n\n다음을 확인해주세요:\n- 카메라 권한이 허용되었는지\n- 브라우저가 WebXR을 지원하는지\n- HTTPS 연결인지`);
+
+                // 버튼 상태 복원
+                const farmerBtn = document.getElementById('start-farmer-ar-btn');
+                if (farmerBtn) {
+                    farmerBtn.textContent = '👨‍🌾 농부용 AR 시작';
+                    farmerBtn.style.background = 'linear-gradient(45deg, #27ae60, #229954)';
+                    farmerBtn.disabled = false;
+                }
             }
         }
 
