@@ -224,22 +224,6 @@
         backdrop-filter: blur(10px);
     }
 
-    /* Mobile AR status indicator */
-    body.mobile-ar-mode::after {
-        content: "📱 Mobile AR Mode • Ready";
-        position: fixed;
-        top: 50px;
-        left: 0;
-        right: 0;
-        background: rgba(7, 23, 63, 0.9);
-        color: #00ff00;
-        text-align: center;
-        padding: 8px 20px;
-        font-size: 14px;
-        font-weight: 500;
-        z-index: 9998;
-        border-bottom: 1px solid rgba(46, 150, 245, 0.3);
-    }
 
     /* Make AR ChatGPT tab fullscreen on mobile */
     body.mobile-ar-mode #arChatGPTTab {
@@ -264,9 +248,9 @@
 
     /* Adjust AR content for mobile header */
     body.mobile-ar-mode .ar-chatgpt-wrapper {
-        padding-top: 95px !important;
-        height: calc(100vh - 90px) !important;
-        height: calc(100dvh - 90px) !important;
+        padding-top: 70px !important;
+        height: calc(100vh - 60px) !important;
+        height: calc(100dvh - 60px) !important;
         overflow-y: auto !important;
         padding-left: 15px !important;
         padding-right: 15px !important;
