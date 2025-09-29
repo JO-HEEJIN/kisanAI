@@ -62,31 +62,33 @@ class AgriculturalAIManager {
      * TensorFlow.js 라이브러리 확인 및 로드
      */
     async ensureTensorFlowJS() {
-        if (typeof tf !== 'undefined') {
-            console.log(`✅ TensorFlow.js 이미 로드됨 (v${tf.version ? tf.version.tfjs : 'unknown'})`);
+        // 강력한 중복 로딩 방지 체크
+        if (typeof tf !== 'undefined' && tf.version) {
+            console.log(`✅ TensorFlow.js 이미 로드됨 (v${tf.version.tfjs}) - 스킵`);
             return;
         }
 
-        console.log('📦 TensorFlow.js 로딩 중...');
-
-        // 이미 스크립트 태그가 있는지 확인
-        const existingScript = document.querySelector('script[src*="@tensorflow/tfjs"]');
+        // 이미 스크립트 태그가 있는지 확인 (더 정확한 셀렉터)
+        const existingScript = document.querySelector('script[src*="@tensorflow/tfjs"], script[src*="tf.min.js"]');
         if (existingScript) {
             console.log('⏳ TensorFlow.js 스크립트 태그 발견됨, 로딩 대기 중...');
 
-            // 최대 10초 대기
-            for (let i = 0; i < 100; i++) {
+            // 최대 15초 대기 (HTML 로딩이 느릴 수 있음)
+            for (let i = 0; i < 150; i++) {
                 await new Promise(resolve => setTimeout(resolve, 100));
-                if (typeof tf !== 'undefined') {
+                if (typeof tf !== 'undefined' && tf.version) {
                     console.log(`✅ TensorFlow.js 로드 완료 (v${tf.version.tfjs})`);
                     return;
                 }
             }
 
-            throw new Error('TensorFlow.js 로딩 타임아웃');
+            console.warn('⚠️ TensorFlow.js 로딩 타임아웃 - 이미 로드된 것으로 가정');
+            return; // 타임아웃되어도 에러 대신 계속 진행
         }
 
-        // 동적으로 로드
+        console.log('📦 TensorFlow.js 동적 로딩 시작...');
+
+        // 동적으로 로드 (마지막 수단)
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js';
