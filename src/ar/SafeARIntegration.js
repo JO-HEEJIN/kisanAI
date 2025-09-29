@@ -68,6 +68,37 @@ class SafeARIntegration {
         }
     }
 
+    // 안전한 AR 종료
+    async stopSafeAR() {
+        try {
+            console.log('🛑 SafeARIntegration: 안전한 AR 종료');
+
+            // AR 시스템 정지
+            if (this.arSystem) {
+                await this.arSystem.stopAR();
+            }
+
+            // 완전 정리
+            await this.cleanup();
+
+            // 앱 상태 복원
+            this.restorePreviousState();
+
+            // State notification
+            this.notifyARStateChange('stopped');
+
+            console.log('✅ SafeARIntegration: 안전한 AR 종료 완료');
+            return true;
+
+        } catch (error) {
+            console.error('❌ SafeARIntegration: AR 종료 실패:', error);
+
+            // 실패 시 강제 정리
+            await this.cleanup();
+            return false;
+        }
+    }
+
     // 현재 앱 상태 백업
     backupCurrentState() {
         console.log('💾 현재 앱 상태 백업');

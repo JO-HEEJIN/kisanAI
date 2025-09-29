@@ -244,9 +244,26 @@ class MinimalWebXRAR {
 
         // Exit 버튼 이벤트
         const exitButton = controlPanel.querySelector('#minimal-ar-exit');
-        const exitHandler = () => {
+        const exitHandler = async () => {
             console.log('🔴 Exit AR 버튼 클릭됨');
-            this.cleanup();
+
+            try {
+                // 먼저 stopAR 호출하여 정상적으로 종료
+                await this.stopAR();
+
+                // SafeARIntegration에도 알림
+                if (window.safeARIntegration && typeof window.safeARIntegration.stopSafeAR === 'function') {
+                    await window.safeARIntegration.stopSafeAR();
+                }
+
+                console.log('✅ AR 시스템 완전 종료됨');
+
+            } catch (error) {
+                console.error('❌ AR 종료 중 오류:', error);
+
+                // 오류 발생시 강제 정리
+                this.cleanup();
+            }
         };
 
         exitButton.addEventListener('click', exitHandler);
@@ -727,13 +744,20 @@ class MinimalWebXRAR {
 
     // Safe cleanup
     async cleanup() {
-        if (!this.isActive && !this.session) return;
+        if (!this.isActive && !this.session && this.cleanupCallbacks.length === 0) return;
 
         console.log('🧹 MinimalWebXRAR: Cleanup started');
 
         // Stop animation loop
         if (this.animationId && this.session) {
             this.session.cancelAnimationFrame(this.animationId);
+        }
+
+        // Stop data update interval
+        if (this.dataUpdateInterval) {
+            clearInterval(this.dataUpdateInterval);
+            this.dataUpdateInterval = null;
+            console.log('⏹️ Data update loop stopped');
         }
 
         // Execute cleanup callbacks
@@ -745,6 +769,28 @@ class MinimalWebXRAR {
             }
         });
 
+        // Remove DOM overlay
+        this.removeDOMOverlay();
+
+        // Release screen orientation lock
+        try {
+            if (screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+                console.log('🔓 Screen orientation unlocked');
+            }
+        } catch (error) {
+            console.warn('⚠️ Could not unlock screen orientation:', error.message);
+        }
+
+        // Restore viewport settings
+        if (this.isMobile()) {
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+            }
+            document.body.style.touchAction = '';
+        }
+
         // Reset state
         this.isActive = false;
         this.session = null;
@@ -754,7 +800,7 @@ class MinimalWebXRAR {
         this.animationId = null;
         this.cleanupCallbacks = [];
 
-        console.log('✅ MinimalWebXRAR: 정리 완료');
+        console.log('✅ MinimalWebXRAR: Complete cleanup finished');
     }
 
     // 상태 확인
