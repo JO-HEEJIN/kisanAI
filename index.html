@@ -168,8 +168,8 @@
                 <div id="dataTab" class="tab-content" data-tab="data">
                     <!-- Sub-tab navigation for Satellite Data -->
                     <div class="satellite-data-nav">
-                        <button class="satellite-subtab active" data-subtab="satellite-cards">📡 Satellite Data Cards</button>
-                        <button class="satellite-subtab" data-subtab="sensor-fusion">🔬 Sensor Fusion</button>
+                        <button class="satellite-subtab active" data-subtab="satellite-cards">Satellite Data Cards</button>
+                        <button class="satellite-subtab" data-subtab="sensor-fusion">Sensor Fusion</button>
                     </div>
 
                     <!-- Satellite Data Cards Sub-tab -->
@@ -183,7 +183,7 @@
                     <div id="sensorFusionSubtab" class="satellite-subtab-content">
                         <div class="sensor-fusion-wrapper">
                             <div class="section-header">
-                                <h2>🔬 Multi-Sensor Fusion Analysis</h2>
+                                <h2>Multi-Sensor Fusion Analysis</h2>
                                 <p>Combining NASA satellite data for smarter farming decisions</p>
                             </div>
                             <div id="sensorFusionTabDashboard"></div>
@@ -239,7 +239,7 @@
                                     <!-- Control Panel (Left) -->
                                     <div class="farm-globe-control-panel">
                                         <div class="control-section">
-                                            <h3>📡 NASA Data Layers</h3>
+                                            <h3>NASA Data Layers</h3>
 
                                             <div class="layer-toggle" onclick="farmGlobe3D?.toggleNASALayer('modis', this.querySelector('input').checked)">
                                                 <input type="checkbox" id="modis-layer" checked>
@@ -263,7 +263,7 @@
                                         </div>
 
                                         <div class="control-section">
-                                            <h3>🗺️ View Mode</h3>
+                                            <h3>View Mode</h3>
                                             <div class="view-mode-buttons">
                                                 <button class="mode-btn active" onclick="(window.app?.farmGlobe3D || window.farmGlobe3D)?.setViewMode('3D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">3D Globe</button>
                                                 <button class="mode-btn" onclick="(window.app?.farmGlobe3D || window.farmGlobe3D)?.setViewMode('2D'); this.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">2D Map</button>
@@ -271,7 +271,7 @@
                                         </div>
 
                                         <div class="control-section">
-                                            <h3>🎯 Quick Navigation</h3>
+                                            <h3>Quick Navigation</h3>
                                             <div class="view-mode-buttons">
                                                 <button class="mode-btn" onclick="(window.app?.farmGlobe3D || window.farmGlobe3D)?.flyToLocation([-93.5, 41.9], 500000)">Iowa Overview</button>
                                                 <button class="mode-btn" onclick="(window.app?.farmGlobe3D || window.farmGlobe3D)?.flyToLocation([-93.0, 41.8], 200000)">All Farms</button>
@@ -309,7 +309,7 @@
                                         <div id="farm-info-grid" class="info-grid"></div>
 
                                         <div class="nasa-data-section">
-                                            <h3>🛰️ NASA Satellite Data</h3>
+                                            <h3>NASA Satellite Data</h3>
                                             <div id="nasa-data-content"></div>
                                         </div>
 
@@ -367,7 +367,7 @@
                                                cursor: pointer; touch-action: manipulation;
                                                box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
                                                min-height: 50px; width: 100%;">
-                                    👨‍🌾 농부용 AR 시작
+                                    AR farming Start!
                                 </button>
                             </div>
 
@@ -3815,7 +3815,7 @@
                 startFarmerARBtn.addEventListener('click', startFarmerAR);
                 startFarmerARBtn.addEventListener('touchstart', startFarmerAR);
                 startFarmerARBtn.addEventListener('touchend', (e) => e.preventDefault());
-                console.log('👨‍🌾 농부용 AR 버튼 이벤트 리스너 설정 완료');
+                console.log('🚜 Farmer AR button event listeners set up');
             }
 
             // Chat send button
@@ -4120,7 +4120,7 @@
 
         // 농부용 AR 시작 함수
         async function startFarmerAR() {
-            console.log('👨‍🌾 농부용 AR 시작 요청');
+            console.log('🚜 Farmer AR start requested');
 
             try {
                 // 기존 AR 시스템 정리
@@ -4135,12 +4135,12 @@
                 const success = await window.safeAR.startFarmerAR();
 
                 if (success) {
-                    console.log('✅ 농부용 AR 성공적으로 시작됨');
+                    console.log('✅ Farmer AR successfully started');
 
                     // 버튼 상태 업데이트
                     const farmerBtn = document.getElementById('start-farmer-ar-btn');
                     if (farmerBtn) {
-                        farmerBtn.textContent = '🟢 농부 AR 활성화됨';
+                        farmerBtn.textContent = '🟢 Farmer AR Active';
                         farmerBtn.style.background = 'linear-gradient(45deg, #16a085, #1abc9c)';
                         farmerBtn.disabled = true;
                     }
@@ -4158,12 +4158,12 @@
                 console.error('❌ 농부용 AR 시작 실패:', error);
 
                 // 에러 알림
-                alert(`농부용 AR 시작에 실패했습니다.\n\n${error.message}\n\n다음을 확인해주세요:\n- 카메라 권한이 허용되었는지\n- 브라우저가 WebXR을 지원하는지\n- HTTPS 연결인지`);
+                alert(`Farmer AR failed to start.\n\n${error.message}\n\nPlease check:\n- Camera permissions are allowed\n- Browser supports WebXR\n- Using HTTPS connection`);
 
                 // 버튼 상태 복원
                 const farmerBtn = document.getElementById('start-farmer-ar-btn');
                 if (farmerBtn) {
-                    farmerBtn.textContent = '👨‍🌾 농부용 AR 시작';
+                    farmerBtn.textContent = '🚜 Start Farmer AR';
                     farmerBtn.style.background = 'linear-gradient(45deg, #27ae60, #229954)';
                     farmerBtn.disabled = false;
                 }
