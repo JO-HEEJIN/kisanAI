@@ -853,29 +853,7 @@
                     }
                 }, 100);
 
-                // Show mobile welcome message
-                const welcomeMessage = document.createElement('div');
-                welcomeMessage.innerHTML = `
-                    <div style="background: rgba(7, 23, 63, 0.95); color: white; padding: 20px; text-align: center;
-                                border-radius: 15px; margin: 20px; backdrop-filter: blur(10px);
-                                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);">
-                        <h2>🚀 Welcome to NASA Farm Navigators</h2>
-                        <p>📱 <strong>Mobile AR Experience</strong></p>
-                        <p>Experience agricultural AI analysis with augmented reality on your mobile device</p>
-                        <button onclick="this.parentElement.parentElement.remove()"
-                                style="background: linear-gradient(45deg, #2E96F5, #0960E1); color: white;
-                                       border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold;
-                                       margin-top: 10px; cursor: pointer; font-size: 16px;">
-                            🎯 Start AR Experience
-                        </button>
-                    </div>
-                `;
-
-                // Insert welcome message after header
-                const header = document.querySelector('.app-header');
-                if (header) {
-                    header.insertAdjacentElement('afterend', welcomeMessage);
-                }
+                // Mobile welcome message removed - going directly to AR interface
 
             } else {
                 console.log('💻 Desktop device detected - Full experience available');
