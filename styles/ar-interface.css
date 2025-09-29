@@ -129,6 +129,16 @@
         display: none !important;
     }
 
+    /* Hide tab navigation completely on mobile AR mode */
+    body.mobile-ar-mode .tab-container {
+        display: none !important;
+    }
+
+    /* Hide navigation bar on mobile AR mode */
+    body.mobile-ar-mode .navigation {
+        display: none !important;
+    }
+
     /* Force AR ChatGPT tab to be active on mobile */
     .tab[data-tab="ar-chatgpt"] {
         background: linear-gradient(135deg, #2E96F5, #0960E1);
@@ -185,25 +195,94 @@
         width: 100%;
     }
 
-    /* Mobile AR welcome message */
+    /* Hide main header completely on mobile AR mode */
+    body.mobile-ar-mode .app-header {
+        display: none !important;
+    }
+
+    /* Hide header trigger zone on mobile */
+    body.mobile-ar-mode .header-trigger {
+        display: none !important;
+    }
+
+    /* Mobile AR header replacement */
     body.mobile-ar-mode::before {
-        content: "🚀 NASA Farm Navigators - AR Experience";
+        content: "🛰️ NASA Farm Navigators AR";
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(135deg, #0960E1, #2E96F5);
+        background: linear-gradient(135deg, #2E96F5, #0960E1);
         color: white;
         text-align: center;
-        padding: 15px;
+        padding: 12px 20px;
         font-weight: bold;
         font-size: 16px;
-        z-index: 1000;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        z-index: 9999;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.4);
+        border-bottom: 2px solid rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
     }
 
-    body.mobile-ar-mode .app-header {
-        margin-top: 60px;
+    /* Mobile AR status indicator */
+    body.mobile-ar-mode::after {
+        content: "📱 Mobile AR Mode • Ready";
+        position: fixed;
+        top: 50px;
+        left: 0;
+        right: 0;
+        background: rgba(7, 23, 63, 0.9);
+        color: #00ff00;
+        text-align: center;
+        padding: 8px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 9998;
+        border-bottom: 1px solid rgba(46, 150, 245, 0.3);
+    }
+
+    /* Make AR ChatGPT tab fullscreen on mobile */
+    body.mobile-ar-mode #arChatGPTTab {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        z-index: 1000 !important;
+        background: linear-gradient(135deg, #07173F, #1e3c72) !important;
+        overflow-y: auto !important;
+    }
+
+    /* Optimize main container for mobile AR */
+    body.mobile-ar-mode .main-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+    }
+
+    /* Adjust AR content for mobile header */
+    body.mobile-ar-mode .ar-chatgpt-wrapper {
+        padding-top: 95px !important;
+        height: calc(100vh - 90px) !important;
+        height: calc(100dvh - 90px) !important;
+        overflow-y: auto !important;
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+
+    /* Mobile AR touch optimizations */
+    body.mobile-ar-mode .ar-test-btn {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        touch-action: manipulation !important;
+    }
+
+    /* Mobile AR scroll improvements */
+    body.mobile-ar-mode #arChatGPTTab {
+        -webkit-overflow-scrolling: touch !important;
+        scroll-behavior: smooth !important;
     }
 }
 
