@@ -43,6 +43,45 @@ node server/nasa-proxy.js
 - **MODIS**: CMR Search + ORNL DAAC backup
 - **Landsat**: 지역 기반 현실적 데이터
 
+### 2-1. Vercel API Routes (2025-09-30 추가)
+배포용 API 엔드포인트들 - 모든 NASA 데이터와 AI 분석 기능:
+
+#### 📡 NASA 위성 데이터 API:
+- **GET `/api/smap/soil-moisture`**: SMAP 토양 수분 데이터
+  - Parameters: `lat`, `lon`, `date` (optional)
+  - Returns: surface_moisture, rootzone_moisture, temperature
+- **GET `/api/modis/ndvi`**: MODIS NDVI 식생 지수
+  - Parameters: `lat`, `lon`, `date` (optional)
+  - Returns: ndvi value, vegetation health, seasonal data
+- **GET `/api/landsat/imagery`**: Landsat 8/9 이미지 및 스펙트럼 데이터
+  - Parameters: `lat`, `lon`, `date` (optional)
+  - Returns: 6 spectral bands (Red, Green, Blue, NIR, SWIR1, SWIR2)
+- **GET `/api/pixel-hunt/data`**: 픽셀 그리드 데이터
+  - Parameters: `lat`, `lon`, `resolution` (10/30/250)
+  - Returns: NxN pixel grid with NDVI, moisture, temperature
+
+#### 🤖 AI 분석 API (새로 추가):
+- **POST `/api/ai/soil-analysis`**: AI 기반 토양 건강 분석
+  - Body: `{ lat, lon, imageData, nasaData, cropType }`
+  - Returns: soil type, pH, organic matter, health score, recommendations
+  - Features: 이미지 분석 + NASA 데이터 결합, 지역별 토양 분류
+
+- **POST `/api/ai/farming-advisor`**: 대화형 농업 AI 어시스턴트
+  - Body: `{ message, context, language, farmData }`
+  - Returns: AI response, intent, entities, suggestions, actions
+  - Intents: irrigation, fertilization, pest management, harvest, planting, soil, weather
+
+- **POST `/api/ai/predictions`**: ML 농업 예측
+  - Body: `{ predictionType, inputData, lat, lon, cropType, timeframe }`
+  - Prediction Types:
+    - `soil_moisture`: 7일 토양 수분 예측
+    - `crop_yield`: 작물 수확량 예측 (신뢰도 포함)
+    - `irrigation_optimization`: 관개 일정 최적화
+    - `anomaly_detection`: 필드 이상 감지
+    - `weather_impact`: 날씨 영향 예측
+
+- **GET `/api/health`**: API 상태 확인 및 엔드포인트 목록
+
 ### 3. 토큰 설정
 - NASA Earthdata 토큰이 localStorage에 저장되어 있어야 함
 - 토큰 없으면 샘플 데이터 표시
