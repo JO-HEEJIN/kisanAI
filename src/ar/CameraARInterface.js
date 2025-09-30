@@ -314,7 +314,12 @@ class CameraARInterface {
             // Use relative URL for deployment, fallback to localhost for development
             const apiBase = window.location.hostname === 'localhost'
                 ? 'http://localhost:3001'
-                : 'https://nasa-proxy.herokuapp.com'; // You'll need to deploy proxy server
+                : null; // No proxy server in production, use fallback data
+
+            // If no API server available, skip to fallback data
+            if (!apiBase) {
+                throw new Error('No API server available in production');
+            }
 
             // Fetch SMAP soil data
             const soilResponse = await fetch(
