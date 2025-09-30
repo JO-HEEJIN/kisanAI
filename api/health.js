@@ -27,6 +27,9 @@ export default async function handler(req, res) {
             'GET /api/modis/ndvi?lat={lat}&lon={lon}&date={date}',
             'GET /api/landsat/imagery?lat={lat}&lon={lon}&date={date}',
             'GET /api/pixel-hunt/data?lat={lat}&lon={lon}&resolution={resolution}',
+            'POST /api/ai/soil-analysis',
+            'POST /api/ai/farming-advisor',
+            'POST /api/ai/predictions',
             'GET /api/health'
         ],
         platform: 'Vercel Serverless Functions',
