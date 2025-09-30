@@ -66,18 +66,18 @@ window.createARScene = async function() {
         width: 100vw;
         height: 100vh;
         z-index: 10000;
-        background: black;
+        background: transparent;
     `;
 
-    // Create A-Frame scene with AR.js - iOS optimized for real AR
+    // Create A-Frame scene with AR.js - Force camera display
     arContainer.innerHTML = `
         <a-scene
             vr-mode-ui="enabled: false"
             device-orientation-permission-ui="enabled: false"
-            arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; sourceWidth: 640; sourceHeight: 480; displayWidth: 640; displayHeight: 480;"
-            renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; precision: mediump"
+            arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; trackingMethod: best; sourceWidth: 480; sourceHeight: 640; displayWidth: 480; displayHeight: 640; cameraParametersUrl: none;"
+            renderer="logarithmicDepthBuffer: true; antialias: false; alpha: true; precision: mediump; preserveDrawingBuffer: true"
             embedded
-            style="height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 1;">
+            style="height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 1; background: transparent;">
 
             <!-- Assets -->
             <a-assets>
@@ -218,12 +218,55 @@ window.createARScene = async function() {
     // Load A-Frame and AR.js scripts
     await window.loadARScripts();
 
+    // Force camera initialization after AR.js loads
+    setTimeout(() => {
+        window.forceARCameraInit();
+    }, 1000);
+
     // Start real-time soil analysis
     setTimeout(() => {
         window.startSoilAnalysis();
-    }, 2000);
+    }, 3000);
 
     console.log('✅ AR.js scene created successfully');
+
+// Force AR camera initialization
+window.forceARCameraInit = function() {
+    console.log('🎥 Forcing AR camera initialization...');
+
+    try {
+        // Get AR.js context and force camera start
+        const scene = document.querySelector('a-scene');
+        if (scene && scene.systems && scene.systems.arjs) {
+            console.log('🎯 Found AR.js system, initializing camera...');
+
+            // Force WebRTC camera access
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: 'environment',
+                    width: { ideal: 480 },
+                    height: { ideal: 640 }
+                }
+            }).then(stream => {
+                console.log('📹 Camera stream obtained');
+
+                // Check if AR.js canvas exists
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    console.log('🖼️ AR canvas found');
+                    // AR.js should handle the stream automatically
+                } else {
+                    console.warn('⚠️ No AR canvas found');
+                }
+            }).catch(error => {
+                console.error('❌ Camera access failed:', error);
+            });
+        } else {
+            console.warn('⚠️ AR.js system not found');
+        }
+    } catch (error) {
+        console.error('❌ AR camera init failed:', error);
+    }
 };
 
 // Load A-Frame and AR.js scripts dynamically with conflict prevention
