@@ -273,6 +273,7 @@ window.createARScene = async function() {
     }, 3000);
 
     console.log('✅ AR.js scene created successfully');
+};
 
 // Force AR camera initialization
 window.forceARCameraInit = function() {
@@ -549,42 +550,6 @@ window.updateARSoilAnalysis = function(pixelX, pixelY, nasaData, aiResult = null
     }
 };
 
-// Fetch NASA data (reusing existing function)
-window.fetchNASAData = async function(lat, lon) {
-    try {
-        const apiBase = window.location.hostname === 'localhost'
-            ? 'http://localhost:3001'
-            : 'https://nasa-proxy.herokuapp.com';
-
-        console.log(`🛰️ Fetching NASA data from: ${apiBase}`);
-
-        const soilResponse = await fetch(
-            `${apiBase}/api/smap/soil-moisture?lat=${lat}&lon=${lon}`
-        );
-        const soilData = await soilResponse.json();
-
-        const ndviResponse = await fetch(
-            `${apiBase}/api/modis/ndvi?lat=${lat}&lon=${lon}`
-        );
-        const ndviData = await ndviResponse.json();
-
-        return {
-            soilMoisture: Math.round((soilData.surface_moisture || 0) * 100),
-            ndvi: parseFloat(ndviData.ndvi || 0).toFixed(2)
-        };
-    } catch (error) {
-        console.warn('🌐 NASA API unavailable, using realistic fallback data');
-
-        // Generate realistic data based on location and season
-        const soilMoisture = 15 + Math.random() * 40; // 15-55%
-        const ndvi = 0.2 + Math.random() * 0.5; // 0.2-0.7
-
-        return {
-            soilMoisture: Math.round(soilMoisture),
-            ndvi: ndvi.toFixed(2)
-        };
-    }
-};
 
 // Stop AR scene
 window.stopARScene = function() {
