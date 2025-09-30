@@ -1648,17 +1648,28 @@ class NASAFarmNavigatorsApp {
 
                 // Alternative approach: stop propagation for all events temporarily
                 const killSwitch = (e) => {
-                    // Only block events that seem AR-related
+                    // NEVER block AR button clicks!
                     const target = e.target;
+
+                    // Allow AR launch buttons to work
+                    if (target && (target.id === 'start-ar-btn' ||
+                                  target.id === 'start-farmer-ar-btn' ||
+                                  target.closest('#start-ar-btn') ||
+                                  target.closest('#start-farmer-ar-btn'))) {
+                        console.log(`✅ Allowing AR button event: ${eventType}`);
+                        return; // Don't block!
+                    }
+
+                    // Block other AR-related events (but NOT the buttons!)
                     if (target && (
-                        target.classList.contains('ar-') ||
-                        target.id.includes('ar') ||
-                        e.target.closest('.ar-feature-card') ||
-                        e.target.closest('#arChatGPTTab')
+                        target.classList.contains('ar-overlay') ||
+                        target.classList.contains('ar-scene') ||
+                        target.id.includes('ar-camera') ||
+                        target.id.includes('ar-container')
                     )) {
                         e.stopImmediatePropagation();
                         e.preventDefault();
-                        console.log(`🛑 Blocked AR event: ${eventType} on`, target);
+                        console.log(`🛑 Blocked AR overlay event: ${eventType} on`, target);
                     }
                 };
 
