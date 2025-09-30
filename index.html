@@ -361,9 +361,18 @@
                                                box-shadow: 0 4px 15px rgba(9, 96, 225, 0.3);
                                                min-height: 50px; width: 100%; margin-bottom: 10px;">Launch AR</button>
 
+                                <!-- AR Functions moved to external file: src/ar-functions.js -->
                                 <script>
-                                    // Initialize AR running state
-                                    window.arRunning = false;
+                                    console.log('📝 AR script section - checking external functions...');
+
+                                    // Wait for external script to load and verify
+                                    setTimeout(() => {
+                                        if (window.launchRealAR) {
+                                            console.log('✅ External AR functions loaded successfully');
+                                        } else {
+                                            console.error('❌ External AR functions not found');
+                                        }
+                                    }, 100);
 
                                     // Real AR.js Implementation for iOS compatibility - Global function
                                     window.launchRealAR = async function() {
@@ -1280,6 +1289,9 @@
 
     <!-- Mobile Debugger for Testing -->
     <script src="src/debug/MobileDebugger.js"></script>
+
+    <!-- AR Functions for Real AR.js Implementation -->
+    <script src="src/ar-functions.js"></script>
 
     <!-- Safe AR System - WebXR DOM Overlay Compliant -->
     <script src="src/ar/MinimalWebXRAR.js"></script>
