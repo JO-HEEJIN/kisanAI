@@ -3,6 +3,7 @@ console.log('🔄 Loading AR functions...');
 
 // Initialize AR running state
 window.arRunning = false;
+window.aiManager = null;
 
 // Real AR.js Implementation for iOS compatibility
 window.launchRealAR = async function() {
@@ -86,7 +87,7 @@ window.createARScene = async function() {
                 </a-mixin>
             </a-assets>
 
-            <!-- Compact Soil Analysis Panel -->
+            <!-- NASA Data Panel -->
             <a-box
                 id="nasa-data-panel"
                 position="0 0.4 -1.3"
@@ -98,7 +99,7 @@ window.createARScene = async function() {
                 <a-text
                     mixin="text-style"
                     position="0 0.2 0.05"
-                    value="🔍 Analysis"
+                    value="📡 NASA Data"
                     text="width: 3; fontSize: 16; color: #2E96F5;">
                 </a-text>
 
@@ -110,7 +111,7 @@ window.createARScene = async function() {
                     text="width: 2.5; fontSize: 10; color: #EAFE07;">
                 </a-text>
 
-                <!-- Data Grid Layout -->
+                <!-- NASA Data Grid -->
                 <a-text
                     id="moisture-text"
                     mixin="text-style"
@@ -141,6 +142,39 @@ window.createARScene = async function() {
                     position="0.25 -0.18 0.05"
                     value="❤️ --"
                     text="width: 2; fontSize: 9; color: #FFFFFF;">
+                </a-text>
+            </a-box>
+
+            <!-- AI Classification Panel -->
+            <a-box
+                id="ai-classification-panel"
+                position="0 -0.1 -1.3"
+                width="1.2"
+                height="0.5"
+                depth="0.02"
+                material="color: #0960E1; opacity: 0.9;">
+
+                <a-text
+                    mixin="text-style"
+                    position="0 0.15 0.05"
+                    value="🤖 AI Analysis"
+                    text="width: 3; fontSize: 16; color: #EAFE07;">
+                </a-text>
+
+                <a-text
+                    id="ai-landcover-text"
+                    mixin="text-style"
+                    position="0 -0.05 0.05"
+                    value="Land: --"
+                    text="width: 2.5; fontSize: 12; color: #FFFFFF;">
+                </a-text>
+
+                <a-text
+                    id="ai-confidence-text"
+                    mixin="text-style"
+                    position="0 -0.15 0.05"
+                    value="Confidence: --"
+                    text="width: 2.5; fontSize: 10; color: #FFFFFF;">
                 </a-text>
             </a-box>
 
@@ -316,9 +350,12 @@ window.loadARScripts = async function() {
     });
 };
 
-// Start real-time soil analysis using Pixel Hunt data system
+// Start real-time soil analysis with AI integration
 window.startSoilAnalysis = function() {
-    console.log('🔍 Starting real-time soil analysis...');
+    console.log('🔍 Starting real-time soil analysis with AI...');
+
+    // Initialize AI Manager
+    window.initializeAIManager();
 
     // Get GPS location for initial positioning
     navigator.geolocation.getCurrentPosition(
@@ -328,7 +365,7 @@ window.startSoilAnalysis = function() {
 
             console.log(`📍 GPS: ${lat}, ${lon}`);
 
-            // Start continuous analysis
+            // Start continuous analysis with AI
             window.startContinuousAnalysis();
         },
         (error) => {
@@ -339,13 +376,31 @@ window.startSoilAnalysis = function() {
     );
 };
 
-// Continuous analysis using Pixel Hunt data system
+// Initialize Agricultural AI Manager
+window.initializeAIManager = async function() {
+    try {
+        console.log('🤖 Initializing Agricultural AI Manager...');
+
+        if (typeof AgriculturalAIManager !== 'undefined') {
+            window.aiManager = new AgriculturalAIManager();
+            await window.aiManager.initialize();
+            console.log('✅ AI Manager initialized successfully');
+        } else {
+            console.warn('⚠️ AgriculturalAIManager not found, continuing without AI');
+        }
+    } catch (error) {
+        console.error('❌ AI Manager initialization failed:', error);
+        window.aiManager = null;
+    }
+};
+
+// Continuous analysis using Pixel Hunt data system + AI
 window.startContinuousAnalysis = function() {
     // Simulate real-time pixel analysis (integrate with actual Pixel Hunt system)
     let pixelX = Math.floor(Math.random() * 20);
     let pixelY = Math.floor(Math.random() * 20);
 
-    const updateAnalysis = () => {
+    const updateAnalysis = async () => {
         // Simulate camera movement - change pixel coordinates
         pixelX = Math.max(0, Math.min(19, pixelX + (Math.random() - 0.5) * 2));
         pixelY = Math.max(0, Math.min(19, pixelY + (Math.random() - 0.5) * 2));
@@ -353,12 +408,27 @@ window.startContinuousAnalysis = function() {
         // Get pixel data (connect to actual Pixel Hunt data system)
         const pixelData = window.getPixelData ? window.getPixelData(Math.floor(pixelX), Math.floor(pixelY)) : generateFallbackPixelData();
 
-        // Update AR display
-        window.updateARSoilAnalysis(pixelX, pixelY, pixelData);
+        // Perform AI classification if available
+        let aiResult = null;
+        if (window.aiManager && window.aiManager.isModelLoaded) {
+            try {
+                // Get AR canvas for AI analysis
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    aiResult = await window.aiManager.classifyARCanvas(canvas);
+                    console.log('🤖 AI Classification:', aiResult);
+                }
+            } catch (error) {
+                console.warn('⚠️ AI classification failed:', error);
+            }
+        }
+
+        // Update AR display with both NASA and AI data
+        window.updateARSoilAnalysis(pixelX, pixelY, pixelData, aiResult);
     };
 
-    // Update every 2 seconds for real-time analysis
-    setInterval(updateAnalysis, 2000);
+    // Update every 3 seconds for real-time analysis (slower for AI processing)
+    setInterval(updateAnalysis, 3000);
     updateAnalysis(); // Initial update
 };
 
@@ -379,10 +449,11 @@ function generateFallbackPixelData() {
     };
 }
 
-// Update AR soil analysis display (Improved UI)
-window.updateARSoilAnalysis = function(pixelX, pixelY, data) {
-    console.log('🔍 Updating AR soil analysis:', {pixelX, pixelY, data});
+// Update AR soil analysis display with AI integration
+window.updateARSoilAnalysis = function(pixelX, pixelY, nasaData, aiResult = null) {
+    console.log('🔍 Updating AR analysis:', {pixelX, pixelY, nasaData, aiResult});
 
+    // Update NASA Data Panel
     const pixelInfoText = document.getElementById('pixel-info-text');
     const moistureText = document.getElementById('moisture-text');
     const ndviText = document.getElementById('ndvi-text');
@@ -393,21 +464,46 @@ window.updateARSoilAnalysis = function(pixelX, pixelY, data) {
         pixelInfoText.setAttribute('value', `Pixel [${Math.floor(pixelX)}, ${Math.floor(pixelY)}]`);
     }
 
-    // Compact format with emojis
+    // NASA data with emojis
     if (moistureText) {
-        moistureText.setAttribute('value', `💧 ${data.moisture}%`);
+        moistureText.setAttribute('value', `💧 ${nasaData.moisture}%`);
     }
 
     if (ndviText) {
-        ndviText.setAttribute('value', `🌿 ${data.ndvi}`);
+        ndviText.setAttribute('value', `🌿 ${nasaData.ndvi}`);
     }
 
     if (tempText) {
-        tempText.setAttribute('value', `🌡️ ${data.temperature}°C`);
+        tempText.setAttribute('value', `🌡️ ${nasaData.temperature}°C`);
     }
 
     if (healthText) {
-        healthText.setAttribute('value', `❤️ ${data.health}%`);
+        healthText.setAttribute('value', `❤️ ${nasaData.health}%`);
+    }
+
+    // Update AI Classification Panel
+    const aiLandcoverText = document.getElementById('ai-landcover-text');
+    const aiConfidenceText = document.getElementById('ai-confidence-text');
+
+    if (aiResult && aiLandcoverText && aiConfidenceText) {
+        aiLandcoverText.setAttribute('value', `Land: ${aiResult.landCover || 'unknown'}`);
+        aiConfidenceText.setAttribute('value', `Confidence: ${Math.round((aiResult.confidence || 0) * 100)}%`);
+
+        // Update AI panel color based on confidence
+        const aiPanel = document.getElementById('ai-classification-panel');
+        if (aiPanel) {
+            let aiColor = '#0960E1'; // NEON BLUE default
+            if (aiResult.confidence >= 0.8) {
+                aiColor = '#00ff88'; // Green for high confidence
+            } else if (aiResult.confidence < 0.5) {
+                aiColor = '#E43700'; // Red for low confidence
+            }
+            aiPanel.setAttribute('material', `color: ${aiColor}; opacity: 0.9;`);
+        }
+    } else if (aiLandcoverText && aiConfidenceText) {
+        // Show AI loading or error state
+        aiLandcoverText.setAttribute('value', 'Land: Loading...');
+        aiConfidenceText.setAttribute('value', 'Confidence: --');
     }
 
     // Update health indicator colors (circular feedback)
@@ -418,13 +514,13 @@ window.updateARSoilAnalysis = function(pixelX, pixelY, data) {
         let healthColor = '#2E96F5'; // BLUE YONDER default (good health)
         let ringOpacity = 0.6;
 
-        if (data.health >= 85) {
+        if (nasaData.health >= 85) {
             healthColor = '#00ff88'; // Bright green for excellent health
             ringOpacity = 0.8;
-        } else if (data.health >= 75) {
+        } else if (nasaData.health >= 75) {
             healthColor = '#2E96F5'; // BLUE YONDER for good health
             ringOpacity = 0.6;
-        } else if (data.health >= 50) {
+        } else if (nasaData.health >= 50) {
             healthColor = '#EAFE07'; // NEON YELLOW for moderate health
             ringOpacity = 0.7;
         } else {
@@ -436,10 +532,10 @@ window.updateARSoilAnalysis = function(pixelX, pixelY, data) {
         healthRing.setAttribute('material', `color: ${healthColor}; opacity: ${ringOpacity};`);
     }
 
-    // Keep panel color consistent (always DEEP BLUE)
-    const panel = document.getElementById('nasa-data-panel');
-    if (panel) {
-        panel.setAttribute('material', 'color: #07173F; opacity: 0.9;');
+    // Keep NASA panel color consistent (always DEEP BLUE)
+    const nasaPanel = document.getElementById('nasa-data-panel');
+    if (nasaPanel) {
+        nasaPanel.setAttribute('material', 'color: #07173F; opacity: 0.9;');
     }
 };
 
