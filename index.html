@@ -362,56 +362,118 @@
                                                min-height: 50px; width: 100%; margin-bottom: 10px;">Launch AR</button>
 
                                 <script>
-                                    // Simple AR launcher that bypasses WebXR
+                                    // Inline Simple Camera AR - No external dependencies
                                     async function launchSimpleAR() {
-                                        console.log('🚀 Launching Simple AR (bypassing WebXR)');
-                                        console.log('🔍 Checking cameraAR availability:', !!window.cameraAR);
+                                        console.log('🚀 Starting Inline Camera AR');
 
-                                        // Force load CameraARInterface if not loaded
-                                        if (!window.cameraAR) {
-                                            console.log('⏳ Loading CameraARInterface...');
+                                        try {
+                                            // Create camera container
+                                            const container = document.createElement('div');
+                                            container.id = 'inline-ar-container';
+                                            container.style.cssText = `
+                                                position: fixed;
+                                                top: 0;
+                                                left: 0;
+                                                width: 100vw;
+                                                height: 100vh;
+                                                background: #000;
+                                                z-index: 999999;
+                                            `;
 
-                                            try {
-                                                const script = document.createElement('script');
-                                                script.src = 'src/ar/CameraARInterface.js';
+                                            // Create video element
+                                            const video = document.createElement('video');
+                                            video.autoplay = true;
+                                            video.playsinline = true;
+                                            video.muted = true;
+                                            video.style.cssText = `
+                                                width: 100%;
+                                                height: 100%;
+                                                object-fit: cover;
+                                            `;
 
-                                                script.onload = async () => {
-                                                    console.log('✅ CameraARInterface loaded, starting...');
-                                                    if (window.cameraAR) {
-                                                        try {
-                                                            await window.cameraAR.startARSession();
-                                                        } catch (e) {
-                                                            console.error('❌ AR start failed:', e);
-                                                            alert('AR failed: ' + e.message);
-                                                        }
-                                                    } else {
-                                                        console.error('❌ CameraARInterface not found after loading');
-                                                        alert('Failed to load Camera AR module');
-                                                    }
-                                                };
+                                            // Create stop button
+                                            const stopBtn = document.createElement('button');
+                                            stopBtn.textContent = 'Stop AR';
+                                            stopBtn.style.cssText = `
+                                                position: absolute;
+                                                top: 20px;
+                                                right: 20px;
+                                                background: #e74c3c;
+                                                color: white;
+                                                border: none;
+                                                padding: 15px 25px;
+                                                border-radius: 8px;
+                                                font-size: 16px;
+                                                font-weight: bold;
+                                                cursor: pointer;
+                                                z-index: 1000000;
+                                            `;
 
-                                                script.onerror = () => {
-                                                    console.error('❌ Failed to load CameraARInterface.js');
-                                                    alert('Failed to load AR script');
-                                                };
+                                            stopBtn.onclick = () => {
+                                                console.log('🛑 Stopping AR');
+                                                const stream = video.srcObject;
+                                                if (stream) {
+                                                    stream.getTracks().forEach(track => track.stop());
+                                                }
+                                                container.remove();
+                                            };
 
-                                                document.body.appendChild(script);
+                                            // Create data overlay
+                                            const overlay = document.createElement('div');
+                                            overlay.style.cssText = `
+                                                position: absolute;
+                                                bottom: 20px;
+                                                left: 20px;
+                                                right: 20px;
+                                                background: rgba(46, 204, 113, 0.9);
+                                                color: white;
+                                                padding: 20px;
+                                                border-radius: 15px;
+                                                text-align: center;
+                                                font-size: 18px;
+                                                font-weight: bold;
+                                            `;
+                                            overlay.innerHTML = '🌱 AR Camera Active - NASA Data Loading...';
 
-                                            } catch (error) {
-                                                console.error('❌ Script loading error:', error);
-                                                alert('Script loading failed: ' + error.message);
-                                            }
+                                            container.appendChild(video);
+                                            container.appendChild(stopBtn);
+                                            container.appendChild(overlay);
+                                            document.body.appendChild(container);
 
-                                        } else {
-                                            // Directly start camera AR
-                                            console.log('✅ CameraAR already loaded, starting directly...');
-                                            try {
-                                                await window.cameraAR.startARSession();
-                                                console.log('✅ AR session started successfully');
-                                            } catch (e) {
-                                                console.error('❌ AR start failed:', e);
-                                                alert('AR failed: ' + e.message);
-                                            }
+                                            console.log('📷 Requesting camera access...');
+
+                                            // Start camera
+                                            const stream = await navigator.mediaDevices.getUserMedia({
+                                                video: {
+                                                    facingMode: { ideal: 'environment' },
+                                                    width: { ideal: 1280 },
+                                                    height: { ideal: 720 }
+                                                }
+                                            });
+
+                                            video.srcObject = stream;
+                                            console.log('✅ Camera started successfully');
+
+                                            // Update overlay with success message
+                                            overlay.innerHTML = '✅ AR Camera Active - Point at soil for analysis';
+
+                                            // Get GPS location
+                                            navigator.geolocation.getCurrentPosition(
+                                                (position) => {
+                                                    const lat = position.coords.latitude.toFixed(4);
+                                                    const lon = position.coords.longitude.toFixed(4);
+                                                    overlay.innerHTML = `📍 GPS: ${lat}, ${lon}<br>🌱 AR Analysis Ready`;
+                                                    console.log(`📍 Location: ${lat}, ${lon}`);
+                                                },
+                                                (error) => {
+                                                    console.warn('GPS failed:', error);
+                                                    overlay.innerHTML = '📍 Using default location<br>🌱 AR Analysis Ready';
+                                                }
+                                            );
+
+                                        } catch (error) {
+                                            console.error('❌ AR failed:', error);
+                                            alert('Camera AR failed: ' + error.message + '\n\nPlease check camera permissions.');
                                         }
                                     }
                                 </script>
