@@ -365,30 +365,51 @@
                                     // Simple AR launcher that bypasses WebXR
                                     async function launchSimpleAR() {
                                         console.log('🚀 Launching Simple AR (bypassing WebXR)');
+                                        console.log('🔍 Checking cameraAR availability:', !!window.cameraAR);
 
                                         // Force load CameraARInterface if not loaded
                                         if (!window.cameraAR) {
-                                            console.log('Loading CameraARInterface...');
-                                            const script = document.createElement('script');
-                                            script.src = 'src/ar/CameraARInterface.js';
-                                            script.onload = async () => {
-                                                console.log('CameraARInterface loaded, starting...');
-                                                if (window.cameraAR) {
-                                                    try {
-                                                        await window.cameraAR.startARSession();
-                                                    } catch (e) {
-                                                        console.error('AR start failed:', e);
-                                                        alert('AR failed: ' + e.message);
+                                            console.log('⏳ Loading CameraARInterface...');
+
+                                            try {
+                                                const script = document.createElement('script');
+                                                script.src = 'src/ar/CameraARInterface.js';
+
+                                                script.onload = async () => {
+                                                    console.log('✅ CameraARInterface loaded, starting...');
+                                                    if (window.cameraAR) {
+                                                        try {
+                                                            await window.cameraAR.startARSession();
+                                                        } catch (e) {
+                                                            console.error('❌ AR start failed:', e);
+                                                            alert('AR failed: ' + e.message);
+                                                        }
+                                                    } else {
+                                                        console.error('❌ CameraARInterface not found after loading');
+                                                        alert('Failed to load Camera AR module');
                                                     }
-                                                }
-                                            };
-                                            document.body.appendChild(script);
+                                                };
+
+                                                script.onerror = () => {
+                                                    console.error('❌ Failed to load CameraARInterface.js');
+                                                    alert('Failed to load AR script');
+                                                };
+
+                                                document.body.appendChild(script);
+
+                                            } catch (error) {
+                                                console.error('❌ Script loading error:', error);
+                                                alert('Script loading failed: ' + error.message);
+                                            }
+
                                         } else {
                                             // Directly start camera AR
+                                            console.log('✅ CameraAR already loaded, starting directly...');
                                             try {
                                                 await window.cameraAR.startARSession();
+                                                console.log('✅ AR session started successfully');
                                             } catch (e) {
-                                                console.error('AR start failed:', e);
+                                                console.error('❌ AR start failed:', e);
                                                 alert('AR failed: ' + e.message);
                                             }
                                         }
@@ -396,6 +417,7 @@
                                 </script>
 
                                 <button id="start-farmer-ar-btn" class="ar-action-btn ar-farmer"
+                                        onclick="launchSimpleAR()"
                                         style="background: linear-gradient(45deg, #27ae60, #229954);
                                                color: white; border: none; padding: 15px 30px;
                                                border-radius: 8px; font-size: 16px; font-weight: bold;
