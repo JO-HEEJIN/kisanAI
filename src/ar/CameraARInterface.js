@@ -311,15 +311,10 @@ class CameraARInterface {
         try {
             console.log('🛰️ Fetching NASA data...');
 
-            // Use relative URL for deployment, fallback to localhost for development
+            // Use Vercel API Routes in production, localhost for development
             const apiBase = window.location.hostname === 'localhost'
                 ? 'http://localhost:3001'
-                : null; // No proxy server in production, use fallback data
-
-            // If no API server available, skip to fallback data
-            if (!apiBase) {
-                throw new Error('No API server available in production');
-            }
+                : window.location.origin; // Use same domain for Vercel API routes
 
             // Fetch SMAP soil data
             const soilResponse = await fetch(
