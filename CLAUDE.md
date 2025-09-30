@@ -12,6 +12,36 @@
 
 # NASA Farm Navigators - Working Configuration
 
+## 🎯 프로젝트 핵심 설계 방향 (중요!)
+
+### PC 버전 (Desktop)
+- **메인 기능**: Farm Game (농장 시뮬레이션 게임)
+- **지원 기능**: 모든 탭 활성화
+  - Satellite Data Visualization
+  - Farm Game (메인)
+  - AR ChatGPT
+  - Conservation Dashboard
+  - Space Farm
+  - AI Navigator
+  - 기타 모든 기능
+
+### 모바일 버전 (Mobile - 핵심!)
+- **메인 기능**: AR 실시간 토양 분석
+- **사용 시나리오**:
+  - 농부가 휴대폰을 들고 실제 밭을 걸으면서 사용
+  - 카메라로 토양을 비추면 실시간 AI 분석
+  - NASA 위성 데이터와 결합하여 즉석 농업 조언 제공
+- **핵심 기능**:
+  - 🎥 실시간 카메라 뷰 (AR.js)
+  - 🤖 AI 토양 상태 분석 (TensorFlow.js)
+  - 📡 NASA 위성 데이터 오버레이
+  - 💬 즉각적인 농업 조언 (AI Farming Advisor API)
+  - 📍 GPS 기반 위치별 데이터
+- **UI 최적화**:
+  - 단순하고 직관적인 AR 인터페이스
+  - 큰 텍스트와 아이콘으로 야외 가독성 확보
+  - 원터치 조작
+
 ## 공식 Space Apps Challenge 브랜드 색상 팔레트
 
 ### Blue Shades:
@@ -532,6 +562,26 @@ Grep({ pattern: "<script", path: "/Users/momo/kisanAI/index.html", output_mode: 
 - **절대 전체 파일을 한번에 읽으려고 하지 말 것**
 - **Grep으로 먼저 위치를 파악한 후 Read 사용**
 - **offset/limit은 라인 수가 아닌 토큰 수 기준**
+
+## 마지막 업데이트: 2025-09-30 - 🥽 AR 모바일 호환성 수정 완료!
+
+### ✅ AR 기능 모바일 최적화 (2025-09-30)
+#### 수정된 문제들:
+- **device-orientation-permission-ui 에러**: iOS 호환성 문제 해결
+- **AgriculturalAIManager not found**: AI 매니저 로딩 순서 문제 해결
+- **카메라 화면 미표시**: AR.js 설정 단순화로 해결
+
+#### AR 핵심 파일들:
+- `src/ar-functions.js`: 메인 AR 기능 (단순화된 카메라 엔티티)
+- `src/ar/AgriculturalAIManager.js`: 농업 AI 분석 모델
+- `index.html`: 스크립트 로딩 순서 중요!
+
+#### 모바일 AR 사용법:
+1. 모바일 브라우저에서 사이트 접속
+2. "Launch AR" 버튼 클릭
+3. 카메라 권한 허용
+4. 토양에 카메라 향하기
+5. 실시간 AI 분석 및 NASA 데이터 확인
 
 ## 마지막 업데이트: 2025-09-25 - 🐛 JavaScript 에러 수정 완료!
 ### ✅ Three.js ES 모듈 업데이트 완료
