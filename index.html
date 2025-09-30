@@ -353,13 +353,47 @@
                                 <h3>AR Field Analysis</h3>
                                 <p>Point your camera at plants for instant identification</p>
                                 <button id="start-ar-btn" class="ar-action-btn ar-primary"
-                                        onclick="console.log('Button clicked!'); alert('AR button clicked! Check debug panel.'); if(window.cameraAR) { window.cameraAR.startARSession(); } else { alert('Camera AR not loaded yet'); }"
+                                        onclick="launchSimpleAR()"
                                         style="background: linear-gradient(45deg, #0960E1, #2E96F5);
                                                color: white; border: none; padding: 15px 30px;
                                                border-radius: 8px; font-size: 16px; font-weight: bold;
                                                cursor: pointer; touch-action: manipulation;
                                                box-shadow: 0 4px 15px rgba(9, 96, 225, 0.3);
                                                min-height: 50px; width: 100%; margin-bottom: 10px;">Launch AR</button>
+
+                                <script>
+                                    // Simple AR launcher that bypasses WebXR
+                                    async function launchSimpleAR() {
+                                        console.log('🚀 Launching Simple AR (bypassing WebXR)');
+
+                                        // Force load CameraARInterface if not loaded
+                                        if (!window.cameraAR) {
+                                            console.log('Loading CameraARInterface...');
+                                            const script = document.createElement('script');
+                                            script.src = 'src/ar/CameraARInterface.js';
+                                            script.onload = async () => {
+                                                console.log('CameraARInterface loaded, starting...');
+                                                if (window.cameraAR) {
+                                                    try {
+                                                        await window.cameraAR.startARSession();
+                                                    } catch (e) {
+                                                        console.error('AR start failed:', e);
+                                                        alert('AR failed: ' + e.message);
+                                                    }
+                                                }
+                                            };
+                                            document.body.appendChild(script);
+                                        } else {
+                                            // Directly start camera AR
+                                            try {
+                                                await window.cameraAR.startARSession();
+                                            } catch (e) {
+                                                console.error('AR start failed:', e);
+                                                alert('AR failed: ' + e.message);
+                                            }
+                                        }
+                                    }
+                                </script>
 
                                 <button id="start-farmer-ar-btn" class="ar-action-btn ar-farmer"
                                         style="background: linear-gradient(45deg, #27ae60, #229954);
