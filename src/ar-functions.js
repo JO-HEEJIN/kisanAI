@@ -86,69 +86,88 @@ window.createARScene = async function() {
                 </a-mixin>
             </a-assets>
 
-            <!-- Real-time Soil Analysis Panel -->
+            <!-- Compact Soil Analysis Panel -->
             <a-box
                 id="nasa-data-panel"
-                position="0 0.2 -1.5"
-                width="1.5"
-                height="0.8"
-                depth="0.03"
+                position="0 0.4 -1.3"
+                width="1.2"
+                height="0.6"
+                depth="0.02"
                 material="color: #07173F; opacity: 0.9;">
 
                 <a-text
                     mixin="text-style"
-                    position="0 0.25 0.06"
-                    value="🔍 Soil Analysis"
-                    text="width: 4; fontSize: 20; color: #2E96F5;">
+                    position="0 0.2 0.05"
+                    value="🔍 Analysis"
+                    text="width: 3; fontSize: 16; color: #2E96F5;">
                 </a-text>
 
                 <a-text
                     id="pixel-info-text"
                     mixin="text-style"
-                    position="0 0.05 0.06"
+                    position="0 0.05 0.05"
                     value="Pixel [0, 0]"
-                    text="width: 3; fontSize: 14; color: #FFFFFF;">
+                    text="width: 2.5; fontSize: 10; color: #EAFE07;">
                 </a-text>
 
+                <!-- Data Grid Layout -->
                 <a-text
                     id="moisture-text"
                     mixin="text-style"
-                    position="-0.3 -0.1 0.06"
-                    value="Moisture: --"
-                    text="width: 2.5; fontSize: 12; color: #FFFFFF;">
+                    position="-0.25 -0.08 0.05"
+                    value="💧 --"
+                    text="width: 2; fontSize: 9; color: #FFFFFF;">
                 </a-text>
 
                 <a-text
                     id="ndvi-text"
                     mixin="text-style"
-                    position="0.3 -0.1 0.06"
-                    value="NDVI: --"
-                    text="width: 2.5; fontSize: 12; color: #FFFFFF;">
+                    position="0.25 -0.08 0.05"
+                    value="🌿 --"
+                    text="width: 2; fontSize: 9; color: #FFFFFF;">
                 </a-text>
 
                 <a-text
                     id="temp-text"
                     mixin="text-style"
-                    position="-0.3 -0.25 0.06"
-                    value="Temp: --"
-                    text="width: 2.5; fontSize: 12; color: #FFFFFF;">
+                    position="-0.25 -0.18 0.05"
+                    value="🌡️ --"
+                    text="width: 2; fontSize: 9; color: #FFFFFF;">
                 </a-text>
 
                 <a-text
                     id="health-text"
                     mixin="text-style"
-                    position="0.3 -0.25 0.06"
-                    value="Health: --"
-                    text="width: 2.5; fontSize: 12; color: #FFFFFF;">
+                    position="0.25 -0.18 0.05"
+                    value="❤️ --"
+                    text="width: 2; fontSize: 9; color: #FFFFFF;">
                 </a-text>
             </a-box>
 
-            <!-- 3D Crosshair -->
+            <!-- Health Status Indicator (Center) -->
+            <a-circle
+                id="health-indicator"
+                position="0 -0.2 -1.3"
+                radius="0.12"
+                material="color: #2E96F5; opacity: 0.8"
+                animation="property: rotation; to: 0 0 360; loop: true; dur: 4000;">
+            </a-circle>
+
+            <!-- Inner Health Ring -->
+            <a-ring
+                id="health-ring"
+                position="0 -0.2 -1.29"
+                radius-inner="0.08"
+                radius-outer="0.12"
+                material="color: #2E96F5; opacity: 0.6">
+            </a-ring>
+
+            <!-- 3D Crosshair (Smaller) -->
             <a-ring
                 position="0 0 -1.5"
-                radius-inner="0.05"
-                radius-outer="0.08"
-                material="color: #00ff88; opacity: 0.9"
+                radius-inner="0.03"
+                radius-outer="0.05"
+                material="color: #EAFE07; opacity: 0.7"
                 animation="property: rotation; to: 0 0 360; loop: true; dur: 3000;">
             </a-ring>
 
@@ -317,7 +336,7 @@ function generateFallbackPixelData() {
     };
 }
 
-// Update AR soil analysis display (Pixel Hunt format)
+// Update AR soil analysis display (Improved UI)
 window.updateARSoilAnalysis = function(pixelX, pixelY, data) {
     console.log('🔍 Updating AR soil analysis:', {pixelX, pixelY, data});
 
@@ -331,32 +350,53 @@ window.updateARSoilAnalysis = function(pixelX, pixelY, data) {
         pixelInfoText.setAttribute('value', `Pixel [${Math.floor(pixelX)}, ${Math.floor(pixelY)}]`);
     }
 
+    // Compact format with emojis
     if (moistureText) {
-        moistureText.setAttribute('value', `Moisture: ${data.moisture}%`);
+        moistureText.setAttribute('value', `💧 ${data.moisture}%`);
     }
 
     if (ndviText) {
-        ndviText.setAttribute('value', `NDVI: ${data.ndvi}`);
+        ndviText.setAttribute('value', `🌿 ${data.ndvi}`);
     }
 
     if (tempText) {
-        tempText.setAttribute('value', `Temp: ${data.temperature}°C`);
+        tempText.setAttribute('value', `🌡️ ${data.temperature}°C`);
     }
 
     if (healthText) {
-        healthText.setAttribute('value', `Health: ${data.health}%`);
+        healthText.setAttribute('value', `❤️ ${data.health}%`);
     }
 
-    // Update panel color based on health
+    // Update health indicator colors (circular feedback)
+    const healthIndicator = document.getElementById('health-indicator');
+    const healthRing = document.getElementById('health-ring');
+
+    if (healthIndicator && healthRing) {
+        let healthColor = '#2E96F5'; // BLUE YONDER default (good health)
+        let ringOpacity = 0.6;
+
+        if (data.health >= 85) {
+            healthColor = '#00ff88'; // Bright green for excellent health
+            ringOpacity = 0.8;
+        } else if (data.health >= 75) {
+            healthColor = '#2E96F5'; // BLUE YONDER for good health
+            ringOpacity = 0.6;
+        } else if (data.health >= 50) {
+            healthColor = '#EAFE07'; // NEON YELLOW for moderate health
+            ringOpacity = 0.7;
+        } else {
+            healthColor = '#E43700'; // ROCKET RED for poor health
+            ringOpacity = 0.9;
+        }
+
+        healthIndicator.setAttribute('material', `color: ${healthColor}; opacity: 0.8;`);
+        healthRing.setAttribute('material', `color: ${healthColor}; opacity: ${ringOpacity};`);
+    }
+
+    // Keep panel color consistent (always DEEP BLUE)
     const panel = document.getElementById('nasa-data-panel');
     if (panel) {
-        let panelColor = '#07173F'; // DEEP BLUE default
-        if (data.health < 50) {
-            panelColor = '#E43700'; // ROCKET RED for poor health
-        } else if (data.health < 75) {
-            panelColor = '#0960E1'; // NEON BLUE for moderate health
-        }
-        panel.setAttribute('material', `color: ${panelColor}; opacity: 0.9;`);
+        panel.setAttribute('material', 'color: #07173F; opacity: 0.9;');
     }
 };
 
