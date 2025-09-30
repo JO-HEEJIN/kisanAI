@@ -22,17 +22,29 @@ window.getNASAApiEndpoint = function() {
 window.fetchNASAData = async function(lat, lon) {
     try {
         const apiBase = window.getNASAApiEndpoint();
-        console.log(`📡 Fetching NASA data from ${apiBase} for ${lat}, ${lon}`);
+        const url = `${apiBase}/pixel-hunt/data?lat=${lat}&lon=${lon}&resolution=30`;
+        console.log(`📡 Fetching NASA data from: ${url}`);
+
+        // Validate coordinates
+        if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
+            throw new Error('Invalid coordinates');
+        }
 
         // Fetch real data from our API
-        const response = await fetch(`${apiBase}/pixel-hunt/data?lat=${lat}&lon=${lon}&resolution=30`);
-        if (!response.ok) throw new Error('API request failed');
+        const response = await fetch(url);
+        console.log(`📡 Response status: ${response.status}`);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API request failed: ${response.status} - ${errorText}`);
+        }
 
         const data = await response.json();
         console.log('✅ Real NASA data received:', data);
         return data;
     } catch (error) {
         console.warn('⚠️ Using fallback data due to:', error.message);
+        console.warn('⚠️ Error details:', error);
         return null; // Will trigger fallback
     }
 };
@@ -452,12 +464,22 @@ window.startContinuousAnalysis = function() {
             try {
                 // Get AR canvas for AI analysis
                 const canvas = document.querySelector('canvas');
-                if (canvas) {
-                    aiResult = await window.aiManager.classifyARCanvas(canvas);
-                    console.log('🤖 AI Classification:', aiResult);
+                if (canvas && canvas.width > 0 && canvas.height > 0) {
+                    // Check canvas state before using
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        console.log('🖼️ Canvas ready for AI analysis');
+                        aiResult = await window.aiManager.classifyARCanvas(canvas);
+                        console.log('🤖 AI Classification result:', JSON.stringify(aiResult, null, 2));
+                    } else {
+                        console.warn('⚠️ Canvas context not available');
+                    }
+                } else {
+                    console.warn('⚠️ Canvas not ready for analysis');
                 }
             } catch (error) {
                 console.warn('⚠️ AI classification failed:', error);
+                console.warn('⚠️ Error details:', error.message);
             }
         }
 
@@ -489,7 +511,11 @@ function generateFallbackPixelData() {
 
 // Update AR soil analysis display with AI integration
 window.updateARSoilAnalysis = function(pixelX, pixelY, nasaData, aiResult = null) {
-    console.log('🔍 Updating AR analysis:', {pixelX, pixelY, nasaData, aiResult});
+    try {
+        console.log('🔍 Updating AR analysis:');
+        console.log('  - Pixel:', `[${pixelX}, ${pixelY}]`);
+        console.log('  - NASA data:', JSON.stringify(nasaData, null, 2));
+        console.log('  - AI result:', JSON.stringify(aiResult, null, 2));
 
     // Update NASA Data Panel
     const pixelInfoText = document.getElementById('pixel-info-text');
@@ -574,6 +600,11 @@ window.updateARSoilAnalysis = function(pixelX, pixelY, nasaData, aiResult = null
     const nasaPanel = document.getElementById('nasa-data-panel');
     if (nasaPanel) {
         nasaPanel.setAttribute('material', 'color: #07173F; opacity: 0.9;');
+    }
+
+    } catch (error) {
+        console.error('❌ Error updating AR analysis:', error);
+        console.error('❌ Error details:', error.message);
     }
 };
 
