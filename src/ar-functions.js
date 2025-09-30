@@ -243,8 +243,8 @@ window.createARScene = async function() {
 
     document.body.appendChild(arContainer);
 
-    // Load A-Frame and AR.js scripts
-    await window.loadARScripts();
+    // Check A-Frame and AR.js are loaded (now loaded via HTML)
+    await window.checkARScripts();
 
     // Force camera initialization after AR.js loads
     setTimeout(() => {
@@ -298,7 +298,22 @@ window.forceARCameraInit = function() {
     }
 };
 
-// Load A-Frame and AR.js scripts dynamically with conflict prevention
+// Check if A-Frame and AR.js are loaded
+window.checkARScripts = function() {
+    return new Promise((resolve) => {
+        // Check if A-Frame is loaded
+        if (window.AFRAME) {
+            console.log('✅ A-Frame is loaded');
+        } else {
+            console.error('❌ A-Frame not loaded - check HTML script tags');
+        }
+
+        // Always resolve to continue
+        setTimeout(resolve, 500);
+    });
+};
+
+// Load A-Frame and AR.js scripts dynamically with conflict prevention (DEPRECATED)
 window.loadARScripts = async function() {
     console.log('📦 Loading AR.js and A-Frame...');
 
