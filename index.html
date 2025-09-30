@@ -365,8 +365,8 @@
                                     // Initialize AR running state
                                     window.arRunning = false;
 
-                                    // Real AR.js Implementation for iOS compatibility
-                                    async function launchRealAR() {
+                                    // Real AR.js Implementation for iOS compatibility - Global function
+                                    window.launchRealAR = async function() {
                                         // Reset AR state properly
                                         window.arRunning = false;
 
@@ -403,7 +403,7 @@
                                             }
 
                                             // Create AR.js scene
-                                            await createARScene();
+                                            await window.createARScene();
 
                                         } catch (error) {
                                             console.error('❌ Real AR failed:', error);
@@ -412,8 +412,8 @@
                                         }
                                     }
 
-                                    // Create AR.js scene with NASA data integration
-                                    async function createARScene() {
+                                    // Create AR.js scene with NASA data integration - Global function
+                                    window.createARScene = async function() {
                                         console.log('🎬 Creating AR.js scene...');
                                         window.arRunning = true;
 
@@ -546,7 +546,7 @@
 
                                         // Start data collection
                                         setTimeout(() => {
-                                            startNASADataCollection();
+                                            window.startNASADataCollection();
                                         }, 2000);
 
                                         console.log('✅ AR.js scene created successfully');
@@ -599,8 +599,8 @@
                                         });
                                     }
 
-                                    // Start NASA data collection in AR scene
-                                    function startNASADataCollection() {
+                                    // Start NASA data collection in AR scene - Global function
+                                    window.startNASADataCollection = function() {
                                         console.log('🛰️ Starting NASA data collection...');
 
                                         // Get GPS location
@@ -685,8 +685,8 @@
                                         };
                                     }
 
-                                    // Stop AR scene
-                                    function stopARScene() {
+                                    // Stop AR scene - Global function
+                                    window.stopARScene = function() {
                                         console.log('🛑 Stopping AR scene...');
 
                                         const arContainer = document.getElementById('arjs-container');
