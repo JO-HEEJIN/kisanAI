@@ -597,29 +597,18 @@
     <!-- Mobile Debugger for Testing -->
     <script src="src/debug/MobileDebugger.js"></script>
 
-    <!-- AR Functions for Real AR.js Implementation -->
-    <script src="src/ar-functions.js"></script>
-
-    <!-- Safe AR System - WebXR DOM Overlay Compliant -->
+    <!-- Disabled AR scripts to prevent conflicts with ar-functions.js -->
+    <!--
     <script src="src/ar/MinimalWebXRAR.js"></script>
     <script src="src/ar/SafeARIntegration.js"></script>
-
-    <!-- Farmer-Optimized AR Interface -->
     <script src="src/ar/FarmerARInterface.js"></script>
-
-    <!-- Camera AR Interface with WebRTC -->
     <script src="src/ar/CameraARInterface.js"></script>
-
-    <!-- Agricultural AI Manager -->
     <script src="src/ar/AgriculturalAIManager.js"></script>
-
-    <!-- Safe AR Stub for Fallback -->
     <script src="src/ar/SafeARStub.js"></script>
-
-    <!-- Legacy AR ChatGPT Framework (Fallback) -->
     <script src="src/ar/ConversationalAI.js"></script>
     <script src="src/ar/PlantIdentificationAI.js"></script>
     <script src="src/ar/ARGamification.js"></script>
+    -->
 
     <!-- Scripts -->
     <script src="src/services/NASADataService.js"></script>
@@ -4784,6 +4773,28 @@
     <script src="src/gamification/AchievementSystem.js"></script>
     <script src="src/gamification/AchievementUI.js"></script>
 
+    <!-- AR Functions - Load LAST to prevent overriding by other scripts -->
+    <script>
+        // Dynamic cache busting for ar-functions.js - Load LAST
+        (function() {
+            const script = document.createElement('script');
+            script.src = 'src/ar-functions.js?v=' + Date.now();
+            script.onload = function() {
+                console.log('✅ ar-functions.js loaded successfully at the end');
+                console.log('🔍 Available functions after final load:', {
+                    launchRealAR: typeof window.launchRealAR,
+                    createARScene: typeof window.createARScene,
+                    stopARScene: typeof window.stopARScene
+                });
+            };
+            script.onerror = function() {
+                console.error('❌ Failed to load ar-functions.js');
+            };
+            document.head.appendChild(script);
+            console.log('🔄 Loading ar-functions.js LAST with cache busting');
+        })();
+    </script>
+
     <!-- AR Button Initialization - Run after all scripts loaded -->
     <script>
         console.log('🔄 Initializing AR button events after all scripts loaded...');
@@ -4813,50 +4824,41 @@
             // Remove any existing onclick handlers
             arBtn.onclick = null;
 
-            // Add proper event listener
-            arBtn.addEventListener('click', function(event) {
-                event.preventDefault();
-                console.log('🎯 AR Button clicked');
-
-                // Check if AR function is available
+            // Wait for ar-functions.js to load before binding events
+            const waitForARFunctions = () => {
                 if (window.launchRealAR && typeof window.launchRealAR === 'function') {
-                    console.log('🚀 AR function found, launching...');
-                    try {
-                        window.launchRealAR();
-                    } catch (error) {
-                        console.error('❌ AR launch failed:', error);
-                        alert('AR launch failed: ' + error.message);
-                    }
-                } else {
-                    console.error('❌ AR function not found. Available functions:', {
-                        launchRealAR: typeof window.launchRealAR,
-                        createARScene: typeof window.createARScene,
-                        stopARScene: typeof window.stopARScene
+                    console.log('✅ AR functions ready, binding click event');
+
+                    // Add proper event listener
+                    arBtn.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        console.log('🎯 AR Button clicked');
+
+                        try {
+                            window.launchRealAR();
+                        } catch (error) {
+                            console.error('❌ AR launch failed:', error);
+                            alert('AR launch failed: ' + error.message);
+                        }
                     });
 
-                    // Try to wait a bit more and retry
-                    setTimeout(() => {
-                        if (window.launchRealAR && typeof window.launchRealAR === 'function') {
-                            console.log('🚀 AR function found after delay, launching...');
-                            window.launchRealAR();
-                        } else {
-                            alert('AR function not loaded yet. Please refresh the page and try again.');
-                        }
-                    }, 1000);
+                    console.log('✅ AR button initialized successfully');
+
+                    // Log current function availability
+                    console.log('📊 Final AR Functions Status:', {
+                        launchRealAR: typeof window.launchRealAR,
+                        createARScene: typeof window.createARScene,
+                        stopARScene: typeof window.stopARScene,
+                        arRunning: window.arRunning
+                    });
+                } else {
+                    console.log('⏳ Still waiting for AR functions to load...');
+                    setTimeout(waitForARFunctions, 100);
                 }
-            });
+            };
 
-            console.log('✅ AR button initialized successfully');
-
-            // Log current function availability
-            setTimeout(() => {
-                console.log('📊 AR Functions Status:', {
-                    launchRealAR: typeof window.launchRealAR,
-                    createARScene: typeof window.createARScene,
-                    stopARScene: typeof window.stopARScene,
-                    arRunning: window.arRunning
-                });
-            }, 100);
+            // Start waiting for AR functions
+            waitForARFunctions();
         }
     </script>
 
