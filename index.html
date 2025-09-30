@@ -609,6 +609,9 @@
     <!-- Farmer-Optimized AR Interface -->
     <script src="src/ar/FarmerARInterface.js"></script>
 
+    <!-- Camera AR Interface with WebRTC -->
+    <script src="src/ar/CameraARInterface.js"></script>
+
     <!-- Agricultural AI Manager -->
     <script src="src/ar/AgriculturalAIManager.js"></script>
 
@@ -1101,6 +1104,48 @@
 
         // Initialize satellite subtabs when DOM is ready
         document.addEventListener('DOMContentLoaded', initializeSatelliteSubtabs);
+
+        // Separate event listener for Farmer AR button to ensure it works
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Setting up Farmer AR button event listener...');
+
+            // Wait a bit for DOM to be fully ready
+            setTimeout(() => {
+                const startFarmerARBtn = document.getElementById('start-farmer-ar-btn');
+                console.log('🔍 Looking for Farmer AR button:', startFarmerARBtn);
+
+                if (startFarmerARBtn) {
+                    console.log('✅ Farmer AR button found! Setting up click handler...');
+
+                    // Remove any existing event listeners
+                    const newBtn = startFarmerARBtn.cloneNode(true);
+                    startFarmerARBtn.parentNode.replaceChild(newBtn, startFarmerARBtn);
+
+                    // Add fresh event listener
+                    newBtn.addEventListener('click', function(e) {
+                        console.log('🚜 Farmer AR button clicked! Event:', e);
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        // Call the startFarmerAR function
+                        if (typeof startFarmerAR === 'function') {
+                            console.log('📞 Calling startFarmerAR function...');
+                            startFarmerAR();
+                        } else {
+                            console.error('❌ startFarmerAR function not found!');
+                        }
+                    });
+
+                    console.log('✅ Farmer AR button event listener attached successfully');
+                } else {
+                    console.error('❌ Farmer AR button not found in DOM');
+
+                    // Log all buttons to see what's available
+                    const allButtons = document.querySelectorAll('button');
+                    console.log('🔍 All buttons found:', Array.from(allButtons).map(btn => ({id: btn.id, text: btn.textContent.trim()})));
+                }
+            }, 500);
+        });
 
         // Function to remove duplicate content
         function removeDuplicateContent() {
@@ -3790,10 +3835,22 @@
             // Farmer AR button
             const startFarmerARBtn = document.getElementById('start-farmer-ar-btn');
             if (startFarmerARBtn) {
-                startFarmerARBtn.addEventListener('click', startFarmerAR);
-                startFarmerARBtn.addEventListener('touchstart', startFarmerAR);
+                console.log('🚜 Farmer AR button found, setting up event listeners...');
+
+                // Add click event listener with debugging
+                startFarmerARBtn.addEventListener('click', (e) => {
+                    console.log('🚜 Farmer AR button clicked!', e);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startFarmerAR();
+                });
+
+                // Remove duplicate touchstart listener to avoid conflicts
                 startFarmerARBtn.addEventListener('touchend', (e) => e.preventDefault());
-                console.log('🚜 Farmer AR button event listeners set up');
+
+                console.log('🚜 Farmer AR button event listeners set up successfully');
+            } else {
+                console.error('❌ Farmer AR button not found!');
             }
 
             // Chat send button
@@ -4096,26 +4153,55 @@
             }
         }
 
-        // 농부용 AR 시작 함수
+        // Farmer AR startup function
         async function startFarmerAR() {
             console.log('🚜 Farmer AR start requested');
 
+            // Check if button is disabled
+            const farmerBtn = document.getElementById('start-farmer-ar-btn');
+            if (farmerBtn && farmerBtn.disabled) {
+                console.log('🚜 Farmer AR button is disabled, ignoring click');
+                return;
+            }
+
+            // Update button state immediately
+            if (farmerBtn) {
+                farmerBtn.disabled = true;
+                farmerBtn.textContent = '⏳ Starting Farmer AR...';
+                farmerBtn.style.background = 'linear-gradient(45deg, #95a5a6, #7f8c8d)';
+            }
+
             try {
-                // 기존 AR 시스템 정리
+                // Check if required classes are available
+                if (typeof SafeARIntegration === 'undefined') {
+                    throw new Error('SafeARIntegration class not loaded');
+                }
+                if (typeof FarmerARInterface === 'undefined') {
+                    throw new Error('FarmerARInterface class not loaded');
+                }
+                if (typeof MinimalWebXRAR === 'undefined') {
+                    throw new Error('MinimalWebXRAR class not loaded');
+                }
+
+                console.log('✅ All required classes loaded');
+
+                // Clean up existing AR system
                 if (window.safeAR) {
+                    console.log('🧹 Cleaning up existing AR system...');
                     await window.safeAR.cleanup();
                 }
 
-                // 새로운 SafeARIntegration 인스턴스 생성
+                // Create new SafeARIntegration instance
+                console.log('🔧 Creating new SafeARIntegration instance...');
                 window.safeAR = new SafeARIntegration();
 
-                // 농부용 AR 시작
+                // Start farmer AR
                 const success = await window.safeAR.startFarmerAR();
 
                 if (success) {
                     console.log('✅ Farmer AR successfully started');
 
-                    // 버튼 상태 업데이트
+                    // Update button state
                     const farmerBtn = document.getElementById('start-farmer-ar-btn');
                     if (farmerBtn) {
                         farmerBtn.textContent = '🟢 Farmer AR Active';
@@ -4129,19 +4215,18 @@
                     }
 
                 } else {
-                    throw new Error('농부용 AR 시작 실패');
+                    throw new Error('Farmer AR startup failed');
                 }
 
             } catch (error) {
-                console.error('❌ 농부용 AR 시작 실패:', error);
+                console.error('❌ Farmer AR start failed:', error);
 
-                // 에러 알림
+                // Error notification
                 alert(`Farmer AR failed to start.\n\n${error.message}\n\nPlease check:\n- Camera permissions are allowed\n- Browser supports WebXR\n- Using HTTPS connection`);
 
-                // 버튼 상태 복원
-                const farmerBtn = document.getElementById('start-farmer-ar-btn');
+                // Restore button state
                 if (farmerBtn) {
-                    farmerBtn.textContent = '🚜 Start Farmer AR';
+                    farmerBtn.textContent = 'AR farming Start!';
                     farmerBtn.style.background = 'linear-gradient(45deg, #27ae60, #229954)';
                     farmerBtn.disabled = false;
                 }

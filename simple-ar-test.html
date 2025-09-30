@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Simple AR Field Scanner</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #000;
+            overflow: hidden;
+        }
+
+        #camera-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        .ar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 999999;
+            pointer-events: none;
+        }
+
+        .top-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(7, 23, 63, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            z-index: 999999;
+            pointer-events: auto;
+        }
+
+        .bottom-data {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(46, 204, 113, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            z-index: 999999;
+            font-size: 16px;
+            pointer-events: auto;
+        }
+
+        .center-crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border: 3px solid #27ae60;
+            border-radius: 50%;
+            z-index: 999999;
+            pointer-events: none;
+        }
+
+        .center-crosshair::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 4px;
+            background: #27ae60;
+            border-radius: 50%;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .data-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .data-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ecf0f1;
+        }
+
+        .data-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .start-btn {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #27ae60, #229954);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 999999;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .stop-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 999999;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Camera Video -->
+    <video id="camera-view" autoplay playsinline muted></video>
+
+    <!-- AR Overlays -->
+    <div class="ar-overlay">
+        <!-- Crosshair -->
+        <div class="center-crosshair pulse"></div>
+    </div>
+
+    <!-- Top Info Bar -->
+    <div class="top-info" id="top-info" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 18px; font-weight: bold;">🛰️ AR Field Scanner</div>
+                <div id="gps-status" style="font-size: 14px; opacity: 0.8;">📍 Getting location...</div>
+            </div>
+            <button class="stop-btn" onclick="stopCamera()">STOP</button>
+        </div>
+    </div>
+
+    <!-- Bottom Data Panel -->
+    <div class="bottom-data" id="data-panel" style="display: none;">
+        <div id="location-info" style="font-size: 14px; margin-bottom: 10px;">
+            📍 Loading GPS coordinates...
+        </div>
+
+        <div style="font-size: 18px; margin-bottom: 15px; text-align: center;">
+            <span id="main-advice">🌱 Point camera at soil and wait...</span>
+        </div>
+
+        <div class="data-grid">
+            <div class="data-item">
+                <div class="data-value" id="moisture-value">--</div>
+                <div class="data-label">💧 Soil Moisture</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value" id="ndvi-value">--</div>
+                <div class="data-label">🌿 NDVI</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value" id="temp-value">--</div>
+                <div class="data-label">🌡️ Temperature</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value" id="quality-value">--</div>
+                <div class="data-label">📊 Quality</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Button -->
+    <button class="start-btn" id="start-btn" onclick="startCamera()">
+        📱 Start AR Scanner
+    </button>
+
+    <!-- Loading -->
+    <div class="loading" id="loading" style="display: none;">
+        <div>📷 Starting camera...</div>
+        <div style="font-size: 14px; margin-top: 10px;">Please allow camera access</div>
+    </div>
+
+    <script>
+        let cameraActive = false;
+        let currentLocation = { lat: null, lon: null };
+        let nasaData = { soil: null, ndvi: null };
+        let dataUpdateInterval = null;
+
+        async function startCamera() {
+            console.log('📷 Starting AR camera...');
+
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            try {
+                // Request camera access
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { ideal: 'environment' }, // Back camera
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+
+                // Set video stream
+                const video = document.getElementById('camera-view');
+                video.srcObject = stream;
+
+                // Get GPS location
+                await getCurrentLocation();
+
+                // Start everything
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('top-info').style.display = 'block';
+                document.getElementById('data-panel').style.display = 'block';
+
+                cameraActive = true;
+
+                // Start data updates
+                startDataUpdates();
+
+                console.log('✅ AR Scanner started successfully');
+
+            } catch (error) {
+                console.error('❌ Camera start failed:', error);
+                alert('Camera failed to start: ' + error.message);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('start-btn').style.display = 'block';
+            }
+        }
+
+        function stopCamera() {
+            console.log('🛑 Stopping camera...');
+
+            const video = document.getElementById('camera-view');
+            const stream = video.srcObject;
+
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+
+            document.getElementById('top-info').style.display = 'none';
+            document.getElementById('data-panel').style.display = 'none';
+            document.getElementById('start-btn').style.display = 'block';
+
+            if (dataUpdateInterval) {
+                clearInterval(dataUpdateInterval);
+            }
+
+            cameraActive = false;
+        }
+
+        async function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation not supported'));
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        currentLocation.lat = position.coords.latitude;
+                        currentLocation.lon = position.coords.longitude;
+
+                        console.log('📍 GPS Location:', currentLocation);
+
+                        // Update UI
+                        document.getElementById('location-info').textContent =
+                            `📍 ${currentLocation.lat.toFixed(4)}, ${currentLocation.lon.toFixed(4)} (±${Math.round(position.coords.accuracy)}m)`;
+                        document.getElementById('gps-status').textContent =
+                            `📍 ${currentLocation.lat.toFixed(4)}, ${currentLocation.lon.toFixed(4)}`;
+
+                        resolve(currentLocation);
+                    },
+                    (error) => {
+                        console.error('❌ GPS Error:', error);
+
+                        // Use fallback location (Arizona)
+                        currentLocation.lat = 33.4484;
+                        currentLocation.lon = -111.9409;
+
+                        document.getElementById('location-info').textContent =
+                            `📍 ${currentLocation.lat.toFixed(4)}, ${currentLocation.lon.toFixed(4)} (fallback)`;
+                        document.getElementById('gps-status').textContent =
+                            `📍 ${currentLocation.lat.toFixed(4)}, ${currentLocation.lon.toFixed(4)}`;
+
+                        resolve(currentLocation);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 300000
+                    }
+                );
+            });
+        }
+
+        async function fetchNASAData() {
+            if (!currentLocation.lat || !currentLocation.lon) {
+                console.warn('⚠️ No GPS location for NASA data');
+                return;
+            }
+
+            try {
+                console.log('🛰️ Fetching NASA data for:', currentLocation);
+
+                // Fetch SMAP soil data
+                const soilResponse = await fetch(
+                    `http://localhost:3001/api/smap/soil-moisture?lat=${currentLocation.lat}&lon=${currentLocation.lon}`
+                );
+                nasaData.soil = await soilResponse.json();
+
+                // Fetch MODIS NDVI data
+                const ndviResponse = await fetch(
+                    `http://localhost:3001/api/modis/ndvi?lat=${currentLocation.lat}&lon=${currentLocation.lon}`
+                );
+                nasaData.ndvi = await ndviResponse.json();
+
+                console.log('✅ NASA Data loaded:', nasaData);
+
+                updateDisplay();
+
+            } catch (error) {
+                console.error('❌ NASA Data fetch failed:', error);
+
+                // Use fallback data
+                nasaData.soil = {
+                    surface_moisture: 0.25 + Math.random() * 0.5,
+                    temperature: 20 + Math.random() * 15,
+                    quality: 'estimated'
+                };
+                nasaData.ndvi = {
+                    ndvi: 0.3 + Math.random() * 0.4,
+                    temperature: 20 + Math.random() * 15,
+                    quality: 'estimated'
+                };
+
+                updateDisplay();
+            }
+        }
+
+        function updateDisplay() {
+            if (!nasaData.soil || !nasaData.ndvi) return;
+
+            const moisture = Math.round((nasaData.soil.surface_moisture || 0) * 100);
+            const ndvi = parseFloat(nasaData.ndvi.ndvi || 0).toFixed(2);
+            const temp = Math.round(nasaData.soil.temperature || 20);
+            const quality = nasaData.soil.quality || 'good';
+
+            document.getElementById('moisture-value').textContent = moisture + '%';
+            document.getElementById('ndvi-value').textContent = ndvi;
+            document.getElementById('temp-value').textContent = temp + '°C';
+            document.getElementById('quality-value').textContent = quality;
+
+            // Generate advice
+            let advice = '';
+            let adviceColor = '#27ae60';
+
+            if (moisture < 15) {
+                advice = '🚨 URGENT: Irrigation needed immediately!';
+                adviceColor = '#e74c3c';
+            } else if (moisture < 25) {
+                advice = '💧 Irrigation recommended today';
+                adviceColor = '#f39c12';
+            } else if (moisture < 35) {
+                advice = '💧 Consider watering in 1-2 days';
+                adviceColor = '#f39c12';
+            } else if (moisture > 85) {
+                advice = '⚠️ Soil too wet - check drainage';
+                adviceColor = '#e67e22';
+            } else {
+                advice = '✅ Soil moisture levels optimal';
+                adviceColor = '#27ae60';
+            }
+
+            const adviceElement = document.getElementById('main-advice');
+            adviceElement.textContent = advice;
+            adviceElement.style.color = adviceColor;
+
+            // Update crosshair color
+            const crosshair = document.querySelector('.center-crosshair');
+            crosshair.style.borderColor = adviceColor;
+        }
+
+        function startDataUpdates() {
+            // Initial load
+            fetchNASAData();
+
+            // Update every 30 seconds
+            dataUpdateInterval = setInterval(() => {
+                if (cameraActive && currentLocation.lat) {
+                    fetchNASAData();
+                }
+            }, 30000);
+        }
+
+        // Handle device orientation
+        window.addEventListener('load', () => {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission();
+            }
+        });
+
+        console.log('📱 Simple AR Field Scanner Ready!');
+    </script>
+</body>
+</html>

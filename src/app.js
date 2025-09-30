@@ -895,9 +895,13 @@ class NASAFarmNavigatorsApp {
                     [class*="ar-overlay"]
                 `);
                 arElements.forEach(el => {
-                    // Launch AR 버튼은 보호
+                    // Launch AR 버튼과 Farmer AR 버튼은 보호
                     if (el.id === 'start-ar-btn') {
                         console.log(`🛡️ Protected Launch AR button from cleanup`);
+                        return;
+                    }
+                    if (el.id === 'start-farmer-ar-btn') {
+                        console.log(`🛡️ Protected Farmer AR button from cleanup`);
                         return;
                     }
 
