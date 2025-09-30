@@ -353,6 +353,7 @@
                                 <h3>AR Field Analysis</h3>
                                 <p>Point your camera at plants for instant identification</p>
                                 <button id="start-ar-btn" class="ar-action-btn ar-primary"
+                                        onclick="console.log('Button clicked!'); alert('AR button clicked! Check debug panel.'); if(window.cameraAR) { window.cameraAR.startARSession(); } else { alert('Camera AR not loaded yet'); }"
                                         style="background: linear-gradient(45deg, #0960E1, #2E96F5);
                                                color: white; border: none; padding: 15px 30px;
                                                border-radius: 8px; font-size: 16px; font-weight: bold;
@@ -601,6 +602,9 @@
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+
+    <!-- Mobile Debugger for Testing -->
+    <script src="src/debug/MobileDebugger.js"></script>
 
     <!-- Safe AR System - WebXR DOM Overlay Compliant -->
     <script src="src/ar/MinimalWebXRAR.js"></script>
