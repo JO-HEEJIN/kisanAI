@@ -9,6 +9,34 @@ if (typeof window !== 'undefined') {
     console.error('❌ ar-functions.js: No window object!');
 }
 
+// NASA API endpoint configuration
+window.getNASAApiEndpoint = function() {
+    // Use Vercel API routes in production
+    const apiBase = window.location.hostname === 'localhost'
+        ? 'http://localhost:3001/api'
+        : '/api';
+    return apiBase;
+};
+
+// Fetch real NASA data
+window.fetchNASAData = async function(lat, lon) {
+    try {
+        const apiBase = window.getNASAApiEndpoint();
+        console.log(`📡 Fetching NASA data from ${apiBase} for ${lat}, ${lon}`);
+
+        // Fetch real data from our API
+        const response = await fetch(`${apiBase}/pixel-hunt/data?lat=${lat}&lon=${lon}&resolution=30`);
+        if (!response.ok) throw new Error('API request failed');
+
+        const data = await response.json();
+        console.log('✅ Real NASA data received:', data);
+        return data;
+    } catch (error) {
+        console.warn('⚠️ Using fallback data due to:', error.message);
+        return null; // Will trigger fallback
+    }
+};
+
 // Initialize AR running state
 window.arRunning = false;
 window.aiManager = null;
@@ -340,11 +368,16 @@ window.startSoilAnalysis = function() {
 
             console.log(`📍 GPS: ${lat}, ${lon}`);
 
+            // Store coordinates for NASA data fetching
+            window.currentLocation = { lat, lon };
+
             // Start continuous analysis with AI
             window.startContinuousAnalysis();
         },
         (error) => {
             console.warn('GPS failed:', error);
+            // Use default location for testing
+            window.currentLocation = { lat: 33.4255, lon: -111.9400 };
             // Start analysis anyway with default location
             window.startContinuousAnalysis();
         }
@@ -371,7 +404,7 @@ window.initializeAIManager = async function() {
 
 // Continuous analysis using Pixel Hunt data system + AI
 window.startContinuousAnalysis = function() {
-    // Simulate real-time pixel analysis (integrate with actual Pixel Hunt system)
+    // Simulate real-time pixel analysis
     let pixelX = Math.floor(Math.random() * 20);
     let pixelY = Math.floor(Math.random() * 20);
 
@@ -380,8 +413,23 @@ window.startContinuousAnalysis = function() {
         pixelX = Math.max(0, Math.min(19, pixelX + (Math.random() - 0.5) * 2));
         pixelY = Math.max(0, Math.min(19, pixelY + (Math.random() - 0.5) * 2));
 
-        // Get pixel data (connect to actual Pixel Hunt data system)
-        const pixelData = window.getPixelData ? window.getPixelData(Math.floor(pixelX), Math.floor(pixelY)) : generateFallbackPixelData();
+        // Try to get real NASA data first
+        let pixelData;
+        if (window.currentLocation) {
+            const nasaData = await window.fetchNASAData(window.currentLocation.lat, window.currentLocation.lon);
+            if (nasaData && nasaData.pixels && nasaData.pixels.length > 0) {
+                // Use real NASA pixel data
+                const pixelIndex = Math.min(pixelY * 20 + pixelX, nasaData.pixels.length - 1);
+                pixelData = nasaData.pixels[pixelIndex];
+                console.log('📡 Using real NASA data:', pixelData);
+            } else {
+                // Fall back to simulated data
+                pixelData = generateFallbackPixelData();
+                console.log('⚠️ Using fallback data');
+            }
+        } else {
+            pixelData = generateFallbackPixelData();
+        }
 
         // Perform AI classification if available
         let aiResult = null;
