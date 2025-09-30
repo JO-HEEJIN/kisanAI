@@ -228,26 +228,51 @@ class CameraARInterface {
     async getCurrentLocation() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
+                console.warn('⚠️ Geolocation not supported by browser');
                 // Use fallback location
                 this.currentLocation = { lat: 33.4484, lon: -111.9409 };
-                this.updateLocationDisplay();
+                this.updateLocationDisplay('📍 Location: Using default (Arizona)');
                 resolve(this.currentLocation);
                 return;
             }
+
+            console.log('📍 Requesting GPS location permission...');
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     this.currentLocation.lat = position.coords.latitude;
                     this.currentLocation.lon = position.coords.longitude;
-                    console.log('📍 GPS Location:', this.currentLocation);
+                    console.log('✅ GPS Location obtained:', this.currentLocation);
+                    console.log('📍 Accuracy:', position.coords.accuracy + 'm');
                     this.updateLocationDisplay();
                     resolve(this.currentLocation);
                 },
                 (error) => {
-                    console.error('GPS Error:', error);
+                    console.error('❌ GPS Error:', error);
+                    let errorMsg = '';
+
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = 'Location permission denied. Using default location.';
+                            console.warn('⚠️ User denied location permission');
+                            // Alert user about location permission
+                            alert('Location permission denied.\n\nFor better accuracy, please allow location access in your browser settings.\n\nUsing default location (Arizona) for now.');
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = 'Location unavailable. Using default location.';
+                            console.warn('⚠️ Position unavailable');
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = 'Location request timeout. Using default location.';
+                            console.warn('⚠️ Location request timed out');
+                            break;
+                        default:
+                            errorMsg = 'Unknown location error. Using default location.';
+                    }
+
                     // Use fallback location
                     this.currentLocation = { lat: 33.4484, lon: -111.9409 };
-                    this.updateLocationDisplay();
+                    this.updateLocationDisplay('📍 ' + errorMsg);
                     resolve(this.currentLocation);
                 },
                 {
@@ -260,16 +285,19 @@ class CameraARInterface {
     }
 
     // Update location display
-    updateLocationDisplay() {
+    updateLocationDisplay(customMessage = null) {
         const locationInfo = document.getElementById('ar-location-info');
         const gpsStatus = document.getElementById('ar-gps-status');
 
-        if (locationInfo && this.currentLocation.lat) {
-            locationInfo.textContent = `📍 ${this.currentLocation.lat.toFixed(4)}, ${this.currentLocation.lon.toFixed(4)}`;
-        }
-
-        if (gpsStatus && this.currentLocation.lat) {
-            gpsStatus.textContent = `📍 ${this.currentLocation.lat.toFixed(4)}, ${this.currentLocation.lon.toFixed(4)}`;
+        if (customMessage) {
+            // Display custom message (e.g., error or fallback info)
+            if (locationInfo) locationInfo.textContent = customMessage;
+            if (gpsStatus) gpsStatus.textContent = customMessage;
+        } else if (this.currentLocation.lat) {
+            // Display actual coordinates
+            const coordText = `📍 ${this.currentLocation.lat.toFixed(4)}, ${this.currentLocation.lon.toFixed(4)}`;
+            if (locationInfo) locationInfo.textContent = coordText;
+            if (gpsStatus) gpsStatus.textContent = coordText;
         }
     }
 
