@@ -283,15 +283,20 @@ class CameraARInterface {
         try {
             console.log('🛰️ Fetching NASA data...');
 
+            // Use relative URL for deployment, fallback to localhost for development
+            const apiBase = window.location.hostname === 'localhost'
+                ? 'http://localhost:3001'
+                : 'https://nasa-proxy.herokuapp.com'; // You'll need to deploy proxy server
+
             // Fetch SMAP soil data
             const soilResponse = await fetch(
-                `http://localhost:3001/api/smap/soil-moisture?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`
+                `${apiBase}/api/smap/soil-moisture?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`
             );
             this.nasaData.soil = await soilResponse.json();
 
             // Fetch MODIS NDVI data
             const ndviResponse = await fetch(
-                `http://localhost:3001/api/modis/ndvi?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`
+                `${apiBase}/api/modis/ndvi?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`
             );
             this.nasaData.ndvi = await ndviResponse.json();
 

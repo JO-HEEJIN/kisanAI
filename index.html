@@ -3680,8 +3680,25 @@
                 const safeARHandler = async (event) => {
                     event.preventDefault();
                     event.stopPropagation();
+
+                    // Add visual feedback for button click
+                    console.log('📱 AR button clicked!');
+                    console.log('🔍 Device info:', {
+                        userAgent: navigator.userAgent,
+                        isIOS: /iPhone|iPad|iPod/i.test(navigator.userAgent),
+                        isHTTPS: window.location.protocol === 'https:',
+                        hasCamera: navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+                    });
+
                     try {
                         console.log('🚀 Starting Safe AR System...');
+
+                        // Check for HTTPS on iOS
+                        if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && window.location.protocol !== 'https:') {
+                            console.warn('⚠️ iOS requires HTTPS for camera access');
+                            alert('iOS requires HTTPS for camera access. Please use HTTPS URL or Safari browser.');
+                            return;
+                        }
 
                         // Use SafeARIntegration system
                         if (window.safeARIntegration) {
@@ -3695,7 +3712,14 @@
                             }
                         } else {
                             console.error('❌ SafeARIntegration not found');
-                            throw new Error('SafeARIntegration not initialized');
+                            // Fallback: Show camera AR directly if FarmerAR exists
+                            if (window.farmerAR) {
+                                console.log('🔄 Using FarmerAR as fallback');
+                                window.farmerAR.show();
+                                updateARStatus('webxr-status', 'supported', 'Active');
+                            } else {
+                                throw new Error('No AR system available');
+                            }
                         }
 
                         // Track gamification
@@ -3706,7 +3730,8 @@
                         console.error('❌ Safe AR System failed:', error);
                         updateARStatus('webxr-status', 'not-supported', 'Error');
 
-                        alert(`AR 시작 실패: ${error.message}\n\n페이지를 새로고침하거나 브라우저를 확인해 주세요.`);
+                        // More informative error message
+                        alert(`AR Launch Failed:\n${error.message}\n\nTroubleshooting:\n• iOS: Use Safari or HTTPS\n• Android: Allow camera permissions\n• Check browser compatibility`);
                     }
                 };
 
