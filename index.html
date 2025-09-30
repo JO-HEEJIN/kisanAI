@@ -386,12 +386,21 @@
 
                                             console.log('📷 Requesting camera permission...');
                                             const stream = await navigator.mediaDevices.getUserMedia({
-                                                video: { facingMode: 'environment' }
+                                                video: {
+                                                    facingMode: 'environment',
+                                                    width: { ideal: 640 },
+                                                    height: { ideal: 480 }
+                                                }
                                             });
 
                                             // Stop the stream immediately as AR.js will handle it
                                             stream.getTracks().forEach(track => track.stop());
                                             console.log('✅ Camera permission granted');
+
+                                            // Request iOS device orientation permissions
+                                            if (isIOS) {
+                                                await requestIOSPermissions();
+                                            }
 
                                             // Create AR.js scene
                                             await createARScene();
@@ -421,11 +430,15 @@
                                             background: black;
                                         `;
 
-                                        // Create A-Frame scene with AR.js
+                                        // Create A-Frame scene with AR.js - iOS optimized
                                         arContainer.innerHTML = `
                                             <a-scene
                                                 vr-mode-ui="enabled: false"
-                                                arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+                                                device-orientation-permission-ui="enabled: false"
+                                                arjs="sourceType: webcam; debugUIEnabled: true; detectionMode: mono; trackingMethod: best; cameraParametersUrl: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
+                                                renderer="logarithmicDepthBuffer: true; antialias: false; alpha: true"
+                                                embedded
+                                                style="height: 100vh; width: 100vw; position: fixed; top: 0; left: 0;">`
 
                                                 <!-- Assets -->
                                                 <a-assets>
@@ -484,8 +497,15 @@
                                                     animation="property: rotation; to: 0 0 360; loop: true; dur: 3000;">
                                                 </a-ring>
 
-                                                <!-- Camera -->
-                                                <a-camera gps-camera rotation-reader look-controls wasd-controls="enabled: false;"></a-camera>
+                                                <!-- Camera - iOS optimized -->
+                                                <a-camera
+                                                    gps-camera
+                                                    rotation-reader
+                                                    arjs-device-orientation-controls
+                                                    look-controls="enabled: false"
+                                                    wasd-controls="enabled: false"
+                                                    cursor="rayOrigin: mouse">
+                                                </a-camera>
                                             </a-scene>
 
                                             <!-- AR Control Panel -->
@@ -532,28 +552,45 @@
                                         console.log('✅ AR.js scene created successfully');
                                     }
 
-                                    // Load A-Frame and AR.js scripts dynamically
+                                    // Load A-Frame and AR.js scripts dynamically with conflict prevention
                                     async function loadARScripts() {
                                         console.log('📦 Loading AR.js and A-Frame...');
 
                                         return new Promise((resolve, reject) => {
+                                            // Check if already loaded
+                                            if (window.AFRAME && window.AFRAME.version) {
+                                                console.log('✅ A-Frame already loaded');
+                                                resolve();
+                                                return;
+                                            }
+
+                                            // Clear any existing Three.js to prevent conflicts
+                                            if (window.THREE) {
+                                                console.log('⚠️ Clearing existing Three.js');
+                                                delete window.THREE;
+                                            }
+
                                             // Load A-Frame first
                                             const aframeScript = document.createElement('script');
                                             aframeScript.src = 'https://aframe.io/releases/1.4.0/aframe.min.js';
                                             aframeScript.onload = () => {
                                                 console.log('✅ A-Frame loaded');
 
-                                                // Then load AR.js
-                                                const arjsScript = document.createElement('script');
-                                                arjsScript.src = 'https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js';
-                                                arjsScript.onload = () => {
-                                                    console.log('✅ AR.js loaded');
-                                                    resolve();
-                                                };
-                                                arjsScript.onerror = () => {
-                                                    reject(new Error('Failed to load AR.js'));
-                                                };
-                                                document.head.appendChild(arjsScript);
+                                                // Wait a bit for A-Frame to initialize
+                                                setTimeout(() => {
+                                                    // Then load AR.js
+                                                    const arjsScript = document.createElement('script');
+                                                    arjsScript.src = 'https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js';
+                                                    arjsScript.onload = () => {
+                                                        console.log('✅ AR.js loaded');
+                                                        // Wait for AR.js to fully initialize
+                                                        setTimeout(resolve, 1000);
+                                                    };
+                                                    arjsScript.onerror = () => {
+                                                        reject(new Error('Failed to load AR.js'));
+                                                    };
+                                                    document.head.appendChild(arjsScript);
+                                                }, 500);
                                             };
                                             aframeScript.onerror = () => {
                                                 reject(new Error('Failed to load A-Frame'));
@@ -659,6 +696,29 @@
 
                                         window.arRunning = false;
                                         console.log('✅ AR scene stopped');
+                                    }
+
+                                    // Request iOS device permissions
+                                    async function requestIOSPermissions() {
+                                        console.log('📱 Requesting iOS device permissions...');
+
+                                        try {
+                                            // Request device orientation permission (iOS 13+)
+                                            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                                                const orientationPermission = await DeviceOrientationEvent.requestPermission();
+                                                console.log('📱 Orientation permission:', orientationPermission);
+                                            }
+
+                                            // Request device motion permission (iOS 13+)
+                                            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                                                const motionPermission = await DeviceMotionEvent.requestPermission();
+                                                console.log('📱 Motion permission:', motionPermission);
+                                            }
+
+                                            console.log('✅ iOS permissions requested');
+                                        } catch (error) {
+                                            console.warn('⚠️ iOS permissions failed:', error);
+                                        }
                                     }
 
                                     // Fallback camera implementation (현재 방식)
