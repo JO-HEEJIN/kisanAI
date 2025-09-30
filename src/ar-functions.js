@@ -618,3 +618,49 @@ console.log('✅ AR functions loaded successfully. Available:', {
     createARScene: typeof window.createARScene,
     stopARScene: typeof window.stopARScene
 });
+
+// Protection against function overriding by other scripts
+(function() {
+    console.log('🛡️ Protecting AR functions from being overridden...');
+
+    // Store original functions
+    const originalLaunchRealAR = window.launchRealAR;
+    const originalCreateARScene = window.createARScene;
+    const originalStopARScene = window.stopARScene;
+
+    // Add protection by checking periodically and restoring if overridden
+    const protectionInterval = setInterval(() => {
+        let restored = false;
+
+        if (window.launchRealAR !== originalLaunchRealAR) {
+            console.warn('⚠️ launchRealAR was overridden, restoring...');
+            window.launchRealAR = originalLaunchRealAR;
+            restored = true;
+        }
+
+        if (window.createARScene !== originalCreateARScene) {
+            console.warn('⚠️ createARScene was overridden, restoring...');
+            window.createARScene = originalCreateARScene;
+            restored = true;
+        }
+
+        if (window.stopARScene !== originalStopARScene) {
+            console.warn('⚠️ stopARScene was overridden, restoring...');
+            window.stopARScene = originalStopARScene;
+            restored = true;
+        }
+
+        if (restored) {
+            console.log('✅ AR functions restored successfully');
+        }
+    }, 100);
+
+    // Stop protection after 10 seconds (when all scripts should be loaded)
+    setTimeout(() => {
+        clearInterval(protectionInterval);
+        console.log('🛡️ AR function protection completed');
+    }, 10000);
+
+    // Mark as protected
+    window.arFunctionsProtected = true;
+})();
