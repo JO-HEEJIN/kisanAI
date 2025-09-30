@@ -74,8 +74,8 @@ window.createARScene = async function() {
         <a-scene
             vr-mode-ui="enabled: false"
             device-orientation-permission-ui="enabled: false"
-            arjs="sourceType: webcam; debugUIEnabled: true; detectionMode: mono; trackingMethod: best; cameraParametersUrl: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
-            renderer="logarithmicDepthBuffer: true; antialias: false; alpha: true"
+            arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; trackingMethod: best; sourceWidth: 480; sourceHeight: 640; displayWidth: 480; displayHeight: 640;"
+            renderer="logarithmicDepthBuffer: true; antialias: false; alpha: false; colorManagement: true"
             embedded
             style="height: 100vh; width: 100vw; position: fixed; top: 0; left: 0;">
 
@@ -89,50 +89,50 @@ window.createARScene = async function() {
             <!-- Markerless AR content -->
             <a-box
                 id="nasa-data-panel"
-                position="0 1.5 -3"
-                width="3"
-                height="2"
-                depth="0.1"
-                material="color: #2ecc71; opacity: 0.8;">
+                position="0 0.5 -2"
+                width="2"
+                height="1.2"
+                depth="0.05"
+                material="color: #2ecc71; opacity: 0.85;">
 
                 <a-text
                     mixin="text-style"
-                    position="0 0.6 0.06"
+                    position="0 0.4 0.06"
                     value="🌱 NASA Farm Data"
-                    text="width: 8;">
+                    text="width: 6; fontSize: 24;">
                 </a-text>
 
                 <a-text
                     id="soil-moisture-text"
                     mixin="text-style"
-                    position="0 0.2 0.06"
+                    position="0 0.1 0.06"
                     value="💧 Soil Moisture: Loading..."
-                    text="width: 6;">
+                    text="width: 5; fontSize: 18;">
                 </a-text>
 
                 <a-text
                     id="ndvi-text"
                     mixin="text-style"
-                    position="0 -0.2 0.06"
+                    position="0 -0.1 0.06"
                     value="🌿 NDVI: Loading..."
-                    text="width: 6;">
+                    text="width: 5; fontSize: 18;">
                 </a-text>
 
                 <a-text
                     id="gps-text"
                     mixin="text-style"
-                    position="0 -0.6 0.06"
+                    position="0 -0.4 0.06"
                     value="📍 GPS: Getting location..."
-                    text="width: 6;">
+                    text="width: 4; fontSize: 14;">
                 </a-text>
             </a-box>
 
             <!-- 3D Crosshair -->
             <a-ring
-                position="0 0 -2"
-                radius-inner="0.1"
-                radius-outer="0.15"
-                material="color: #00ff88; opacity: 0.8"
+                position="0 0 -1.5"
+                radius-inner="0.05"
+                radius-outer="0.08"
+                material="color: #00ff88; opacity: 0.9"
                 animation="property: rotation; to: 0 0 360; loop: true; dur: 3000;">
             </a-ring>
 
