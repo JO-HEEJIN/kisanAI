@@ -384,7 +384,7 @@
                                                 width: 100vw;
                                                 height: 100vh;
                                                 background: #000;
-                                                z-index: 999999;
+                                                z-index: 1000;
                                             `;
 
                                             // Create video element
@@ -413,7 +413,7 @@
                                                 font-size: 16px;
                                                 font-weight: bold;
                                                 cursor: pointer;
-                                                z-index: 9999999;
+                                                z-index: 999999999;
                                                 box-shadow: 0 4px 15px rgba(0,0,0,0.5);
                                             `;
 
@@ -552,11 +552,52 @@
                                             `;
 
                                             container.appendChild(video);
+
+                                            // Add container first (lowest layer)
                                             document.body.appendChild(container);
-                                            document.body.appendChild(stopBtn);
-                                            document.body.appendChild(overlay);
-                                            document.body.appendChild(crosshair);
-                                            document.body.appendChild(topPanel);
+
+                                            // Force UI elements to be on top with timeout to ensure they render after video
+                                            setTimeout(() => {
+                                                document.body.appendChild(stopBtn);
+                                                document.body.appendChild(overlay);
+                                                document.body.appendChild(crosshair);
+                                                document.body.appendChild(topPanel);
+
+                                                // Force visibility again with stronger styles
+                                                stopBtn.style.cssText += `
+                                                    position: fixed !important;
+                                                    z-index: 2147483647 !important;
+                                                    display: block !important;
+                                                    visibility: visible !important;
+                                                    opacity: 1 !important;
+                                                `;
+
+                                                overlay.style.cssText += `
+                                                    position: fixed !important;
+                                                    z-index: 2147483646 !important;
+                                                    display: block !important;
+                                                    visibility: visible !important;
+                                                    opacity: 1 !important;
+                                                `;
+
+                                                crosshair.style.cssText += `
+                                                    position: fixed !important;
+                                                    z-index: 2147483645 !important;
+                                                    display: block !important;
+                                                    visibility: visible !important;
+                                                    opacity: 1 !important;
+                                                `;
+
+                                                topPanel.style.cssText += `
+                                                    position: fixed !important;
+                                                    z-index: 2147483644 !important;
+                                                    display: block !important;
+                                                    visibility: visible !important;
+                                                    opacity: 1 !important;
+                                                `;
+
+                                                console.log('🔧 Force applied UI visibility styles');
+                                            }, 100);
 
                                             console.log('📷 Requesting camera access...');
 
