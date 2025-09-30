@@ -3681,63 +3681,80 @@
                     event.preventDefault();
                     event.stopPropagation();
 
-                    // Add visual feedback for button click
+                    // Add visual feedback
                     console.log('📱 AR button clicked!');
-                    console.log('🔍 Device info:', {
-                        userAgent: navigator.userAgent,
-                        isIOS: /iPhone|iPad|iPod/i.test(navigator.userAgent),
-                        isHTTPS: window.location.protocol === 'https:',
-                        hasCamera: navigator.mediaDevices && navigator.mediaDevices.getUserMedia
-                    });
+                    const btn = event.target;
+                    btn.textContent = 'Loading AR...';
+                    btn.disabled = true;
 
                     try {
-                        console.log('🚀 Starting Safe AR System...');
+                        console.log('🚀 Starting AR Camera directly...');
 
                         // Check for HTTPS on iOS
                         if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && window.location.protocol !== 'https:') {
                             console.warn('⚠️ iOS requires HTTPS for camera access');
-                            alert('iOS requires HTTPS for camera access. Please use HTTPS URL or Safari browser.');
+                            alert('iOS requires HTTPS for camera access.\nPlease use Safari browser or an HTTPS URL.');
+                            btn.textContent = 'Launch AR';
+                            btn.disabled = false;
                             return;
                         }
 
-                        // Use SafeARIntegration system
-                        if (window.safeARIntegration) {
-                            console.log('🛡️ SafeARIntegration found, starting...');
-                            const success = await window.safeARIntegration.startSafeAR();
-                            if (success) {
-                                console.log('✅ Safe AR started successfully');
-                                updateARStatus('webxr-status', 'supported', 'Active');
-                            } else {
-                                throw new Error('Safe AR failed to start');
-                            }
+                        // Direct approach: Just launch camera AR
+                        if (window.cameraAR) {
+                            console.log('📷 Launching Camera AR directly...');
+                            await window.cameraAR.startARSession();
+                            updateARStatus('webxr-status', 'supported', 'Camera Active');
+                        } else if (window.farmerAR) {
+                            console.log('🌾 Launching Farmer AR interface...');
+                            window.farmerAR.show();
+                            updateARStatus('webxr-status', 'supported', 'Interface Active');
                         } else {
-                            console.error('❌ SafeARIntegration not found');
-                            // Fallback: Show camera AR directly if FarmerAR exists
-                            if (window.farmerAR) {
-                                console.log('🔄 Using FarmerAR as fallback');
-                                window.farmerAR.show();
-                                updateARStatus('webxr-status', 'supported', 'Active');
-                            } else {
-                                throw new Error('No AR system available');
-                            }
+                            // Last resort: Try to load and launch camera AR
+                            console.log('⏳ Loading Camera AR module...');
+                            const script = document.createElement('script');
+                            script.src = 'src/ar/CameraARInterface.js';
+                            script.onload = async () => {
+                                if (window.cameraAR) {
+                                    await window.cameraAR.startARSession();
+                                    updateARStatus('webxr-status', 'supported', 'Camera Active');
+                                }
+                            };
+                            script.onerror = () => {
+                                throw new Error('Failed to load AR module');
+                            };
+                            document.body.appendChild(script);
                         }
 
                         // Track gamification
                         if (window.arGamification) {
                             window.arGamification.trackActivity('ar_session_started');
                         }
+
+                        btn.textContent = 'AR Active';
+
                     } catch (error) {
-                        console.error('❌ Safe AR System failed:', error);
+                        console.error('❌ AR failed:', error);
                         updateARStatus('webxr-status', 'not-supported', 'Error');
 
-                        // More informative error message
-                        alert(`AR Launch Failed:\n${error.message}\n\nTroubleshooting:\n• iOS: Use Safari or HTTPS\n• Android: Allow camera permissions\n• Check browser compatibility`);
+                        alert(`AR Launch Failed:\n${error.message}\n\nPlease check:\n• Camera permissions\n• Browser compatibility\n• HTTPS connection (for iOS)`);
+
+                        btn.textContent = 'Launch AR';
+                        btn.disabled = false;
                     }
                 };
 
-                // Add event listeners
-                newStartARBtn.addEventListener('click', safeARHandler);
-                newStartARBtn.addEventListener('touchstart', safeARHandler);
+                // Add event listeners (prevent double firing)
+                let isProcessing = false;
+                const handleARClick = async (e) => {
+                    if (isProcessing) return;
+                    isProcessing = true;
+                    await safeARHandler(e);
+                    isProcessing = false;
+                };
+
+                newStartARBtn.addEventListener('click', handleARClick);
+                // Remove touchstart to prevent double firing on mobile
+                // newStartARBtn.addEventListener('touchstart', handleARClick);
                 newStartARBtn.addEventListener('touchend', (e) => e.preventDefault());
 
                 console.log('✅ Safe AR button event listeners attached');
