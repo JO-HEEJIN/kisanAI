@@ -69,15 +69,15 @@ window.createARScene = async function() {
         background: black;
     `;
 
-    // Create A-Frame scene with AR.js - iOS optimized
+    // Create A-Frame scene with AR.js - iOS optimized for real AR
     arContainer.innerHTML = `
         <a-scene
             vr-mode-ui="enabled: false"
             device-orientation-permission-ui="enabled: false"
-            arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; trackingMethod: best; sourceWidth: 480; sourceHeight: 640; displayWidth: 480; displayHeight: 640;"
-            renderer="logarithmicDepthBuffer: true; antialias: false; alpha: false; colorManagement: true"
+            arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; sourceWidth: 640; sourceHeight: 480; displayWidth: 640; displayHeight: 480;"
+            renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; precision: mediump"
             embedded
-            style="height: 100vh; width: 100vw; position: fixed; top: 0; left: 0;">
+            style="height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 1;">
 
             <!-- Assets -->
             <a-assets>
@@ -86,44 +86,60 @@ window.createARScene = async function() {
                 </a-mixin>
             </a-assets>
 
-            <!-- Markerless AR content -->
+            <!-- Real-time Soil Analysis Panel -->
             <a-box
                 id="nasa-data-panel"
-                position="0 0.5 -2"
-                width="2"
-                height="1.2"
-                depth="0.05"
-                material="color: #2ecc71; opacity: 0.85;">
+                position="0 0.2 -1.5"
+                width="1.5"
+                height="0.8"
+                depth="0.03"
+                material="color: #07173F; opacity: 0.9;">
 
                 <a-text
                     mixin="text-style"
-                    position="0 0.4 0.06"
-                    value="🌱 NASA Farm Data"
-                    text="width: 6; fontSize: 24;">
+                    position="0 0.25 0.06"
+                    value="🔍 Soil Analysis"
+                    text="width: 4; fontSize: 20; color: #2E96F5;">
                 </a-text>
 
                 <a-text
-                    id="soil-moisture-text"
+                    id="pixel-info-text"
                     mixin="text-style"
-                    position="0 0.1 0.06"
-                    value="💧 Soil Moisture: Loading..."
-                    text="width: 5; fontSize: 18;">
+                    position="0 0.05 0.06"
+                    value="Pixel [0, 0]"
+                    text="width: 3; fontSize: 14; color: #FFFFFF;">
+                </a-text>
+
+                <a-text
+                    id="moisture-text"
+                    mixin="text-style"
+                    position="-0.3 -0.1 0.06"
+                    value="Moisture: --"
+                    text="width: 2.5; fontSize: 12; color: #FFFFFF;">
                 </a-text>
 
                 <a-text
                     id="ndvi-text"
                     mixin="text-style"
-                    position="0 -0.1 0.06"
-                    value="🌿 NDVI: Loading..."
-                    text="width: 5; fontSize: 18;">
+                    position="0.3 -0.1 0.06"
+                    value="NDVI: --"
+                    text="width: 2.5; fontSize: 12; color: #FFFFFF;">
                 </a-text>
 
                 <a-text
-                    id="gps-text"
+                    id="temp-text"
                     mixin="text-style"
-                    position="0 -0.4 0.06"
-                    value="📍 GPS: Getting location..."
-                    text="width: 4; fontSize: 14;">
+                    position="-0.3 -0.25 0.06"
+                    value="Temp: --"
+                    text="width: 2.5; fontSize: 12; color: #FFFFFF;">
+                </a-text>
+
+                <a-text
+                    id="health-text"
+                    mixin="text-style"
+                    position="0.3 -0.25 0.06"
+                    value="Health: --"
+                    text="width: 2.5; fontSize: 12; color: #FFFFFF;">
                 </a-text>
             </a-box>
 
@@ -183,9 +199,9 @@ window.createARScene = async function() {
     // Load A-Frame and AR.js scripts
     await window.loadARScripts();
 
-    // Start data collection
+    // Start real-time soil analysis
     setTimeout(() => {
-        window.startNASADataCollection();
+        window.startSoilAnalysis();
     }, 2000);
 
     console.log('✅ AR.js scene created successfully');
@@ -238,11 +254,11 @@ window.loadARScripts = async function() {
     });
 };
 
-// Start NASA data collection in AR scene
-window.startNASADataCollection = function() {
-    console.log('🛰️ Starting NASA data collection...');
+// Start real-time soil analysis using Pixel Hunt data system
+window.startSoilAnalysis = function() {
+    console.log('🔍 Starting real-time soil analysis...');
 
-    // Get GPS location
+    // Get GPS location for initial positioning
     navigator.geolocation.getCurrentPosition(
         async (position) => {
             const lat = position.coords.latitude.toFixed(4);
@@ -250,55 +266,97 @@ window.startNASADataCollection = function() {
 
             console.log(`📍 GPS: ${lat}, ${lon}`);
 
-            // Update GPS text in AR
-            const gpsText = document.getElementById('gps-text');
-            if (gpsText) {
-                gpsText.setAttribute('value', `📍 GPS: ${lat}, ${lon}`);
-            }
-
-            // Fetch NASA data
-            try {
-                const nasaData = await window.fetchNASAData(lat, lon);
-                window.updateARData(nasaData);
-            } catch (error) {
-                console.error('NASA data fetch failed:', error);
-                // Use fallback data
-                window.updateARData({
-                    soilMoisture: (Math.random() * 50 + 15).toFixed(1),
-                    ndvi: (Math.random() * 0.4 + 0.3).toFixed(2)
-                });
-            }
+            // Start continuous analysis
+            window.startContinuousAnalysis();
         },
         (error) => {
             console.warn('GPS failed:', error);
-            // Update with fallback location
-            const gpsText = document.getElementById('gps-text');
-            if (gpsText) {
-                gpsText.setAttribute('value', '📍 GPS: Using default location');
-            }
-
-            // Use fallback data
-            window.updateARData({
-                soilMoisture: (Math.random() * 50 + 15).toFixed(1),
-                ndvi: (Math.random() * 0.4 + 0.3).toFixed(2)
-            });
+            // Start analysis anyway with default location
+            window.startContinuousAnalysis();
         }
     );
 };
 
-// Update AR data display
-window.updateARData = function(data) {
-    console.log('📊 Updating AR data display:', data);
+// Continuous analysis using Pixel Hunt data system
+window.startContinuousAnalysis = function() {
+    // Simulate real-time pixel analysis (integrate with actual Pixel Hunt system)
+    let pixelX = Math.floor(Math.random() * 20);
+    let pixelY = Math.floor(Math.random() * 20);
 
-    const soilText = document.getElementById('soil-moisture-text');
+    const updateAnalysis = () => {
+        // Simulate camera movement - change pixel coordinates
+        pixelX = Math.max(0, Math.min(19, pixelX + (Math.random() - 0.5) * 2));
+        pixelY = Math.max(0, Math.min(19, pixelY + (Math.random() - 0.5) * 2));
+
+        // Get pixel data (connect to actual Pixel Hunt data system)
+        const pixelData = window.getPixelData ? window.getPixelData(Math.floor(pixelX), Math.floor(pixelY)) : generateFallbackPixelData();
+
+        // Update AR display
+        window.updateARSoilAnalysis(pixelX, pixelY, pixelData);
+    };
+
+    // Update every 2 seconds for real-time analysis
+    setInterval(updateAnalysis, 2000);
+    updateAnalysis(); // Initial update
+};
+
+// Generate fallback pixel data similar to Pixel Hunt
+function generateFallbackPixelData() {
+    const soilTypes = ['pasture', 'crop', 'forest', 'urban', 'water'];
+    const moisture = (Math.random() * 50 + 15).toFixed(1);
+    const ndvi = (Math.random() * 0.6 + 0.2).toFixed(3);
+    const temp = (Math.random() * 15 + 15).toFixed(1);
+    const health = Math.floor(Math.random() * 30 + 70);
+
+    return {
+        moisture: parseFloat(moisture),
+        ndvi: parseFloat(ndvi),
+        temperature: parseFloat(temp),
+        type: soilTypes[Math.floor(Math.random() * soilTypes.length)],
+        health: health
+    };
+}
+
+// Update AR soil analysis display (Pixel Hunt format)
+window.updateARSoilAnalysis = function(pixelX, pixelY, data) {
+    console.log('🔍 Updating AR soil analysis:', {pixelX, pixelY, data});
+
+    const pixelInfoText = document.getElementById('pixel-info-text');
+    const moistureText = document.getElementById('moisture-text');
     const ndviText = document.getElementById('ndvi-text');
+    const tempText = document.getElementById('temp-text');
+    const healthText = document.getElementById('health-text');
 
-    if (soilText) {
-        soilText.setAttribute('value', `💧 Soil Moisture: ${data.soilMoisture}%`);
+    if (pixelInfoText) {
+        pixelInfoText.setAttribute('value', `Pixel [${Math.floor(pixelX)}, ${Math.floor(pixelY)}]`);
+    }
+
+    if (moistureText) {
+        moistureText.setAttribute('value', `Moisture: ${data.moisture}%`);
     }
 
     if (ndviText) {
-        ndviText.setAttribute('value', `🌿 NDVI: ${data.ndvi}`);
+        ndviText.setAttribute('value', `NDVI: ${data.ndvi}`);
+    }
+
+    if (tempText) {
+        tempText.setAttribute('value', `Temp: ${data.temperature}°C`);
+    }
+
+    if (healthText) {
+        healthText.setAttribute('value', `Health: ${data.health}%`);
+    }
+
+    // Update panel color based on health
+    const panel = document.getElementById('nasa-data-panel');
+    if (panel) {
+        let panelColor = '#07173F'; // DEEP BLUE default
+        if (data.health < 50) {
+            panelColor = '#E43700'; // ROCKET RED for poor health
+        } else if (data.health < 75) {
+            panelColor = '#0960E1'; // NEON BLUE for moderate health
+        }
+        panel.setAttribute('material', `color: ${panelColor}; opacity: 0.9;`);
     }
 };
 
