@@ -1,12 +1,22 @@
 // AR Functions - Separate file for better compatibility
 console.log('🔄 Loading AR functions...');
+console.log('📍 ar-functions.js: Script is executing');
+
+// Immediate verification that we're in the right scope
+if (typeof window !== 'undefined') {
+    console.log('✅ ar-functions.js: Window object available');
+} else {
+    console.error('❌ ar-functions.js: No window object!');
+}
 
 // Initialize AR running state
 window.arRunning = false;
 window.aiManager = null;
 
 // Real AR.js Implementation for iOS compatibility
+console.log('🎯 Defining window.launchRealAR function...');
 window.launchRealAR = async function() {
+    console.log('🚀 launchRealAR function called!');
     // Reset AR state properly
     window.arRunning = false;
 
@@ -613,11 +623,21 @@ window.requestIOSPermissions = async function() {
 };
 
 // Confirm functions are loaded
-console.log('✅ AR functions loaded successfully. Available:', {
+const finalStatus = {
     launchRealAR: typeof window.launchRealAR,
     createARScene: typeof window.createARScene,
-    stopARScene: typeof window.stopARScene
-});
+    stopARScene: typeof window.stopARScene,
+    arRunning: typeof window.arRunning
+};
+console.log('✅ AR functions loaded successfully.');
+console.log('📊 Final Status:', JSON.stringify(finalStatus, null, 2));
+
+// Test function availability
+if (window.launchRealAR && typeof window.launchRealAR === 'function') {
+    console.log('✅ launchRealAR is properly defined and callable');
+} else {
+    console.error('❌ launchRealAR is NOT properly defined!');
+}
 
 // Protection against function overriding by other scripts
 (function() {

@@ -4754,11 +4754,25 @@
             script.src = 'src/ar-functions.js?v=' + Date.now();
             script.onload = function() {
                 console.log('✅ ar-functions.js loaded successfully at the end');
-                console.log('🔍 Available functions after final load:', {
-                    launchRealAR: typeof window.launchRealAR,
-                    createARScene: typeof window.createARScene,
-                    stopARScene: typeof window.stopARScene
-                });
+
+                // Wait a moment for functions to be defined
+                setTimeout(() => {
+                    const functions = {
+                        launchRealAR: typeof window.launchRealAR,
+                        createARScene: typeof window.createARScene,
+                        stopARScene: typeof window.stopARScene,
+                        arRunning: typeof window.arRunning,
+                        aiManager: typeof window.aiManager
+                    };
+                    console.log('🔍 Available functions after load:', JSON.stringify(functions, null, 2));
+
+                    // Test if functions are actually callable
+                    if (window.launchRealAR) {
+                        console.log('✅ launchRealAR function is available and callable');
+                    } else {
+                        console.error('❌ launchRealAR function is NOT available');
+                    }
+                }, 100);
             };
             script.onerror = function() {
                 console.error('❌ Failed to load ar-functions.js');
@@ -4786,11 +4800,12 @@
                     alert('AR launch failed: ' + error.message);
                 }
             } else {
-                console.error('❌ AR function not available. Current status:', {
+                const status = {
                     launchRealAR: typeof window.launchRealAR,
                     createARScene: typeof window.createARScene,
                     stopARScene: typeof window.stopARScene
-                });
+                };
+                console.error('❌ AR function not available. Current status:', JSON.stringify(status, null, 2));
 
                 // Simple retry after 1 second
                 console.log('🔄 Retrying in 1 second...');
