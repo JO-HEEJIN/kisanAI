@@ -353,6 +353,7 @@
                                 <h3>AR Field Analysis</h3>
                                 <p>Point your camera at plants for instant identification</p>
                                 <button id="start-ar-btn" class="ar-action-btn ar-primary"
+                                        onclick="handleARButtonClick()"
                                         style="background: linear-gradient(45deg, #0960E1, #2E96F5);
                                                color: white; border: none; padding: 15px 30px;
                                                border-radius: 8px; font-size: 16px; font-weight: bold;
@@ -400,35 +401,7 @@
                             </div>
                         </div>
 
-                        <!-- Mobile-Optimized AI Testing Panel -->
-                        <div class="ar-testing-panel">
-                            <h3>🧪 AI System Testing</h3>
-                            <div class="ar-test-controls">
-                                <div class="test-button-group">
-                                    <button id="test-ai-init-btn" class="ar-test-btn">🤖 Test AI Init</button>
-                                    <button id="test-image-classification-btn" class="ar-test-btn">🖼️ Test Classification</button>
-                                    <button id="test-nasa-integration-btn" class="ar-test-btn">🛰️ Test NASA Data</button>
-                                </div>
-                                <div id="ar-test-results" class="ar-test-results">
-                                    <div class="test-result-header">Test Results:</div>
-                                    <div id="test-output" class="test-output">Ready for testing...</div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="ar-chat-preview">
-                            <h3>Chat Interface Preview</h3>
-                            <div id="chat-preview-container" class="chat-preview-container">
-                                <div class="chat-message assistant">
-                                    👋 Hello! I'm your AI farming assistant. Ask me about your crops, soil conditions, or satellite data!
-                                </div>
-                                <div class="chat-input-container">
-                                    <input type="text" id="chat-preview-input" placeholder="Ask about your crops..." />
-                                    <button id="send-chat-btn" class="chat-send-btn">Send</button>
-                                </div>
-                                <div id="chat-messages" class="chat-messages"></div>
-                            </div>
-                        </div>
 
                         <!-- AR Overlay for AR sessions -->
                         <div id="ar-overlay" class="ar-overlay" style="display: none;">
@@ -4795,71 +4768,44 @@
         })();
     </script>
 
-    <!-- AR Button Initialization - Run after all scripts loaded -->
+    <!-- Simple AR Button Handler -->
     <script>
-        console.log('🔄 Initializing AR button events after all scripts loaded...');
+        console.log('🔄 Setting up simple AR button handler...');
 
-        // Wait for DOM to be fully loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeARButton();
-        });
+        // Simple global function for AR button
+        window.handleARButtonClick = function() {
+            console.log('🎯 AR Button clicked - handleARButtonClick()');
 
-        // Also try immediate initialization in case DOM is already loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeARButton);
-        } else {
-            initializeARButton();
-        }
-
-        function initializeARButton() {
-            console.log('🎯 Initializing AR button...');
-
-            // Get the AR button
-            const arBtn = document.getElementById('start-ar-btn');
-            if (!arBtn) {
-                console.error('❌ AR button not found');
-                return;
-            }
-
-            // Remove any existing onclick handlers
-            arBtn.onclick = null;
-
-            // Wait for ar-functions.js to load before binding events
-            const waitForARFunctions = () => {
-                if (window.launchRealAR && typeof window.launchRealAR === 'function') {
-                    console.log('✅ AR functions ready, binding click event');
-
-                    // Add proper event listener
-                    arBtn.addEventListener('click', function(event) {
-                        event.preventDefault();
-                        console.log('🎯 AR Button clicked');
-
-                        try {
-                            window.launchRealAR();
-                        } catch (error) {
-                            console.error('❌ AR launch failed:', error);
-                            alert('AR launch failed: ' + error.message);
-                        }
-                    });
-
-                    console.log('✅ AR button initialized successfully');
-
-                    // Log current function availability
-                    console.log('📊 Final AR Functions Status:', {
-                        launchRealAR: typeof window.launchRealAR,
-                        createARScene: typeof window.createARScene,
-                        stopARScene: typeof window.stopARScene,
-                        arRunning: window.arRunning
-                    });
-                } else {
-                    console.log('⏳ Still waiting for AR functions to load...');
-                    setTimeout(waitForARFunctions, 100);
+            // Check if AR function is available
+            if (window.launchRealAR && typeof window.launchRealAR === 'function') {
+                console.log('🚀 AR function found, launching...');
+                try {
+                    window.launchRealAR();
+                } catch (error) {
+                    console.error('❌ AR launch failed:', error);
+                    alert('AR launch failed: ' + error.message);
                 }
-            };
+            } else {
+                console.error('❌ AR function not available. Current status:', {
+                    launchRealAR: typeof window.launchRealAR,
+                    createARScene: typeof window.createARScene,
+                    stopARScene: typeof window.stopARScene
+                });
 
-            // Start waiting for AR functions
-            waitForARFunctions();
-        }
+                // Simple retry after 1 second
+                console.log('🔄 Retrying in 1 second...');
+                setTimeout(() => {
+                    if (window.launchRealAR && typeof window.launchRealAR === 'function') {
+                        console.log('🚀 AR function found after retry, launching...');
+                        window.launchRealAR();
+                    } else {
+                        alert('AR function not loaded. Please refresh the page and try again.');
+                    }
+                }, 1000);
+            }
+        };
+
+        console.log('✅ AR button handler ready');
     </script>
 
 </body>
