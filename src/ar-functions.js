@@ -43,7 +43,7 @@ window.launchRealAR = async function() {
             }
         });
 
-        // Stop the stream immediately as AR.js will handle it
+        // Stop the stream as AR.js will create its own
         stream.getTracks().forEach(track => track.stop());
         console.log('✅ Camera permission granted');
 
@@ -80,23 +80,21 @@ window.createARScene = async function() {
         background: transparent;
     `;
 
-    // Create A-Frame scene with AR.js - Force camera display
+    // Create A-Frame scene with AR.js
     arContainer.innerHTML = `
         <a-scene
             vr-mode-ui="enabled: false"
-            device-orientation-permission-ui="enabled: false"
-            arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; trackingMethod: best; sourceWidth: 480; sourceHeight: 640; displayWidth: 480; displayHeight: 640; cameraParametersUrl: none;"
-            renderer="logarithmicDepthBuffer: true; antialias: false; alpha: true; precision: mediump; preserveDrawingBuffer: true"
+            arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;"
+            renderer="logarithmicDepthBuffer: true; antialias: false; alpha: true;"
             embedded
-            style="height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 1; background: transparent;">
+            style="height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 1;">
 
             <!-- Assets -->
             <a-assets>
                 <a-mixin id="text-style"
-                    text="color: white; align: center; width: 6; shader: msdf; font: roboto">
+                    text="color: white; align: center; width: 6; font: roboto">
                 </a-mixin>
             </a-assets>
-
             <!-- NASA Data Panel -->
             <a-box
                 id="nasa-data-panel"
@@ -110,24 +108,15 @@ window.createARScene = async function() {
                     mixin="text-style"
                     position="0 0.2 0.05"
                     value="📡 NASA Data"
-                    text="width: 3; fontSize: 16; color: #2E96F5;">
+                    text="width: 3; color: #2E96F5;">
                 </a-text>
 
-                <a-text
-                    id="pixel-info-text"
-                    mixin="text-style"
-                    position="0 0.05 0.05"
-                    value="Pixel [0, 0]"
-                    text="width: 2.5; fontSize: 10; color: #EAFE07;">
-                </a-text>
-
-                <!-- NASA Data Grid -->
                 <a-text
                     id="moisture-text"
                     mixin="text-style"
                     position="-0.25 -0.08 0.05"
                     value="💧 --"
-                    text="width: 2; fontSize: 9; color: #FFFFFF;">
+                    text="width: 2; color: #FFFFFF;">
                 </a-text>
 
                 <a-text
@@ -135,7 +124,7 @@ window.createARScene = async function() {
                     mixin="text-style"
                     position="0.25 -0.08 0.05"
                     value="🌿 --"
-                    text="width: 2; fontSize: 9; color: #FFFFFF;">
+                    text="width: 2; color: #FFFFFF;">
                 </a-text>
 
                 <a-text
@@ -143,15 +132,7 @@ window.createARScene = async function() {
                     mixin="text-style"
                     position="-0.25 -0.18 0.05"
                     value="🌡️ --"
-                    text="width: 2; fontSize: 9; color: #FFFFFF;">
-                </a-text>
-
-                <a-text
-                    id="health-text"
-                    mixin="text-style"
-                    position="0.25 -0.18 0.05"
-                    value="❤️ --"
-                    text="width: 2; fontSize: 9; color: #FFFFFF;">
+                    text="width: 2; color: #FFFFFF;">
                 </a-text>
             </a-box>
 
@@ -168,7 +149,7 @@ window.createARScene = async function() {
                     mixin="text-style"
                     position="0 0.15 0.05"
                     value="🤖 AI Analysis"
-                    text="width: 3; fontSize: 16; color: #EAFE07;">
+                    text="width: 3; color: #EAFE07;">
                 </a-text>
 
                 <a-text
@@ -176,7 +157,7 @@ window.createARScene = async function() {
                     mixin="text-style"
                     position="0 -0.05 0.05"
                     value="Land: --"
-                    text="width: 2.5; fontSize: 12; color: #FFFFFF;">
+                    text="width: 2.5; color: #FFFFFF;">
                 </a-text>
 
                 <a-text
@@ -184,27 +165,9 @@ window.createARScene = async function() {
                     mixin="text-style"
                     position="0 -0.15 0.05"
                     value="Confidence: --"
-                    text="width: 2.5; fontSize: 10; color: #FFFFFF;">
+                    text="width: 2.5; color: #FFFFFF;">
                 </a-text>
             </a-box>
-
-            <!-- Health Status Indicator (Center) -->
-            <a-circle
-                id="health-indicator"
-                position="0 -0.2 -1.3"
-                radius="0.12"
-                material="color: #2E96F5; opacity: 0.8"
-                animation="property: rotation; to: 0 0 360; loop: true; dur: 4000;">
-            </a-circle>
-
-            <!-- Inner Health Ring -->
-            <a-ring
-                id="health-ring"
-                position="0 -0.2 -1.29"
-                radius-inner="0.08"
-                radius-outer="0.12"
-                material="color: #2E96F5; opacity: 0.6">
-            </a-ring>
 
             <!-- 3D Crosshair (Smaller) -->
             <a-ring
@@ -215,15 +178,8 @@ window.createARScene = async function() {
                 animation="property: rotation; to: 0 0 360; loop: true; dur: 3000;">
             </a-ring>
 
-            <!-- Camera - iOS optimized -->
-            <a-camera
-                gps-camera
-                rotation-reader
-                arjs-device-orientation-controls
-                look-controls="enabled: false"
-                wasd-controls="enabled: false"
-                cursor="rayOrigin: mouse">
-            </a-camera>
+            <!-- Simplified Camera for AR -->
+            <a-entity camera></a-entity>
         </a-scene>
 
         <!-- AR Control Panel -->
