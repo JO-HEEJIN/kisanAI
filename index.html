@@ -353,7 +353,6 @@
                                 <h3>AR Field Analysis</h3>
                                 <p>Point your camera at plants for instant identification</p>
                                 <button id="start-ar-btn" class="ar-action-btn ar-primary"
-                                        onclick="launchRealAR()"
                                         style="background: linear-gradient(45deg, #0960E1, #2E96F5);
                                                color: white; border: none; padding: 15px 30px;
                                                border-radius: 8px; font-size: 16px; font-weight: bold;
@@ -721,6 +720,51 @@
                                         }
                                     }
 
+                                    // Setup event listeners after DOM loads
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        console.log('🔧 Setting up AR button event listeners...');
+
+                                        const startARBtn = document.getElementById('start-ar-btn');
+                                        const startFarmerARBtn = document.getElementById('start-farmer-ar-btn');
+
+                                        if (startARBtn) {
+                                            startARBtn.addEventListener('click', function(e) {
+                                                e.preventDefault();
+                                                console.log('🎯 Launch AR button clicked');
+                                                if (window.launchRealAR) {
+                                                    window.launchRealAR();
+                                                } else {
+                                                    console.error('❌ launchRealAR function not found');
+                                                }
+                                            });
+                                            console.log('✅ Launch AR button listener added');
+                                        }
+
+                                        if (startFarmerARBtn) {
+                                            startFarmerARBtn.addEventListener('click', function(e) {
+                                                e.preventDefault();
+                                                console.log('🚜 Farmer AR button clicked');
+                                                if (window.launchRealAR) {
+                                                    window.launchRealAR();
+                                                } else {
+                                                    console.error('❌ launchRealAR function not found');
+                                                }
+                                            });
+                                            console.log('✅ Farmer AR button listener added');
+                                        }
+                                    });
+
+                                    // Also setup when already loaded
+                                    if (document.readyState === 'loading') {
+                                        // DOM is still loading, DOMContentLoaded will fire
+                                    } else {
+                                        // DOM already loaded, setup immediately
+                                        setTimeout(() => {
+                                            const event = new Event('DOMContentLoaded');
+                                            document.dispatchEvent(event);
+                                        }, 100);
+                                    }
+
                                     // Fallback camera implementation (현재 방식)
                                     async function launchCameraFallback() {
                                         console.log('📷 Starting Camera Fallback Mode');
@@ -1029,7 +1073,6 @@
                                 </script>
 
                                 <button id="start-farmer-ar-btn" class="ar-action-btn ar-farmer"
-                                        onclick="launchRealAR()"
                                         style="background: linear-gradient(45deg, #27ae60, #229954);
                                                color: white; border: none; padding: 15px 30px;
                                                border-radius: 8px; font-size: 16px; font-weight: bold;
