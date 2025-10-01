@@ -81,16 +81,17 @@ class MindARManager {
     async setupMindAR() {
         const container = document.getElementById('mindar-container');
 
-        // MindAR 설정 - 마커 없이 카메라 뷰만 사용
+        // 실제 MindAR 설정 - 간단한 타겟 이미지 사용
         this.mindarThree = new window.MINDAR.IMAGE.MindARThree({
             container: container,
             uiLoading: "no",
             uiScanning: "no",
-            // 간단한 타겟 이미지 사용 (실제로는 마커 추적 안함)
-            imageTargetSrc: 'data:application/octet-stream;base64,',
-            maxTrack: 0,
+            imageTargetSrc: 'https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind',
+            maxTrack: 1,
             filterMinCF: 0.0001,
-            filterBeta: 1
+            filterBeta: 1000,
+            warmupTolerance: 5,
+            missTolerance: 5
         });
 
         const {renderer, scene, camera} = this.mindarThree;
