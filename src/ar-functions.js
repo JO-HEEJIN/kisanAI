@@ -356,6 +356,19 @@ window.createARScene = async function() {
                         letter-spacing: 0.5px;
                     ">🛰️ LIVE AR SCANNER</span>
                 </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="toggle-panel" onclick="window.toggleARPanel()" style="
+                        background: rgba(255, 255, 255, 0.2);
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        color: white;
+                        padding: 6px 10px;
+                        border-radius: 8px;
+                        font-size: 12px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                        ▼ HIDE
+                    </button>
                 <button onclick="window.stopARScene()" style="
                     background: linear-gradient(45deg, #E43700, #8E1100);
                     color: white;
@@ -370,10 +383,11 @@ window.createARScene = async function() {
                 " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                     ❌ EXIT
                 </button>
+                </div>
             </div>
 
-            <!-- Status Section -->
-            <div style="
+            <!-- Collapsible Panel Content -->
+            <div id="panel-content" style="
                 padding: 15px 20px;
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -510,6 +524,11 @@ window.createARScene = async function() {
         window.forceARCameraInit();
         window.forceMobileCameraPortrait();
     }, 1000);
+
+    // Verify GPS and NASA data sources after AR setup
+    setTimeout(() => {
+        window.verifyARDataSources();
+    }, 2000);
 
     // Start real-time soil analysis
     setTimeout(() => {
@@ -1235,5 +1254,86 @@ window.forceMobileCameraPortrait = function() {
 
     } catch (error) {
         console.error('❌ Error setting up portrait camera:', error);
+    }
+};
+
+// Toggle AR control panel visibility
+window.toggleARPanel = function() {
+    const panelContent = document.getElementById('panel-content');
+    const toggleButton = document.getElementById('toggle-panel');
+
+    if (!panelContent || !toggleButton) {
+        console.warn('⚠️ Panel elements not found');
+        return;
+    }
+
+    const isVisible = panelContent.style.display !== 'none';
+
+    if (isVisible) {
+        // Hide panel
+        panelContent.style.display = 'none';
+        toggleButton.innerHTML = '▲ SHOW';
+        toggleButton.style.background = 'rgba(46, 150, 245, 0.3)'; // NEON_BLUE
+        console.log('📱 AR panel hidden');
+    } else {
+        // Show panel
+        panelContent.style.display = 'grid';
+        toggleButton.innerHTML = '▼ HIDE';
+        toggleButton.style.background = 'rgba(255, 255, 255, 0.2)';
+        console.log('📱 AR panel shown');
+    }
+};
+
+// Verify GPS and NASA data functionality
+window.verifyARDataSources = function() {
+    console.log('🔍 Verifying AR data sources...');
+
+    // Check GPS location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                console.log('✅ GPS working:', { lat, lon, accuracy: position.coords.accuracy });
+
+                // Test NASA API with real coordinates
+                fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('🛰️ NASA SMAP Data:', {
+                            source: data.source,
+                            quality: data.quality,
+                            soilMoisture: data.soilMoisture,
+                            realData: data.quality === 'real' ? '✅ Real NASA Data' : '⚠️ Fallback Data'
+                        });
+                    })
+                    .catch(error => {
+                        console.error('❌ NASA API Error:', error);
+                    });
+            },
+            (error) => {
+                console.error('❌ GPS Error:', error.message);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        );
+    } else {
+        console.error('❌ Geolocation not supported');
+    }
+
+    // Enhance targeting indicator visibility
+    const targetingSystem = document.getElementById('targeting-system');
+    if (targetingSystem) {
+        // Force targeting system to render on top
+        targetingSystem.setAttribute('position', '0 0 -1.5');
+        targetingSystem.setAttribute('renderorder', '999');
+
+        // Add pulsing animation to make it more visible
+        const outerRing = targetingSystem.querySelector('a-ring');
+        if (outerRing) {
+            outerRing.setAttribute('animation__pulse', 'property: scale; to: 1.2 1.2 1.2; direction: alternate; loop: true; dur: 1000');
+            outerRing.setAttribute('material', 'color: #EAFE07; opacity: 0.9; transparent: true; alphaTest: 0.1');
+        }
+
+        console.log('🎯 Enhanced targeting indicator visibility');
     }
 };
