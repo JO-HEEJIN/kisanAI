@@ -135,9 +135,6 @@
                         <span class="status-text">No token</span>
                     </div>
                 </div>
-                <button id="testButton" class="test-button" style="display: none;">
-                    Run Tests
-                </button>
                 <button id="settingsButton" class="settings-button" title="Settings" style="display: inline-block !important; background: rgba(102, 126, 234, 0.3) !important; border: 2px solid #667eea !important; padding: 8px !important; margin: 0 5px !important; z-index: 99999 !important; position: relative !important;">
                     ⚙️
                 </button>
@@ -581,8 +578,6 @@
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 
-    <!-- Mobile Debugger for Testing -->
-    <script src="src/debug/MobileDebugger.js"></script>
 
     <!-- AR.js + A-Frame for WebAR -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -616,11 +611,6 @@
             });
         }
 
-        // Check for debug mode
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('debug')) {
-            document.getElementById('testButton').style.display = 'inline-block';
-        }
 
         // Browser compatibility check function
         function checkBrowserCompatibility() {

@@ -1415,19 +1415,6 @@ class NASAFarmNavigatorsApp {
                     🚀 안전한 AR 시작
                 </button>
 
-                <button id="safe-ar-test" style="
-                    background: #6c757d;
-                    border: none;
-                    color: white;
-                    padding: 12px 30px;
-                    border-radius: 20px;
-                    font-size: 14px;
-                    cursor: pointer;
-                    margin: 10px;
-                    transition: all 0.3s ease;
-                " onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
-                    🔍 WebXR 지원 확인
-                </button>
 
                 <div id="safe-ar-status" style="
                     margin-top: 20px;
@@ -1453,7 +1440,6 @@ class NASAFarmNavigatorsApp {
      */
     setupSafeAREventListeners() {
         const launchButton = document.getElementById('safe-ar-launch');
-        const testButton = document.getElementById('safe-ar-test');
         const statusDiv = document.getElementById('safe-ar-status');
 
         if (launchButton) {
@@ -1490,33 +1476,6 @@ class NASAFarmNavigatorsApp {
             });
         }
 
-        if (testButton) {
-            testButton.addEventListener('click', async () => {
-                console.log('🔍 WebXR 지원 확인 버튼 클릭됨');
-
-                testButton.disabled = true;
-                testButton.textContent = '🔄 확인 중...';
-
-                try {
-                    if (!navigator.xr) {
-                        this.showSafeARStatus('❌ 이 브라우저는 WebXR을 지원하지 않습니다', 'error');
-                    } else {
-                        const supported = await navigator.xr.isSessionSupported('immersive-ar');
-                        if (supported) {
-                            this.showSafeARStatus('✅ WebXR AR이 지원됩니다! AR을 시작할 수 있습니다.', 'success');
-                        } else {
-                            this.showSafeARStatus('⚠️ WebXR은 지원되지만 AR 모드는 사용할 수 없습니다. Fallback 모드가 사용됩니다.', 'warning');
-                        }
-                    }
-                } catch (error) {
-                    console.error('❌ WebXR support check error:', error);
-                    this.showSafeARStatus('❌ Error occurred while checking WebXR support', 'error');
-                }
-
-                testButton.disabled = false;
-                testButton.textContent = '🔍 Check WebXR Support';
-            });
-        }
     }
 
     /**
