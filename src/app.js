@@ -1054,6 +1054,14 @@ class NASAFarmNavigatorsApp {
     switchTab(tabName) {
         console.log(`Switching to tab: ${tabName}`);
 
+        // Preserve mobile AR mode when switching to/from AR tab
+        const isMobileARMode = document.body.classList.contains('mobile-ar-mode');
+        const isARTab = tabName === 'ar-chatgpt';
+
+        if (isMobileARMode && isARTab) {
+            console.log('📱 Preserving mobile AR mode during tab switch');
+        }
+
         // Get current active tab before switching
         const currentActiveTab = document.querySelector('.tab.active');
         const currentTabName = currentActiveTab ? currentActiveTab.getAttribute('data-tab') : null;
@@ -1137,6 +1145,34 @@ class NASAFarmNavigatorsApp {
                 this.initializeSafeAR();
                 break;
             // Add other tab cases as needed
+        }
+
+        // Restore mobile AR mode if it was active before switching
+        if (isMobileARMode && isARTab) {
+            setTimeout(() => {
+                console.log('📱 Restoring mobile AR mode after tab switch');
+                document.body.classList.add('mobile-ar-mode');
+
+                // Reapply mobile fullscreen styles
+                const navigation = document.querySelector('.navigation');
+                if (navigation) navigation.style.display = 'none';
+
+                const header = document.querySelector('.app-header');
+                if (header) header.style.display = 'none';
+
+                const arTab = document.getElementById('arChatGPTTab');
+                if (arTab) {
+                    arTab.style.position = 'fixed';
+                    arTab.style.top = '0';
+                    arTab.style.left = '0';
+                    arTab.style.width = '100vw';
+                    arTab.style.height = '100vh';
+                    arTab.style.zIndex = '9999';
+                    arTab.style.background = '#000';
+                }
+
+                console.log('✅ Mobile AR mode restored after tab switch');
+            }, 50); // Small delay to let tab switching complete
         }
     }
 
