@@ -794,50 +794,6 @@ function generateFallbackPixelData() {
     };
 }
 
-// Generate enhanced fallback data that matches NASA API structure
-function generateEnhancedFallbackData(lat, lon) {
-    // Generate location-based realistic data
-    const latFactor = Math.abs(lat) / 90; // 0-1 based on latitude
-    const baseTemp = 25 - (latFactor * 20); // Warmer near equator
-
-    const smapData = {
-        soilMoisture: (Math.random() * 0.3 + 0.15 + (latFactor * 0.1)).toFixed(3),
-        temperature: (baseTemp + Math.random() * 10 - 5).toFixed(1),
-        timestamp: new Date().toISOString(),
-        source: 'Enhanced Fallback Data',
-        quality: 'enhanced_fallback'
-    };
-
-    const modisData = {
-        ndvi: (Math.random() * 0.4 + 0.3 + (latFactor * 0.2)).toFixed(3),
-        evi: (Math.random() * 0.3 + 0.2).toFixed(3),
-        temperature: parseFloat(smapData.temperature),
-        timestamp: new Date().toISOString(),
-        source: 'Enhanced Fallback MODIS'
-    };
-
-    const landsatData = {
-        cloudCover: Math.floor(Math.random() * 30),
-        surfaceTemp: parseFloat(smapData.temperature),
-        waterIndex: (Math.random() * 0.2 - 0.1).toFixed(3),
-        timestamp: new Date().toISOString(),
-        source: 'Enhanced Fallback Landsat'
-    };
-
-    const health = Math.floor(
-        (parseFloat(modisData.ndvi) * 100) +
-        (parseFloat(smapData.soilMoisture) * 50) +
-        Math.random() * 20 - 10
-    );
-
-    return {
-        smap: smapData,
-        modis: modisData,
-        landsat: landsatData,
-        health: Math.min(100, Math.max(0, health))
-    };
-}
-
 // Update AR soil analysis display with AI integration
 window.updateARSoilAnalysis = function(pixelX, pixelY, nasaData, aiResult = null) {
     try {
@@ -1411,20 +1367,6 @@ window.verifyARDataSources = function() {
 window.handlePixelClick = function(event) {
     console.log('🖱️ Pixel clicked, getting detailed analysis...');
 
-    // Calculate pixel coordinates from click event
-    let pixelX = 0, pixelY = 0;
-    if (event && event.target) {
-        const rect = event.target.getBoundingClientRect();
-        pixelX = Math.floor(event.clientX - rect.left);
-        pixelY = Math.floor(event.clientY - rect.top);
-    } else {
-        // Default to screen center if no event
-        pixelX = Math.floor(window.innerWidth / 2);
-        pixelY = Math.floor(window.innerHeight / 2);
-    }
-
-    console.log('🎯 Pixel coordinates:', { x: pixelX, y: pixelY });
-
     // Get current GPS location
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -1432,93 +1374,39 @@ window.handlePixelClick = function(event) {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
 
-                console.log('📍 Getting pixel data for:', { lat, lon, pixel: [pixelX, pixelY] });
+                console.log('📍 Getting pixel data for:', { lat, lon });
 
                 try {
-                    console.log('🛰️ Fetching real NASA data for detailed analysis...');
-
-                    // Check if NASA proxy server is running
-                    console.log('🔍 Checking NASA proxy server status...');
-                    const healthCheck = await fetch('http://localhost:3001/api/health')
-                        .then(r => r.ok)
-                        .catch(() => false);
-
-                    if (!healthCheck) {
-                        throw new Error('NASA proxy server not running on port 3001');
-                    }
-
-                    console.log('✅ NASA proxy server is running, fetching data...');
-
-                    // Fetch detailed NASA data for this location with better error handling
-                    const [smapResponse, modisResponse, landsatResponse] = await Promise.all([
-                        fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`)
-                            .then(async r => {
-                                if (!r.ok) throw new Error(`SMAP API error: ${r.status}`);
-                                const data = await r.json();
-                                console.log('🛰️ SMAP Response:', data);
-                                return data;
-                            }),
-                        fetch(`http://localhost:3001/api/modis/ndvi?lat=${lat}&lon=${lon}`)
-                            .then(async r => {
-                                if (!r.ok) throw new Error(`MODIS API error: ${r.status}`);
-                                const data = await r.json();
-                                console.log('🌱 MODIS Response:', data);
-                                return data;
-                            }),
-                        fetch(`http://localhost:3001/api/landsat/imagery?lat=${lat}&lon=${lon}`)
-                            .then(async r => {
-                                if (!r.ok) throw new Error(`Landsat API error: ${r.status}`);
-                                const data = await r.json();
-                                console.log('🛰️ Landsat Response:', data);
-                                return data;
-                            })
+                    // Fetch detailed NASA data for this location
+                    const [smapData, modisData, landsatData] = await Promise.all([
+                        fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`).then(r => r.json()),
+                        fetch(`http://localhost:3001/api/modis/ndvi?lat=${lat}&lon=${lon}`).then(r => r.json()),
+                        fetch(`http://localhost:3001/api/landsat/imagery?lat=${lat}&lon=${lon}`).then(r => r.json())
                     ]);
 
-                    console.log('✅ NASA API responses received:', {
-                        smap: smapResponse,
-                        modis: modisResponse,
-                        landsat: landsatResponse
-                    });
+                    // Calculate health score
+                    const healthScore = calculateHealthScore(smapData, modisData, landsatData);
 
-                    // Calculate health score with real data
-                    const healthScore = calculateHealthScore(smapResponse, modisResponse, landsatResponse);
-
-                    // Show detailed popup with real NASA data
+                    // Show detailed popup
                     showDetailedAnalysisPopup({
-                        location: { lat: lat.toFixed(4), lon: lon.toFixed(4) },
-                        pixel: { x: pixelX, y: pixelY },
-                        smap: smapResponse,
-                        modis: modisResponse,
-                        landsat: landsatResponse,
-                        ndvi: modisResponse.ndvi || 0.65,
+                        location: { lat, lon },
+                        smap: smapData,
+                        ndvi: modisData.ndvi || 0.65,
                         health: healthScore,
-                        quality: smapResponse.quality || 'real'
+                        quality: smapData.quality || 'real'
                     });
 
-                    console.log('✅ Real NASA data analysis shown:', {
-                        healthScore,
-                        quality: smapResponse.quality,
-                        dataSource: 'NASA APIs'
-                    });
+                    console.log('✅ Detailed analysis shown:', { healthScore, quality: smapData.quality });
 
                 } catch (error) {
-                    console.error('❌ Error fetching NASA data, using enhanced fallback:', error);
-
-                    // Enhanced fallback with more realistic data patterns
-                    const enhancedFallback = generateEnhancedFallbackData(lat, lon);
-
+                    console.error('❌ Error fetching detailed data:', error);
                     showDetailedAnalysisPopup({
-                        location: { lat: lat.toFixed(4), lon: lon.toFixed(4) },
-                        pixel: { x: pixelX, y: pixelY },
-                        smap: enhancedFallback.smap,
-                        modis: enhancedFallback.modis,
-                        landsat: enhancedFallback.landsat,
-                        ndvi: enhancedFallback.modis.ndvi,
-                        health: enhancedFallback.health,
-                        quality: 'enhanced_fallback'
+                        location: { lat, lon },
+                        smap: { soilMoisture: 0.32 },
+                        ndvi: 0.65,
+                        health: 78,
+                        quality: 'fallback'
                     });
-
-                    console.log('⚠️ Using enhanced fallback data due to API error');
                 }
             },
             (error) => {
@@ -1526,7 +1414,6 @@ window.handlePixelClick = function(event) {
                 // Show fallback data
                 showDetailedAnalysisPopup({
                     location: { lat: 'Unknown', lon: 'Unknown' },
-                    pixel: { x: pixelX, y: pixelY },
                     smap: { soilMoisture: 0.30 },
                     ndvi: 0.60,
                     health: 75,
@@ -1622,8 +1509,7 @@ function showDetailedAnalysisPopup(data) {
     popup.innerHTML = `
         <div style="text-align: center; margin-bottom: 15px;">
             <h3 style="margin: 0; color: #EAFE07; font-size: 18px;">🛰️ DETAILED ANALYSIS</h3>
-            <p style="margin: 3px 0; font-size: 10px; color: white;">📍 Location: ${data.location.lat}, ${data.location.lon}</p>
-            <p style="margin: 3px 0; font-size: 10px; color: white;">🎯 Pixel: [${data.pixel ? data.pixel.x : 0}, ${data.pixel ? data.pixel.y : 0}]</p>
+            <p style="margin: 5px 0; font-size: 12px; opacity: 0.8;">Location: ${data.location.lat}, ${data.location.lon}</p>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
