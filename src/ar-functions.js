@@ -131,7 +131,7 @@ window.createARScene = async function() {
     arContainer.innerHTML = `
         <a-scene
             vr-mode-ui="enabled: false"
-            arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;"
+            arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best; sourceWidth: 480; sourceHeight: 640;"
             renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true;"
             embedded
             style="height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 1;">
@@ -505,9 +505,10 @@ window.createARScene = async function() {
     // Check A-Frame and AR.js are loaded (now loaded via HTML)
     await window.checkARScripts();
 
-    // Force camera initialization after AR.js loads
+    // Force mobile camera initialization for portrait mode
     setTimeout(() => {
         window.forceARCameraInit();
+        window.forceMobileCameraPortrait();
     }, 1000);
 
     // Start real-time soil analysis
@@ -1113,8 +1114,8 @@ window.updateARSoilAnalysis = function(x, y, pixelData, aiResult) {
 };
 
 // Add CSS animations for notifications
-const style = document.createElement('style');
-style.textContent = `
+const notificationStyle = document.createElement('style');
+notificationStyle.textContent = `
     @keyframes slideUp {
         from {
             transform: translateX(-50%) translateY(20px);
@@ -1126,4 +1127,113 @@ style.textContent = `
         }
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(notificationStyle);
+
+// Force mobile camera to work in portrait mode
+window.forceMobileCameraPortrait = function() {
+    console.log('📱 Forcing mobile camera portrait mode...');
+
+    try {
+        // Check if we're on mobile
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (!isMobile) {
+            console.log('💻 Desktop detected - portrait fix not needed');
+            return;
+        }
+
+        // Force WebRTC camera with specific portrait constraints
+        const portraitConstraints = {
+            video: {
+                facingMode: 'environment',
+                width: { ideal: 480, max: 640 },
+                height: { ideal: 640, max: 854 },
+                aspectRatio: { ideal: 0.75 } // 3:4 ratio for portrait
+            },
+            audio: false
+        };
+
+        // Get AR.js video element
+        setTimeout(() => {
+            const arVideo = document.querySelector('a-scene video');
+            const arjsVideo = document.querySelector('#arjs-video');
+            const canvas = document.querySelector('a-scene canvas');
+
+            console.log('🔍 Found AR elements:', {
+                arVideo: !!arVideo,
+                arjsVideo: !!arjsVideo,
+                canvas: !!canvas
+            });
+
+            // Request new camera stream with portrait constraints
+            navigator.mediaDevices.getUserMedia(portraitConstraints)
+                .then(stream => {
+                    console.log('📹 Portrait camera stream obtained:', {
+                        videoTracks: stream.getVideoTracks().length,
+                        settings: stream.getVideoTracks()[0]?.getSettings()
+                    });
+
+                    // Apply stream to AR.js video elements
+                    if (arVideo) {
+                        arVideo.srcObject = stream;
+                        arVideo.play();
+                        console.log('✅ Portrait stream applied to AR video');
+                    }
+
+                    if (arjsVideo) {
+                        arjsVideo.srcObject = stream;
+                        arjsVideo.play();
+                        console.log('✅ Portrait stream applied to AR.js video');
+                    }
+
+                    // Force canvas to maintain aspect ratio
+                    if (canvas) {
+                        canvas.style.transform = 'none';
+                        canvas.style.objectFit = 'cover';
+                        console.log('✅ Canvas aspect ratio fixed for portrait');
+                    }
+
+                    // Add CSS to prevent landscape forcing
+                    const portraitStyle = document.createElement('style');
+                    portraitStyle.textContent = `
+                        a-scene video {
+                            object-fit: cover !important;
+                            transform: none !important;
+                        }
+                        a-scene canvas {
+                            object-fit: cover !important;
+                            transform: none !important;
+                        }
+                        #arjs-video {
+                            object-fit: cover !important;
+                            transform: none !important;
+                        }
+                        @media screen and (max-width: 768px) {
+                            a-scene {
+                                width: 100vw !important;
+                                height: 100vh !important;
+                            }
+                        }
+                    `;
+                    document.head.appendChild(portraitStyle);
+
+                })
+                .catch(error => {
+                    console.warn('⚠️ Portrait camera setup failed:', error);
+                    console.log('📱 Falling back to default camera setup');
+                });
+
+        }, 2000); // Wait for AR.js to initialize
+
+        // Disable screen rotation lock that might force landscape
+        if (screen.orientation && screen.orientation.unlock) {
+            screen.orientation.unlock()
+                .then(() => console.log('🔓 Screen orientation unlocked'))
+                .catch(e => console.log('🔒 Screen orientation already unlocked'));
+        }
+
+        console.log('✅ Mobile portrait camera setup completed');
+
+    } catch (error) {
+        console.error('❌ Error setting up portrait camera:', error);
+    }
+};
