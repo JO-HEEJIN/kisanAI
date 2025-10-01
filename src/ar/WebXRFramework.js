@@ -573,6 +573,35 @@ ${nasaContext.ndvi < 0.6 ? '• Vegetation may be stressed - investigate further
         // Clean up
         this.dispose();
 
+        // Restore mobile UI when exiting AR
+        if (document.body.classList.contains('mobile-ar-mode')) {
+            console.log('📱 Restoring mobile UI...');
+
+            // Remove mobile AR mode
+            document.body.classList.remove('mobile-ar-mode');
+
+            // Restore navigation and header
+            const navigation = document.querySelector('.navigation');
+            if (navigation) navigation.style.display = '';
+
+            const header = document.querySelector('.app-header');
+            if (header) header.style.display = '';
+
+            // Reset AR tab styles
+            const arTab = document.getElementById('arChatGPTTab');
+            if (arTab) {
+                arTab.style.position = '';
+                arTab.style.top = '';
+                arTab.style.left = '';
+                arTab.style.width = '';
+                arTab.style.height = '';
+                arTab.style.zIndex = '';
+                arTab.style.background = '';
+            }
+
+            console.log('✅ Mobile UI restored');
+        }
+
         // Notify AR ChatGPT Core
         if (window.arChatGPTCore) {
             window.arChatGPTCore.exitARMode();

@@ -3703,6 +3703,33 @@
                     try {
                         console.log('🚀 Starting AR Camera directly...');
 
+                        // Force mobile AR mode when Launch AR is clicked
+                        if (window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                            console.log('📱 Activating mobile AR mode...');
+                            document.body.classList.add('mobile-ar-mode');
+
+                            // Hide navigation and header elements
+                            const navigation = document.querySelector('.navigation');
+                            if (navigation) navigation.style.display = 'none';
+
+                            const header = document.querySelector('.app-header');
+                            if (header) header.style.display = 'none';
+
+                            // Make AR tab fullscreen
+                            const arTab = document.getElementById('arChatGPTTab');
+                            if (arTab) {
+                                arTab.style.position = 'fixed';
+                                arTab.style.top = '0';
+                                arTab.style.left = '0';
+                                arTab.style.width = '100vw';
+                                arTab.style.height = '100vh';
+                                arTab.style.zIndex = '9999';
+                                arTab.style.background = '#000';
+                            }
+
+                            console.log('✅ Mobile AR mode activated');
+                        }
+
                         // Check for HTTPS on iOS
                         if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && window.location.protocol !== 'https:') {
                             console.warn('⚠️ iOS requires HTTPS for camera access');
