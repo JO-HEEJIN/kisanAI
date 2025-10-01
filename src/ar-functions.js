@@ -534,50 +534,6 @@ window.createARScene = async function() {
 
     document.body.appendChild(arContainer);
 
-    // Setup A-Frame click event listeners
-    setTimeout(() => {
-        console.log('🔗 Setting up A-Frame event listeners...');
-
-        const scene = document.querySelector('a-scene');
-        if (scene) {
-            // Wait for scene to be ready
-            scene.addEventListener('loaded', () => {
-                console.log('🎬 A-Frame scene loaded, setting up click events...');
-
-                // Add click event listeners to clickable elements
-                const clickableCards = document.querySelectorAll('.clickable-card');
-                clickableCards.forEach((card, index) => {
-                    console.log(`📋 Setting up listener for card ${index}:`, card.id);
-
-                    // Add A-Frame click event
-                    card.addEventListener('click', (event) => {
-                        console.log('🖱️ A-Frame click detected on:', card.id);
-                        window.handlePixelClick(event);
-                    });
-
-                    // Also add mouseenter for cursor feedback
-                    card.addEventListener('mouseenter', () => {
-                        console.log('👆 Mouse entered card:', card.id);
-                        card.setAttribute('material', 'color: #0960E1; opacity: 1.0; transparent: true;');
-                    });
-
-                    card.addEventListener('mouseleave', () => {
-                        card.setAttribute('material', 'color: #07173F; opacity: 0.95; transparent: true;');
-                    });
-                });
-
-                // Setup targeting system
-                const targetingSystem = document.getElementById('targeting-system');
-                if (targetingSystem) {
-                    targetingSystem.addEventListener('click', (event) => {
-                        console.log('🎯 Targeting system clicked');
-                        window.handleTargetClick(event);
-                    });
-                }
-            });
-        }
-    }, 1500);
-
     // Check A-Frame and AR.js are loaded (now loaded via HTML)
     await window.checkARScripts();
 
