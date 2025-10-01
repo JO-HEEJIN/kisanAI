@@ -1208,6 +1208,47 @@ body.ar-active {
     }
 }
 
+/* Android-specific optimizations */
+@media (max-width: 768px) and (pointer: coarse) {
+    .ar-status-panel {
+        max-height: 40vh !important;
+        overflow-y: auto !important;
+        padding: 15px !important;
+        margin: 10px !important;
+    }
+
+    .ar-status-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+
+    .ar-status-item {
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+    }
+
+    .ar-status-label {
+        font-size: 12px !important;
+    }
+
+    .ar-status-value {
+        font-size: 11px !important;
+        padding: 3px 8px !important;
+    }
+
+    /* Compact AR UI controls */
+    .ar-ui-controls {
+        max-height: 30vh !important;
+        overflow-y: auto !important;
+    }
+
+    /* Hide non-essential elements on small screens */
+    .ar-status-panel h3 {
+        font-size: 16px !important;
+        margin-bottom: 10px !important;
+    }
+}
+
 /* AR Fallback Interface Styles */
 .ar-fallback-container {
     position: fixed;

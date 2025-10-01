@@ -64,14 +64,37 @@ window.launchRealAR = async function() {
     // Reset AR state properly
     window.arRunning = false;
 
-    console.log('🚀 Starting Real AR.js AR for iOS');
+    console.log('🚀 Starting Real AR.js AR for mobile devices');
 
     try {
-        // Check device capabilities
+        // Enhanced device detection
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isAndroid = /Android/i.test(navigator.userAgent);
         const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
 
-        console.log(`📱 Device: iOS=${isIOS}, Safari=${isSafari}`);
+        console.log(`📱 Device: iOS=${isIOS}, Android=${isAndroid}, Safari=${isSafari}`);
+
+        // Android optimization: Show loading indicator early
+        if (isAndroid) {
+            console.log('🤖 Applying Android optimizations...');
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.id = 'ar-loading-android';
+            loadingIndicator.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                z-index: 10000;
+                text-align: center;
+                font-family: Arial, sans-serif;
+            `;
+            loadingIndicator.innerHTML = '🚀 Loading AR...<br><small>Optimizing for Android</small>';
+            document.body.appendChild(loadingIndicator);
+        }
 
         // Request camera permission first
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -79,13 +102,24 @@ window.launchRealAR = async function() {
         }
 
         console.log('📷 Requesting camera permission...');
-        const stream = await navigator.mediaDevices.getUserMedia({
+
+        // Device-optimized camera settings
+        const cameraConfig = isAndroid ? {
+            video: {
+                facingMode: 'environment',
+                width: { ideal: 640 },  // Lower resolution for Android performance
+                height: { ideal: 480 },
+                frameRate: { ideal: 15, max: 24 }  // Lower framerate for performance
+            }
+        } : {
             video: {
                 facingMode: 'environment',
                 width: { ideal: 640 },
                 height: { ideal: 480 }
             }
-        });
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(cameraConfig);
 
         // Stop the stream as AR.js will create its own
         stream.getTracks().forEach(track => track.stop());
@@ -551,6 +585,15 @@ window.createARScene = async function() {
     }, 3000);
 
     console.log('✅ AR.js scene created successfully');
+
+    // Remove Android loading indicator
+    const androidLoading = document.getElementById('ar-loading-android');
+    if (androidLoading) {
+        setTimeout(() => {
+            androidLoading.remove();
+            console.log('🤖 Android loading indicator removed');
+        }, 2000); // Keep visible for 2 more seconds to show completion
+    }
 };
 
 // Force AR camera initialization

@@ -1445,11 +1445,61 @@ class ConversationalAI {
     // Voice methods
     speak(text) {
         if (this.voiceEnabled && this.speechSynthesis) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9;
-            utterance.pitch = 1.0;
-            utterance.volume = 0.8;
-            this.speechSynthesis.speak(utterance);
+            console.log('🗣️ Attempting to speak:', text);
+
+            // Stop any ongoing speech
+            this.speechSynthesis.cancel();
+
+            // Android compatibility: Wait for voices to load
+            const speakText = () => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 1.0;
+                utterance.volume = 0.8;
+
+                // Android-specific settings
+                const isAndroid = /Android/i.test(navigator.userAgent);
+                if (isAndroid) {
+                    utterance.rate = 0.8; // Slower rate for Android
+                    utterance.lang = 'en-US'; // Explicit language setting
+                }
+
+                // Get available voices
+                const voices = this.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    // Prefer English voices on Android
+                    const englishVoice = voices.find(voice =>
+                        voice.lang.startsWith('en') && voice.default
+                    ) || voices[0];
+                    utterance.voice = englishVoice;
+                    console.log('🗣️ Using voice:', englishVoice.name);
+                }
+
+                // Error handling
+                utterance.onerror = (e) => {
+                    console.error('❌ Speech synthesis error:', e);
+                };
+
+                utterance.onstart = () => {
+                    console.log('✅ Speech started');
+                };
+
+                utterance.onend = () => {
+                    console.log('✅ Speech completed');
+                };
+
+                this.speechSynthesis.speak(utterance);
+            };
+
+            // Ensure voices are loaded (Android workaround)
+            if (this.speechSynthesis.getVoices().length === 0) {
+                this.speechSynthesis.onvoiceschanged = () => {
+                    console.log('🔄 Voices loaded, attempting speech');
+                    speakText();
+                };
+            } else {
+                speakText();
+            }
         }
     }
 
