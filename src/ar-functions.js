@@ -18,11 +18,8 @@ if (typeof window !== 'undefined') {
 
 // NASA API endpoint configuration
 window.getNASAApiEndpoint = function() {
-    // Use Vercel API routes in production
-    const apiBase = window.location.hostname === 'localhost'
-        ? 'http://localhost:3001/api'
-        : '/api';
-    return apiBase;
+    // Always use local proxy server for AR detailed analysis
+    return 'http://localhost:3001/api';
 };
 
 // Fetch real NASA data
