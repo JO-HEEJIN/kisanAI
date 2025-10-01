@@ -761,25 +761,56 @@ window.startContinuousAnalysis = function() {
     // Simulate real-time pixel analysis
     let pixelX = Math.floor(Math.random() * 20);
     let pixelY = Math.floor(Math.random() * 20);
+    let cachedNASAData = null;
+    let lastFetchTime = 0;
+    const CACHE_DURATION = 30000; // 30 seconds cache
 
     const updateAnalysis = async () => {
         // Simulate camera movement - change pixel coordinates
         pixelX = Math.max(0, Math.min(19, pixelX + (Math.random() - 0.5) * 2));
         pixelY = Math.max(0, Math.min(19, pixelY + (Math.random() - 0.5) * 2));
 
-        // Try to get real NASA data first
+        // Try to get real NASA data first with caching
         let pixelData;
         if (window.currentLocation) {
-            const nasaData = await window.fetchNASAData(window.currentLocation.lat, window.currentLocation.lon);
-            if (nasaData && nasaData.pixels && nasaData.pixels.length > 0) {
-                // Use real NASA pixel data
-                const pixelIndex = Math.min(pixelY * 20 + pixelX, nasaData.pixels.length - 1);
-                pixelData = nasaData.pixels[pixelIndex];
-                console.log('📡 Using real NASA data:', pixelData);
+            const currentTime = Date.now();
+            const locationKey = `${window.currentLocation.lat}_${window.currentLocation.lon}`;
+
+            // Check if we have cached data that's still fresh
+            if (cachedNASAData &&
+                cachedNASAData.locationKey === locationKey &&
+                (currentTime - lastFetchTime) < CACHE_DURATION) {
+                // Use cached data
+                console.log('📋 Using cached NASA data');
+                const nasaData = cachedNASAData.data;
+                if (nasaData && nasaData.pixels && nasaData.pixels.length > 0) {
+                    const pixelIndex = Math.min(pixelY * 20 + pixelX, nasaData.pixels.length - 1);
+                    pixelData = nasaData.pixels[pixelIndex];
+                } else {
+                    pixelData = generateFallbackPixelData();
+                }
             } else {
-                // Fall back to simulated data
-                pixelData = generateFallbackPixelData();
-                console.log('⚠️ Using fallback data');
+                // Fetch new NASA data
+                console.log('🌐 Fetching fresh NASA data...');
+                const nasaData = await window.fetchNASAData(window.currentLocation.lat, window.currentLocation.lon);
+
+                // Cache the result
+                cachedNASAData = {
+                    locationKey: locationKey,
+                    data: nasaData
+                };
+                lastFetchTime = currentTime;
+
+                if (nasaData && nasaData.pixels && nasaData.pixels.length > 0) {
+                    // Use real NASA pixel data
+                    const pixelIndex = Math.min(pixelY * 20 + pixelX, nasaData.pixels.length - 1);
+                    pixelData = nasaData.pixels[pixelIndex];
+                    console.log('📡 Using fresh NASA data:', pixelData);
+                } else {
+                    // Fall back to simulated data
+                    pixelData = generateFallbackPixelData();
+                    console.log('⚠️ Using fallback data');
+                }
             }
         } else {
             pixelData = generateFallbackPixelData();
@@ -789,20 +820,31 @@ window.startContinuousAnalysis = function() {
         let aiResult = null;
         if (window.aiManager && window.aiManager.isModelLoaded) {
             try {
-                // Get AR canvas for AI analysis
-                const canvas = document.querySelector('canvas');
-                if (canvas && canvas.width > 0 && canvas.height > 0) {
-                    // Check canvas state before using
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                        console.log('🖼️ Canvas ready for AI analysis');
-                        aiResult = await window.aiManager.classifyARCanvas(canvas);
-                        console.log('🤖 AI Classification result:', JSON.stringify(aiResult, null, 2));
-                    } else {
-                        console.warn('⚠️ Canvas context not available');
-                    }
+                // Get AR canvas for AI analysis - try multiple selectors
+                let canvas = document.querySelector('a-scene canvas') ||
+                            document.querySelector('canvas[data-aframe-canvas]') ||
+                            document.querySelector('canvas');
+
+                // Wait for canvas to be ready
+                if (!canvas) {
+                    console.warn('⚠️ No canvas found for analysis');
+                    return;
+                }
+
+                // Give canvas time to initialize if just created
+                if (canvas.width === 0 || canvas.height === 0) {
+                    console.warn('⚠️ Canvas dimensions not ready:', {width: canvas.width, height: canvas.height});
+                    return;
+                }
+
+                // Check canvas state before using
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    console.log('🖼️ Canvas ready for AI analysis');
+                    aiResult = await window.aiManager.classifyARCanvas(canvas);
+                    console.log('🤖 AI Classification result:', JSON.stringify(aiResult, null, 2));
                 } else {
-                    console.warn('⚠️ Canvas not ready for analysis');
+                    console.warn('⚠️ Canvas context not available');
                 }
             } catch (error) {
                 console.warn('⚠️ AI classification failed:', error);
@@ -1244,8 +1286,11 @@ window.forceMobileCameraPortrait = function() {
             });
 
             // Request new camera stream with portrait constraints
-            navigator.mediaDevices.getUserMedia(portraitConstraints)
-                .then(stream => {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    const getUserMediaPromise = navigator.mediaDevices.getUserMedia(portraitConstraints);
+                    if (getUserMediaPromise && typeof getUserMediaPromise.then === 'function') {
+                        getUserMediaPromise.then(stream => {
                     console.log('📹 Portrait camera stream obtained:', {
                         videoTracks: stream.getVideoTracks().length,
                         settings: stream.getVideoTracks()[0]?.getSettings()
@@ -1295,11 +1340,23 @@ window.forceMobileCameraPortrait = function() {
                     `;
                     document.head.appendChild(portraitStyle);
 
-                })
-                .catch(error => {
-                    console.warn('⚠️ Portrait camera setup failed:', error);
-                    console.log('📱 Falling back to default camera setup');
-                });
+                        })
+                        .catch(error => {
+                            console.warn('⚠️ Portrait camera setup failed:', error);
+                            console.log('📱 Falling back to default camera setup');
+                        });
+                    } else {
+                        console.warn('⚠️ getUserMedia did not return a promise');
+                        console.log('📱 Using default camera setup');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Error calling getUserMedia:', error);
+                    console.log('📱 Using default camera setup');
+                }
+            } else {
+                console.warn('⚠️ MediaDevices API not available');
+                console.log('📱 Using default camera setup');
+            }
 
         }, 2000); // Wait for AR.js to initialize
 
