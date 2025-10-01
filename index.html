@@ -3876,14 +3876,17 @@
                 }
             }
 
-            // Start Chat button - Redirect to AI Farm Navigator
-            const startChatBtn = document.getElementById('start-chat-btn');
-            if (startChatBtn) {
-                const originalText = startChatBtn.innerHTML;
-                startChatBtn.addEventListener('click', async () => {
-                    console.log('Start Chat button clicked - redirecting to AI Farm Navigator');
+            // Use event delegation for buttons that might not be loaded yet
+            document.addEventListener('click', async (event) => {
+                // Start Chat button handler
+                if (event.target && event.target.id === 'start-chat-btn') {
+                    console.log('🚀 Start Chat button clicked - showing loading indicator');
+                    event.preventDefault();
 
-                    // Show loading state
+                    const startChatBtn = event.target;
+                    const originalText = startChatBtn.innerHTML;
+
+                    // Show loading state immediately
                     setButtonLoading(startChatBtn, true, originalText);
 
                     // Switch to Farmland Survey tab using the correct selector
@@ -3933,15 +3936,18 @@
 
                     // Reset loading state
                     setButtonLoading(startChatBtn, false, originalText);
-                });
-            }
+                    return;
+                }
 
-            // Voice test button
-            const testVoiceBtn = document.getElementById('test-voice-btn');
-            if (testVoiceBtn) {
-                const originalVoiceText = testVoiceBtn.innerHTML;
-                testVoiceBtn.addEventListener('click', async () => {
-                    // Show loading state
+                // Test Voice button handler
+                if (event.target && event.target.id === 'test-voice-btn') {
+                    console.log('🎤 Test Voice button clicked - showing loading indicator');
+                    event.preventDefault();
+
+                    const testVoiceBtn = event.target;
+                    const originalVoiceText = testVoiceBtn.innerHTML;
+
+                    // Show loading state immediately
                     setButtonLoading(testVoiceBtn, true, originalVoiceText);
 
                     try {
@@ -3954,8 +3960,9 @@
                             setButtonLoading(testVoiceBtn, false, originalVoiceText);
                         }, 2000);
                     }
-                });
-            }
+                    return;
+                }
+            });
 
             // Plant identification test button
             const testPlantBtn = document.getElementById('test-plant-id-btn');
@@ -4876,7 +4883,7 @@
     <script src="src/gamification/AchievementUI.js"></script>
 
     <!-- AR Functions - Hide tab container on mobile -->
-    <script src="src/ar-functions.js?v=16"></script>
+    <script src="src/ar-functions.js?v=17"></script>
 
     <!-- Conversational AI -->
     <script src="src/conversational-ai.js"></script>

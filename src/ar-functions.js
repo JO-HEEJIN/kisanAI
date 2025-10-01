@@ -321,9 +321,13 @@ window.createARScene = async function() {
                 position="0 0 -2"
                 look-at="#ar-camera"
                 class="ar-ui-element clickable-target"
-                cursor-listener="true"
+                cursor-listener
                 onclick="window.handlePixelClick(event)"
+                ontouchstart="window.handlePixelClick(event)"
+                ontouchend="window.handlePixelClick(event)"
                 raycaster="objects: .clickable-target; far: 20; near: 0"
+                geometry="primitive: box; width: 0.4; height: 0.4; depth: 0.01"
+                material="color: transparent; transparent: true; opacity: 0"
                 >
                 <!-- Visible Background Box for Better Color Display -->
                 <a-box
@@ -1731,7 +1735,66 @@ window.verifyARDataSources = function() {
 
         console.log('🎯 Enhanced targeting indicator visibility and touch responsiveness');
     }
+
+    // Setup global touch handler for AR scene
+    setupGlobalTouchHandler();
 };
+
+// Global touch handler for AR scene
+function setupGlobalTouchHandler() {
+    console.log('🤚 Setting up global touch handler for AR scene...');
+
+    // Add touch event to A-Frame scene
+    const arScene = document.querySelector('a-scene');
+    if (arScene) {
+        ['touchstart', 'touchend', 'click'].forEach(eventType => {
+            arScene.addEventListener(eventType, (event) => {
+                console.log(`🤚 AR Scene ${eventType} detected`);
+
+                // Check if touch is in center area (targeting zone)
+                if (event.touches && event.touches[0]) {
+                    const touch = event.touches[0];
+                    const sceneRect = arScene.getBoundingClientRect();
+                    const centerX = sceneRect.left + sceneRect.width / 2;
+                    const centerY = sceneRect.top + sceneRect.height / 2;
+                    const touchX = touch.clientX;
+                    const touchY = touch.clientY;
+
+                    // Check if touch is within targeting area (center 200x200px)
+                    const distanceFromCenter = Math.sqrt(
+                        Math.pow(touchX - centerX, 2) + Math.pow(touchY - centerY, 2)
+                    );
+
+                    if (distanceFromCenter < 100 && eventType === 'touchend') {
+                        console.log('🎯 Touch detected in targeting area, triggering pixel click');
+                        event.preventDefault();
+                        window.handlePixelClick(event);
+                    }
+                } else if (eventType === 'click') {
+                    // Handle mouse click
+                    const sceneRect = arScene.getBoundingClientRect();
+                    const centerX = sceneRect.left + sceneRect.width / 2;
+                    const centerY = sceneRect.top + sceneRect.height / 2;
+                    const clickX = event.clientX;
+                    const clickY = event.clientY;
+
+                    const distanceFromCenter = Math.sqrt(
+                        Math.pow(clickX - centerX, 2) + Math.pow(clickY - centerY, 2)
+                    );
+
+                    if (distanceFromCenter < 100) {
+                        console.log('🎯 Click detected in targeting area, triggering pixel click');
+                        window.handlePixelClick(event);
+                    }
+                }
+            });
+        });
+
+        console.log('✅ Global touch handler setup complete');
+    } else {
+        console.warn('❌ A-Frame scene not found for touch handler');
+    }
+}
 
 // Debounce timer for pixel clicks
 let pixelClickTimer = null;
