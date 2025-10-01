@@ -21,6 +21,13 @@ class MindARManager {
             // Load required scripts
             await this.loadRequiredScripts();
 
+            // Check if MindAR is loaded
+            if (typeof window.MindARThree === 'undefined') {
+                throw new Error('MindARThree not loaded. Check script tags.');
+            }
+
+            console.log('✅ MindARThree library loaded');
+
             // Create AR container
             this.createARContainer();
 
@@ -42,9 +49,12 @@ class MindARManager {
         }
 
         // Load MindAR if not available
-        if (typeof window.MINDAR === 'undefined') {
+        if (typeof window.MindARThree === 'undefined') {
             await this.loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js');
             await this.loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js');
+
+            // Wait for scripts to initialize
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
     }
 
@@ -82,7 +92,7 @@ class MindARManager {
         const container = document.getElementById('mindar-container');
 
         // 공식 MindAR Three.js 예제 방식 사용
-        this.mindarThree = new window.MINDAR.IMAGE.MindARThree({
+        this.mindarThree = new window.MindARThree({
             container: container,
             imageTargetSrc: "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind"
         });
