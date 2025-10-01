@@ -43,18 +43,46 @@ class MindARManager {
     }
 
     async loadRequiredScripts() {
-        // Load Three.js if not available
+        console.log('🔍 Checking script dependencies...');
+
+        // Check Three.js
         if (typeof THREE === 'undefined') {
+            console.log('📦 Loading Three.js...');
             await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
+        } else {
+            console.log('✅ Three.js already loaded');
         }
+
+        // Check existing global variables
+        console.log('🔍 Global objects check:');
+        console.log('- window.MINDAR:', typeof window.MINDAR);
+        console.log('- window.MindARThree:', typeof window.MindARThree);
 
         // Load MindAR if not available
         if (typeof window.MindARThree === 'undefined') {
-            await this.loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js');
-            await this.loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js');
+            console.log('📦 Loading MindAR scripts...');
 
-            // Wait for scripts to initialize
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            try {
+                await this.loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js');
+                console.log('✅ mindar-image.prod.js loaded');
+
+                await this.loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js');
+                console.log('✅ mindar-image-three.prod.js loaded');
+
+                // Wait for scripts to initialize
+                console.log('⏳ Waiting for MindAR initialization...');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Check again
+                console.log('🔍 After loading - window.MindARThree:', typeof window.MindARThree);
+                console.log('🔍 After loading - window.MINDAR:', typeof window.MINDAR);
+
+            } catch (error) {
+                console.error('❌ Failed to load MindAR scripts:', error);
+                throw error;
+            }
+        } else {
+            console.log('✅ MindAR already loaded');
         }
     }
 
