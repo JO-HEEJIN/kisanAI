@@ -203,7 +203,7 @@ class ConversationalAI {
                 background: rgba(255, 255, 255, 0.1);
                 padding: 12px 16px;
                 border-radius: 15px;
-                color: white;
+                color: #F0F0F0;
                 line-height: 1.4;
             }
 
@@ -245,6 +245,10 @@ class ConversationalAI {
                 white-space: nowrap;
                 cursor: pointer;
                 transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
             }
 
             .ai-quick-btn:hover {
