@@ -3839,11 +3839,52 @@
                 updateStatus('webxr-status', 'Init Failed', 'error');
             }
 
+            // Add loading indicator CSS if not already added
+            if (!document.getElementById('loading-indicator-styles')) {
+                const style = document.createElement('style');
+                style.id = 'loading-indicator-styles';
+                style.textContent = `
+                    .ar-action-btn.loading {
+                        cursor: not-allowed !important;
+                        transition: all 0.3s ease;
+                    }
+                    .spinner {
+                        display: inline-block;
+                        animation: spin 1s linear infinite;
+                        margin-right: 5px;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // Utility function for button loading states
+            function setButtonLoading(button, isLoading, originalText) {
+                if (isLoading) {
+                    button.disabled = true;
+                    button.style.opacity = '0.7';
+                    button.innerHTML = `<span class="spinner">⏳</span> Loading...`;
+                    button.classList.add('loading');
+                } else {
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                    button.innerHTML = originalText;
+                    button.classList.remove('loading');
+                }
+            }
+
             // Start Chat button - Redirect to AI Farm Navigator
             const startChatBtn = document.getElementById('start-chat-btn');
             if (startChatBtn) {
+                const originalText = startChatBtn.innerHTML;
                 startChatBtn.addEventListener('click', async () => {
                     console.log('Start Chat button clicked - redirecting to AI Farm Navigator');
+
+                    // Show loading state
+                    setButtonLoading(startChatBtn, true, originalText);
 
                     // Switch to Farmland Survey tab using the correct selector
                     const farmlandSurveyTab = document.querySelector('.tab[data-tab="farmland-survey"]');
@@ -3889,13 +3930,31 @@
                             }
                         }
                     }
+
+                    // Reset loading state
+                    setButtonLoading(startChatBtn, false, originalText);
                 });
             }
 
             // Voice test button
             const testVoiceBtn = document.getElementById('test-voice-btn');
             if (testVoiceBtn) {
-                testVoiceBtn.addEventListener('click', testVoiceRecognition);
+                const originalVoiceText = testVoiceBtn.innerHTML;
+                testVoiceBtn.addEventListener('click', async () => {
+                    // Show loading state
+                    setButtonLoading(testVoiceBtn, true, originalVoiceText);
+
+                    try {
+                        await testVoiceRecognition();
+                    } catch (error) {
+                        console.error('Voice recognition error:', error);
+                    } finally {
+                        // Reset loading state after 2 seconds minimum
+                        setTimeout(() => {
+                            setButtonLoading(testVoiceBtn, false, originalVoiceText);
+                        }, 2000);
+                    }
+                });
             }
 
             // Plant identification test button
@@ -4817,7 +4876,7 @@
     <script src="src/gamification/AchievementUI.js"></script>
 
     <!-- AR Functions - Hide tab container on mobile -->
-    <script src="src/ar-functions.js?v=12"></script>
+    <script src="src/ar-functions.js?v=13"></script>
 
     <!-- Conversational AI -->
     <script src="src/conversational-ai.js"></script>
