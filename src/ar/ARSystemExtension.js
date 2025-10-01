@@ -697,60 +697,7 @@ class ARSystemExtension {
         };
     }
 
-    // Development and debugging utilities
-    enableDebugMode() {
-        this.debugMode = true;
-        console.log('🐛 ARSystemExtension: Debug mode enabled');
-
-        // Add debug UI elements
-        this.createDebugPanel();
-    }
-
-    createDebugPanel() {
-        const debugPanel = document.createElement('div');
-        debugPanel.id = 'ar-debug-panel';
-        debugPanel.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 12px;
-            z-index: 10004;
-            display: none;
-        `;
-
-        debugPanel.innerHTML = `
-            <div>🐛 AR Debug Panel</div>
-            <div id="debug-fps">FPS: --</div>
-            <div id="debug-location">Location: --</div>
-            <div id="debug-data">Data Updates: --</div>
-            <div id="debug-memory">Memory: --</div>
-        `;
-
-        document.body.appendChild(debugPanel);
-
-        // Update debug info every second
-        setInterval(() => {
-            if (this.debugMode && this.arSystem.isActive) {
-                debugPanel.style.display = 'block';
-                document.getElementById('debug-fps').textContent =
-                    `FPS: ${this.metrics.renderFPS.toFixed(1)}`;
-                document.getElementById('debug-location').textContent =
-                    `Location: ${this.locationData.lat.toFixed(3)}, ${this.locationData.lon.toFixed(3)}`;
-                document.getElementById('debug-data').textContent =
-                    `Data Updates: ${this.metrics.dataUpdateCount}`;
-                document.getElementById('debug-memory').textContent =
-                    performance.memory ? `Memory: ${(performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1)}MB` : 'Memory: N/A';
-            } else {
-                debugPanel.style.display = 'none';
-            }
-        }, 1000);
-    }
+    // Removed debug utilities for production
 }
 
 // Export for global access
