@@ -81,17 +81,10 @@ class MindARManager {
     async setupMindAR() {
         const container = document.getElementById('mindar-container');
 
-        // 실제 MindAR 설정 - 간단한 타겟 이미지 사용
+        // 공식 MindAR Three.js 예제 방식 사용
         this.mindarThree = new window.MINDAR.IMAGE.MindARThree({
             container: container,
-            uiLoading: "no",
-            uiScanning: "no",
-            imageTargetSrc: 'https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind',
-            maxTrack: 1,
-            filterMinCF: 0.0001,
-            filterBeta: 1000,
-            warmupTolerance: 5,
-            missTolerance: 5
+            imageTargetSrc: "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind"
         });
 
         const {renderer, scene, camera} = this.mindarThree;
@@ -99,13 +92,17 @@ class MindARManager {
         this.scene = scene;
         this.camera = camera;
 
-        // 조명 추가
-        const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-        light.position.set(0.5, 1, 0.25);
-        scene.add(light);
+        // Anchor 추가 (공식 예제 방식)
+        const anchor = this.mindarThree.addAnchor(0);
 
-        // NASA 데이터 오버레이 생성
-        this.createDataOverlays();
+        // 기본 평면 추가 (공식 예제와 동일)
+        const geometry = new THREE.PlaneGeometry(1, 0.55);
+        const material = new THREE.MeshBasicMaterial({color: 0x00ffff, transparent: true, opacity: 0.5});
+        const plane = new THREE.Mesh(geometry, material);
+        anchor.group.add(plane);
+
+        // NASA 데이터 표시용 추가 객체들
+        this.createARObjects(anchor);
 
         // MindAR 시작
         await this.mindarThree.start();
@@ -117,55 +114,50 @@ class MindARManager {
         });
     }
 
-    createDataOverlays() {
-        // NASA 데이터 그룹
-        this.nasaDataGroup = new THREE.Group();
-        this.nasaDataGroup.position.set(0, 0.5, -2);
-        this.scene.add(this.nasaDataGroup);
-
-        // 배경 패널
-        const panelGeometry = new THREE.PlaneGeometry(1.5, 0.8);
-        const panelMaterial = new THREE.MeshBasicMaterial({
+    createARObjects(anchor) {
+        // NASA 데이터 패널 (앵커에 부착)
+        const nasaPanelGeometry = new THREE.PlaneGeometry(0.8, 0.4);
+        const nasaPanelMaterial = new THREE.MeshBasicMaterial({
             color: 0x07173F,
             transparent: true,
             opacity: 0.8
         });
-        const panel = new THREE.Mesh(panelGeometry, panelMaterial);
-        this.nasaDataGroup.add(panel);
+        const nasaPanel = new THREE.Mesh(nasaPanelGeometry, nasaPanelMaterial);
+        nasaPanel.position.set(0, 0.3, 0.1);
+        anchor.group.add(nasaPanel);
 
-        // AI 분석 그룹
-        this.aiAnalysisGroup = new THREE.Group();
-        this.aiAnalysisGroup.position.set(0, -0.5, -2);
-        this.scene.add(this.aiAnalysisGroup);
-
-        const aiPanelGeometry = new THREE.PlaneGeometry(1.5, 0.6);
+        // AI 분석 패널 (앵커에 부착)
+        const aiPanelGeometry = new THREE.PlaneGeometry(0.8, 0.3);
         const aiPanelMaterial = new THREE.MeshBasicMaterial({
             color: 0x0960E1,
             transparent: true,
             opacity: 0.8
         });
         const aiPanel = new THREE.Mesh(aiPanelGeometry, aiPanelMaterial);
-        this.aiAnalysisGroup.add(aiPanel);
+        aiPanel.position.set(0, -0.2, 0.1);
+        anchor.group.add(aiPanel);
 
-        // 크로스헤어
-        const ringGeometry = new THREE.RingGeometry(0.05, 0.08, 32);
-        const ringMaterial = new THREE.MeshBasicMaterial({
-            color: 0xEAFE07,
-            transparent: true,
-            opacity: 0.8
+        // 농업 아이콘 (앵커에 부착)
+        const iconGeometry = new THREE.SphereGeometry(0.05, 32, 32);
+        const iconMaterial = new THREE.MeshBasicMaterial({
+            color: 0xEAFE07
         });
-        const crosshair = new THREE.Mesh(ringGeometry, ringMaterial);
-        crosshair.position.set(0, 0, -1);
-        this.scene.add(crosshair);
+        const icon = new THREE.Mesh(iconGeometry, iconMaterial);
+        icon.position.set(0, 0, 0.2);
+        anchor.group.add(icon);
 
         // 회전 애니메이션
         const animate = () => {
             if (this.isRunning) {
-                crosshair.rotation.z += 0.02;
+                icon.rotation.y += 0.02;
                 requestAnimationFrame(animate);
             }
         };
         animate();
+
+        this.nasaPanel = nasaPanel;
+        this.aiPanel = aiPanel;
+        this.icon = icon;
     }
 
     updateNASAData(data) {
