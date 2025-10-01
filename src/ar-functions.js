@@ -367,17 +367,12 @@ window.createARScene = async function() {
                         animation: pulse 2s infinite;
                         box-shadow: 0 0 10px #EAFE07;
                     "></div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <img src="assets/Space_Apps_Logo_Files/(R) Space Apps Small Logo/Colorway=1-Color White.png"
-                             alt="NASA"
-                             style="height: 20px; width: auto; filter: brightness(1.1);">
-                        <span style="
-                            color: #FFFFFF;
-                            font-size: 16px;
-                            font-weight: 600;
-                            letter-spacing: 0.5px;
-                        ">LIVE AR SCANNER</span>
-                    </div>
+                    <span style="
+                        color: #FFFFFF;
+                        font-size: 16px;
+                        font-weight: 600;
+                        letter-spacing: 0.5px;
+                    ">LIVE AR SCANNER</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <button id="toggle-panel" onclick="window.toggleARPanel()" style="
@@ -447,7 +442,7 @@ window.createARScene = async function() {
                 padding: 12px 20px;
                 border-top: 1px solid rgba(46, 150, 245, 0.2);
             ">
-                <div style="
+                <div id="ar-instruction-text" style="
                     color: #FFFFFF;
                     font-size: 13px;
                     text-align: center;
@@ -1284,6 +1279,7 @@ window.forceMobileCameraPortrait = function() {
 window.toggleARPanel = function() {
     const panelContent = document.getElementById('panel-content');
     const toggleButton = document.getElementById('toggle-panel');
+    const instructionText = document.getElementById('ar-instruction-text');
 
     if (!panelContent || !toggleButton) {
         console.warn('⚠️ Panel elements not found');
@@ -1293,14 +1289,20 @@ window.toggleARPanel = function() {
     const isVisible = panelContent.style.display !== 'none';
 
     if (isVisible) {
-        // Hide panel
+        // Hide panel and instruction text
         panelContent.style.display = 'none';
+        if (instructionText) {
+            instructionText.style.display = 'none';
+        }
         toggleButton.innerHTML = '▲ SHOW';
         toggleButton.style.background = 'rgba(46, 150, 245, 0.3)'; // NEON_BLUE
         console.log('📱 AR panel hidden');
     } else {
-        // Show panel
+        // Show panel and instruction text
         panelContent.style.display = 'grid';
+        if (instructionText) {
+            instructionText.style.display = 'block';
+        }
         toggleButton.innerHTML = '▼ HIDE';
         toggleButton.style.background = 'rgba(255, 255, 255, 0.2)';
         console.log('📱 AR panel shown');
