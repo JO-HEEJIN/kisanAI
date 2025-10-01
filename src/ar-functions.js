@@ -1397,6 +1397,12 @@ window.handlePixelClick = function(event) {
                         fetch(`http://localhost:3001/api/landsat/imagery?lat=${lat}&lon=${lon}`).then(r => r.json())
                     ]);
 
+                    console.log('🛰️ Raw NASA API Responses:', {
+                        smapData,
+                        modisData,
+                        landsatData
+                    });
+
                     // Calculate health score
                     const healthScore = calculateHealthScore(smapData, modisData, landsatData);
 
@@ -1417,7 +1423,10 @@ window.handlePixelClick = function(event) {
                     showDetailedAnalysisPopup({
                         location: { lat, lon },
                         pixel: { x: pixelX, y: pixelY },
-                        smap: { soilMoisture: 0.32 },
+                        smap: {
+                            surface_moisture: 0.32,
+                            soilMoisture: 0.32
+                        },
                         ndvi: 0.65,
                         health: 78,
                         quality: 'fallback'
@@ -1430,7 +1439,10 @@ window.handlePixelClick = function(event) {
                 showDetailedAnalysisPopup({
                     location: { lat: 'Unknown', lon: 'Unknown' },
                     pixel: { x: pixelX, y: pixelY },
-                    smap: { soilMoisture: 0.30 },
+                    smap: {
+                        surface_moisture: 0.30,
+                        soilMoisture: 0.30
+                    },
                     ndvi: 0.60,
                     health: 75,
                     quality: 'fallback'
@@ -1464,8 +1476,18 @@ window.handleTargetClick = function(event) {
 function calculateHealthScore(smapData, modisData, landsatData) {
     let healthScore = 50; // Base score
 
+    console.log('🔍 calculateHealthScore input:', { smapData, modisData, landsatData });
+
     // SMAP soil moisture factor (0-40 points)
-    const soilMoisture = smapData.surface_moisture || smapData.soilMoisture || 0.3;
+    const soilMoisture = smapData.surface_moisture !== undefined ?
+                        smapData.surface_moisture :
+                        (smapData.soilMoisture || 0.3);
+
+    console.log('🔍 Soil moisture data:', {
+        surface_moisture: smapData.surface_moisture,
+        soilMoisture: smapData.soilMoisture,
+        finalValue: soilMoisture
+    });
     if (soilMoisture >= 0.25 && soilMoisture <= 0.45) {
         healthScore += 30; // Optimal range
     } else if (soilMoisture >= 0.15 && soilMoisture <= 0.6) {
@@ -1494,6 +1516,22 @@ function calculateHealthScore(smapData, modisData, landsatData) {
 
 // Show detailed analysis popup
 function showDetailedAnalysisPopup(data) {
+    console.log('📊 Popup data received:', data);
+    console.log('🔍 Smap data structure:', data.smap);
+    console.log('🔍 Available smap fields:', Object.keys(data.smap || {}));
+
+    // 데이터 접근 전 로깅
+    const surfaceMoisture = data.smap.surface_moisture;
+    const soilMoisture = data.smap.soilMoisture;
+    const finalMoisture = surfaceMoisture !== undefined ? surfaceMoisture : soilMoisture;
+
+    console.log('🔍 Moisture values:', {
+        surface_moisture: surfaceMoisture,
+        soilMoisture: soilMoisture,
+        finalValue: finalMoisture,
+        calculatedPercentage: ((finalMoisture || 0.3) * 100).toFixed(1)
+    });
+
     // Remove existing popup
     const existingPopup = document.getElementById('detailed-analysis-popup');
     if (existingPopup) {
