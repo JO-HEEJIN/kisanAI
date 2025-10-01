@@ -570,6 +570,33 @@ window.createARScene = async function() {
     // Check A-Frame and AR.js are loaded (now loaded via HTML)
     await window.checkARScripts();
 
+    // Enhanced mobile fullscreen mode
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        // Force mobile AR fullscreen
+        document.body.classList.add('mobile-ar-mode');
+
+        // Hide URL bar and other mobile browser chrome
+        if (window.screen && window.screen.orientation) {
+            try {
+                // Request fullscreen if supported
+                if (document.documentElement.requestFullscreen) {
+                    await document.documentElement.requestFullscreen().catch(e => {
+                        console.log('📱 Fullscreen not supported or denied');
+                    });
+                }
+            } catch (error) {
+                console.log('📱 Fullscreen request failed:', error);
+            }
+        }
+
+        // Hide mobile browser UI elements
+        const metaViewport = document.querySelector('meta[name="viewport"]');
+        if (metaViewport) {
+            metaViewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+        }
+    }
+
     // Force mobile camera initialization for portrait mode
     setTimeout(() => {
         window.forceARCameraInit();
@@ -989,8 +1016,29 @@ window.stopARScene = function() {
         arContainer.remove();
     }
 
+    // Exit fullscreen mode if active
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && document.fullscreenElement) {
+        try {
+            document.exitFullscreen().catch(e => {
+                console.log('📱 Fullscreen exit failed:', e);
+            });
+        } catch (error) {
+            console.log('📱 Fullscreen exit error:', error);
+        }
+    }
+
+    // Remove mobile AR mode class
+    document.body.classList.remove('mobile-ar-mode');
+
+    // Restore viewport meta tag
+    const metaViewport = document.querySelector('meta[name="viewport"]');
+    if (metaViewport) {
+        metaViewport.content = 'width=device-width, initial-scale=1.0';
+    }
+
     window.arRunning = false;
-    console.log('✅ AR scene stopped');
+    console.log('✅ AR scene stopped and mobile mode restored');
 };
 
 // Request iOS device permissions
