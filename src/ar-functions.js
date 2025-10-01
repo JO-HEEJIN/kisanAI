@@ -1157,8 +1157,9 @@ window.stopARScene = function() {
                     * {
                         box-sizing: border-box;
                     }
-                    .sidebar, .navigation, .app-header, .main-content {
+                    .sidebar, .navigation, .app-header, .main-content, .tab-container {
                         display: none !important;
+                        visibility: hidden !important;
                     }
                     #arChatGPTTab {
                         position: fixed !important;
@@ -1167,6 +1168,9 @@ window.stopARScene = function() {
                         width: 100vw !important;
                         height: 100vh !important;
                         z-index: 9999 !important;
+                    }
+                    body.mobile-view .tab-container {
+                        display: none !important;
                     }
                 }
             `;

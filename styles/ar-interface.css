@@ -180,6 +180,18 @@
         display: none !important;
     }
 
+    /* Hide tab container on all mobile views */
+    .tab-container {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* Additional mobile-view class support */
+    body.mobile-view .tab-container {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
     /* Hide navigation bar on mobile AR mode */
     body.mobile-ar-mode .navigation {
         display: none !important;
