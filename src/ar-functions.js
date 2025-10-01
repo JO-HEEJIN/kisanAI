@@ -320,8 +320,13 @@ window.createARScene = async function() {
                 id="targeting-system"
                 position="0 0 -2"
                 look-at="#ar-camera"
-                class="ar-ui-element"
-                onclick="window.handleTargetClick(event)">
+                class="ar-ui-element clickable-target"
+                cursor-listener="true"
+                onclick="window.handlePixelClick(event)"
+                raycaster="objects: .clickable-target; far: 20; near: 0"
+                geometry="primitive: cylinder; radius: 0.15; height: 0.01; openEnded: true"
+                material="color: transparent; transparent: true; opacity: 0"
+                >
                 <!-- Outer Ring -->
                 <a-ring
                     position="0 0 0"
@@ -360,7 +365,8 @@ window.createARScene = async function() {
                 camera
                 look-controls="enabled: true; touchEnabled: true; magicWindowTrackingEnabled: true"
                 wasd-controls="enabled: false"
-                cursor="rayOrigin: mouse; fuse: false"
+                cursor="rayOrigin: mouse; fuse: false; downEvents: mousedown,touchstart; upEvents: mouseup,touchend"
+                raycaster="objects: .clickable-target, .clickable-card; far: 50; near: 0"
                 position="0 1.6 0">
             </a-entity>
         </a-scene>
@@ -1666,7 +1672,7 @@ window.verifyARDataSources = function() {
         console.error('❌ Geolocation not supported');
     }
 
-    // Enhance targeting indicator visibility
+    // Enhance targeting indicator visibility and touch responsiveness
     const targetingSystem = document.getElementById('targeting-system');
     if (targetingSystem) {
         // Force targeting system to render on top
@@ -1680,23 +1686,73 @@ window.verifyARDataSources = function() {
             outerRing.setAttribute('material', 'color: #EAFE07; opacity: 0.9; transparent: true; alphaTest: 0.1');
         }
 
-        console.log('🎯 Enhanced targeting indicator visibility');
+        // Add multiple event listeners for better touch responsiveness
+        ['click', 'touchstart', 'touchend'].forEach(eventType => {
+            targetingSystem.addEventListener(eventType, (event) => {
+                console.log(`🎯 Targeting system ${eventType} event triggered`);
+                if (eventType === 'click' || eventType === 'touchend') {
+                    window.handlePixelClick(event);
+                }
+            });
+        });
+
+        // A-Frame specific cursor events
+        targetingSystem.addEventListener('cursor-click', (event) => {
+            console.log('🎯 A-Frame cursor-click event triggered');
+            window.handlePixelClick(event);
+        });
+
+        targetingSystem.addEventListener('mousedown', (event) => {
+            console.log('🎯 Targeting system mousedown event triggered');
+            // Add visual feedback for click
+            targetingSystem.setAttribute('animation__click', 'property: scale; to: 0.9 0.9 0.9; dur: 150; autoReverse: true');
+        });
+
+        console.log('🎯 Enhanced targeting indicator visibility and touch responsiveness');
     }
 };
 
-// Handle pixel click for detailed analysis
+// Debounce timer for pixel clicks
+let pixelClickTimer = null;
+
+// Handle pixel click for detailed analysis - Improved for touch responsiveness
 window.handlePixelClick = function(event) {
     console.log('🖱️ Pixel clicked, getting detailed analysis...');
 
-    // Calculate pixel coordinates from click event
+    // Debounce rapid clicks to prevent double-firing
+    if (pixelClickTimer) {
+        console.log('⏳ Pixel click debounced, skipping...');
+        return;
+    }
+
+    // Set debounce timer for 1 second
+    pixelClickTimer = setTimeout(() => {
+        pixelClickTimer = null;
+    }, 1000);
+
+    // Prevent default touch behaviors that might interfere
+    if (event) {
+        if (event.preventDefault) event.preventDefault();
+        if (event.stopPropagation) event.stopPropagation();
+    }
+
+    // Calculate pixel coordinates from click/touch event
     let pixelX = 0, pixelY = 0;
     if (event) {
         if (event.clientX !== undefined && event.clientY !== undefined) {
             pixelX = Math.floor(event.clientX);
             pixelY = Math.floor(event.clientY);
+        } else if (event.touches && event.touches[0]) {
+            pixelX = Math.floor(event.touches[0].clientX);
+            pixelY = Math.floor(event.touches[0].clientY);
         } else if (event.changedTouches && event.changedTouches[0]) {
             pixelX = Math.floor(event.changedTouches[0].clientX);
             pixelY = Math.floor(event.changedTouches[0].clientY);
+        } else if (event.detail && event.detail.intersection) {
+            // A-Frame cursor event with intersection point
+            const point = event.detail.intersection.point;
+            pixelX = Math.floor(point.x * 100 + 400); // Convert 3D to screen coords
+            pixelY = Math.floor(point.y * 100 + 300);
         }
     }
     console.log('🎯 Pixel coordinates:', { x: pixelX, y: pixelY });
