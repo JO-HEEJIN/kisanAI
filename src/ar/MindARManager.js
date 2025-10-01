@@ -63,11 +63,12 @@ class MindARManager {
             console.log('📦 Loading MindAR scripts...');
 
             try {
-                await this.loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js');
-                console.log('✅ mindar-image.prod.js loaded');
+                // Try alternative CDN first
+                await this.loadScript('https://unpkg.com/mind-ar@1.2.5/dist/mindar-image.prod.js');
+                console.log('✅ mindar-image.prod.js loaded (unpkg)');
 
-                await this.loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js');
-                console.log('✅ mindar-image-three.prod.js loaded');
+                await this.loadScript('https://unpkg.com/mind-ar@1.2.5/dist/mindar-image-three.prod.js');
+                console.log('✅ mindar-image-three.prod.js loaded (unpkg)');
 
                 // Wait for scripts to initialize
                 console.log('⏳ Waiting for MindAR initialization...');
