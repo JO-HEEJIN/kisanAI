@@ -1509,7 +1509,7 @@ function showDetailedAnalysisPopup(data) {
     popup.innerHTML = `
         <div style="text-align: center; margin-bottom: 15px;">
             <h3 style="margin: 0; color: #EAFE07; font-size: 18px;">🛰️ DETAILED ANALYSIS</h3>
-            <p style="margin: 5px 0; font-size: 12px; opacity: 0.8;">Location: ${data.location.lat}, ${data.location.lon}</p>
+            <p style="margin: 5px 0; font-size: 12px; color: white;">📍 Location: ${typeof data.location.lat === 'number' ? data.location.lat.toFixed(1) : data.location.lat}, ${typeof data.location.lon === 'number' ? data.location.lon.toFixed(1) : data.location.lon}</p>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
