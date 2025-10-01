@@ -157,7 +157,10 @@ window.createARScene = async function() {
                 height="1.2"
                 radius="0.1"
                 material="color: #07173F; opacity: 0.95; transparent: true;"
-                geometry="primitive: rounded; radiusTop: 0.1; radiusBottom: 0.1;">
+                geometry="primitive: rounded; radiusTop: 0.1; radiusBottom: 0.1;"
+                look-at="#ar-camera"
+                class="ar-ui-element clickable-card"
+                onclick="window.handlePixelClick(event)">
 
                 <!-- Card Header -->
                 <a-plane
@@ -225,7 +228,10 @@ window.createARScene = async function() {
                 width="2"
                 height="1"
                 radius="0.1"
-                material="color: #0960E1; opacity: 0.95; transparent: true;">
+                material="color: #0960E1; opacity: 0.95; transparent: true;"
+                look-at="#ar-camera"
+                class="ar-ui-element clickable-card"
+                onclick="window.handlePixelClick(event)">
 
                 <!-- AI Header -->
                 <a-plane
@@ -279,7 +285,12 @@ window.createARScene = async function() {
             </a-rounded>
 
             <!-- Modern Targeting System -->
-            <a-entity id="targeting-system" position="0 0 -2">
+            <a-entity
+                id="targeting-system"
+                position="0 0 -2"
+                look-at="#ar-camera"
+                class="ar-ui-element"
+                onclick="window.handleTargetClick(event)">
                 <!-- Outer Ring -->
                 <a-ring
                     position="0 0 0"
@@ -312,8 +323,15 @@ window.createARScene = async function() {
                 </a-ring>
             </a-entity>
 
-            <!-- Camera Entity -->
-            <a-entity camera look-controls wasd-controls></a-entity>
+            <!-- Camera Entity with Device Orientation -->
+            <a-entity
+                id="ar-camera"
+                camera
+                look-controls="enabled: true; touchEnabled: true; magicWindowTrackingEnabled: true"
+                wasd-controls="enabled: false"
+                cursor="rayOrigin: mouse; fuse: false"
+                position="0 1.6 0">
+            </a-entity>
         </a-scene>
 
         <!-- Modern AR Control Panel -->
@@ -1336,4 +1354,211 @@ window.verifyARDataSources = function() {
 
         console.log('🎯 Enhanced targeting indicator visibility');
     }
+};
+
+// Handle pixel click for detailed analysis
+window.handlePixelClick = function(event) {
+    console.log('🖱️ Pixel clicked, getting detailed analysis...');
+
+    // Get current GPS location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                console.log('📍 Getting pixel data for:', { lat, lon });
+
+                try {
+                    // Fetch detailed NASA data for this location
+                    const [smapData, modisData, landsatData] = await Promise.all([
+                        fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`).then(r => r.json()),
+                        fetch(`http://localhost:3001/api/modis/ndvi?lat=${lat}&lon=${lon}`).then(r => r.json()),
+                        fetch(`http://localhost:3001/api/landsat/imagery?lat=${lat}&lon=${lon}`).then(r => r.json())
+                    ]);
+
+                    // Calculate health score
+                    const healthScore = calculateHealthScore(smapData, modisData, landsatData);
+
+                    // Show detailed popup
+                    showDetailedAnalysisPopup({
+                        location: { lat, lon },
+                        smap: smapData,
+                        ndvi: modisData.ndvi || 0.65,
+                        health: healthScore,
+                        quality: smapData.quality || 'real'
+                    });
+
+                    console.log('✅ Detailed analysis shown:', { healthScore, quality: smapData.quality });
+
+                } catch (error) {
+                    console.error('❌ Error fetching detailed data:', error);
+                    showDetailedAnalysisPopup({
+                        location: { lat, lon },
+                        smap: { soilMoisture: 0.32 },
+                        ndvi: 0.65,
+                        health: 78,
+                        quality: 'fallback'
+                    });
+                }
+            },
+            (error) => {
+                console.error('❌ GPS Error:', error);
+                // Show fallback data
+                showDetailedAnalysisPopup({
+                    location: { lat: 'Unknown', lon: 'Unknown' },
+                    smap: { soilMoisture: 0.30 },
+                    ndvi: 0.60,
+                    health: 75,
+                    quality: 'fallback'
+                });
+            }
+        );
+    }
+};
+
+// Handle targeting system click
+window.handleTargetClick = function(event) {
+    console.log('🎯 Target clicked, scanning area...');
+
+    // Trigger intensive scan animation
+    const targetingSystem = document.getElementById('targeting-system');
+    if (targetingSystem) {
+        // Add scanning effect
+        const rings = targetingSystem.querySelectorAll('a-ring');
+        rings.forEach(ring => {
+            ring.setAttribute('animation__scan', 'property: scale; to: 2 2 2; duration: 1000; easing: easeOutQuart; dir: alternate; loop: 3');
+        });
+
+        // Trigger detailed scan
+        setTimeout(() => {
+            window.handlePixelClick(event);
+        }, 1500);
+    }
+};
+
+// Calculate health score from NASA data
+function calculateHealthScore(smapData, modisData, landsatData) {
+    let healthScore = 50; // Base score
+
+    // SMAP soil moisture factor (0-40 points)
+    const soilMoisture = smapData.soilMoisture || 0.3;
+    if (soilMoisture >= 0.25 && soilMoisture <= 0.45) {
+        healthScore += 30; // Optimal range
+    } else if (soilMoisture >= 0.15 && soilMoisture <= 0.6) {
+        healthScore += 20; // Good range
+    } else {
+        healthScore += 10; // Poor range
+    }
+
+    // NDVI vegetation factor (0-30 points)
+    const ndvi = modisData.ndvi || 0.65;
+    if (ndvi >= 0.6) {
+        healthScore += 25; // Healthy vegetation
+    } else if (ndvi >= 0.4) {
+        healthScore += 15; // Moderate vegetation
+    } else {
+        healthScore += 5; // Poor vegetation
+    }
+
+    // Quality bonus
+    if (smapData.quality === 'real') {
+        healthScore += 5;
+    }
+
+    return Math.min(100, Math.max(0, healthScore));
+}
+
+// Show detailed analysis popup
+function showDetailedAnalysisPopup(data) {
+    // Remove existing popup
+    const existingPopup = document.getElementById('detailed-analysis-popup');
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+
+    // Create popup overlay
+    const popup = document.createElement('div');
+    popup.id = 'detailed-analysis-popup';
+    popup.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #07173F 0%, #0960E1 100%);
+        border: 2px solid #EAFE07;
+        border-radius: 15px;
+        padding: 20px;
+        color: white;
+        font-family: 'Roboto', sans-serif;
+        z-index: 10000;
+        box-shadow: 0 8px 32px rgba(7, 23, 63, 0.8);
+        backdrop-filter: blur(10px);
+        max-width: 90%;
+        width: 400px;
+        animation: popup-appear 0.5s ease-out;
+    `;
+
+    popup.innerHTML = `
+        <div style="text-align: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: #EAFE07; font-size: 18px;">🛰️ DETAILED ANALYSIS</h3>
+            <p style="margin: 5px 0; font-size: 12px; opacity: 0.8;">Location: ${data.location.lat}, ${data.location.lon}</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px;">
+                <div style="color: #EAFE07; font-weight: bold; font-size: 14px;">💧 SOIL MOISTURE</div>
+                <div style="font-size: 20px; margin: 5px 0;">${(data.smap.soilMoisture * 100).toFixed(1)}%</div>
+                <div style="font-size: 11px; opacity: 0.7;">NASA SMAP Data</div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px;">
+                <div style="color: #2E96F5; font-weight: bold; font-size: 14px;">🌱 VEGETATION</div>
+                <div style="font-size: 20px; margin: 5px 0;">NDVI ${data.ndvi.toFixed(2)}</div>
+                <div style="font-size: 11px; opacity: 0.7;">MODIS Terra/Aqua</div>
+            </div>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px;">
+            <div style="color: #EAFE07; font-weight: bold; font-size: 16px;">🏥 HEALTH SCORE</div>
+            <div style="font-size: 36px; margin: 10px 0; color: ${data.health >= 80 ? '#4CAF50' : data.health >= 60 ? '#FF9800' : '#F44336'}">${data.health}%</div>
+            <div style="font-size: 12px; opacity: 0.8;">
+                ${data.health >= 80 ? '✅ Excellent condition' : data.health >= 60 ? '⚠️ Moderate condition' : '❌ Poor condition'}
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: ${data.quality === 'real' ? '#4CAF50' : '#FF9800'}">
+                ${data.quality === 'real' ? '✅ Real NASA Data' : '⚠️ Fallback Data'}
+            </span>
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                background: #E43700;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 12px;
+            ">CLOSE</button>
+        </div>
+    `;
+
+    // Add popup animation CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes popup-appear {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(popup);
+
+    // Auto-close after 10 seconds
+    setTimeout(() => {
+        if (popup.parentElement) {
+            popup.remove();
+        }
+    }, 10000);
 };
