@@ -9,6 +9,13 @@ if (typeof window !== 'undefined') {
     console.error('❌ ar-functions.js: No window object!');
 }
 
+// Clear any MindAR references to prevent errors
+if (typeof window !== 'undefined') {
+    window.MindARManager = undefined;
+    window.MindARNASAOverlay = undefined;
+    console.log('🧹 Cleared MindAR references');
+}
+
 // NASA API endpoint configuration
 window.getNASAApiEndpoint = function() {
     // Use Vercel API routes in production
