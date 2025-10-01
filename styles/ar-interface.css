@@ -205,43 +205,29 @@
         display: none !important;
     }
 
-    /* Mobile AR header replacement with NASA logo */
-    body.mobile-ar-mode::before {
-        content: "";
+    /* Simplified Mobile AR header */
+    body.mobile-ar-mode::after {
+        content: "NASA Farm Navigators AR";
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(135deg, #2E96F5, #0960E1);
-        color: white;
-        text-align: center;
-        padding: 12px 20px;
-        font-weight: bold;
-        font-size: 16px;
-        z-index: 9999;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.4);
-        border-bottom: 2px solid rgba(255,255,255,0.2);
-        backdrop-filter: blur(10px);
-        background-image: url('assets/Space_Apps_Logo_Files/(R) Space Apps Small Logo/Colorway=1-Color White.png');
-        background-repeat: no-repeat;
-        background-position: center left 20px;
-        background-size: 20px auto;
-        padding-left: 50px;
-    }
-
-    /* Add text content for mobile AR header */
-    body.mobile-ar-mode::after {
-        content: "NASA Farm Navigators AR";
-        position: fixed;
-        top: 12px;
-        left: 50px;
-        right: 20px;
-        color: white;
-        text-align: center;
-        font-weight: bold;
-        font-size: 16px;
-        z-index: 10000;
+        width: 100%;
+        height: 35px;
+        background: linear-gradient(135deg,
+            rgba(7, 23, 63, 0.9) 0%,
+            rgba(46, 150, 245, 0.8) 100%);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid rgba(234, 254, 7, 0.2);
+        z-index: 10001;
         pointer-events: none;
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
     }
 
 
@@ -268,9 +254,9 @@
 
     /* Adjust AR content for mobile header */
     body.mobile-ar-mode .ar-chatgpt-wrapper {
-        padding-top: 70px !important;
-        height: calc(100vh - 60px) !important;
-        height: calc(100dvh - 60px) !important;
+        padding-top: 45px !important;
+        height: calc(100vh - 35px) !important;
+        height: calc(100dvh - 35px) !important;
         overflow-y: auto !important;
         padding-left: 15px !important;
         padding-right: 15px !important;
