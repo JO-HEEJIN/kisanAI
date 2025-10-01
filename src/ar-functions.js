@@ -1367,6 +1367,19 @@ window.verifyARDataSources = function() {
 window.handlePixelClick = function(event) {
     console.log('🖱️ Pixel clicked, getting detailed analysis...');
 
+    // Calculate pixel coordinates from click event
+    let pixelX = 0, pixelY = 0;
+    if (event) {
+        if (event.clientX !== undefined && event.clientY !== undefined) {
+            pixelX = Math.floor(event.clientX);
+            pixelY = Math.floor(event.clientY);
+        } else if (event.changedTouches && event.changedTouches[0]) {
+            pixelX = Math.floor(event.changedTouches[0].clientX);
+            pixelY = Math.floor(event.changedTouches[0].clientY);
+        }
+    }
+    console.log('🎯 Pixel coordinates:', { x: pixelX, y: pixelY });
+
     // Get current GPS location
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -1374,7 +1387,7 @@ window.handlePixelClick = function(event) {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
 
-                console.log('📍 Getting pixel data for:', { lat, lon });
+                console.log('📍 Getting pixel data for:', { lat, lon, pixel: [pixelX, pixelY] });
 
                 try {
                     // Fetch detailed NASA data for this location
@@ -1390,6 +1403,7 @@ window.handlePixelClick = function(event) {
                     // Show detailed popup
                     showDetailedAnalysisPopup({
                         location: { lat, lon },
+                        pixel: { x: pixelX, y: pixelY },
                         smap: smapData,
                         ndvi: modisData.ndvi || 0.65,
                         health: healthScore,
@@ -1402,6 +1416,7 @@ window.handlePixelClick = function(event) {
                     console.error('❌ Error fetching detailed data:', error);
                     showDetailedAnalysisPopup({
                         location: { lat, lon },
+                        pixel: { x: pixelX, y: pixelY },
                         smap: { soilMoisture: 0.32 },
                         ndvi: 0.65,
                         health: 78,
@@ -1414,6 +1429,7 @@ window.handlePixelClick = function(event) {
                 // Show fallback data
                 showDetailedAnalysisPopup({
                     location: { lat: 'Unknown', lon: 'Unknown' },
+                    pixel: { x: pixelX, y: pixelY },
                     smap: { soilMoisture: 0.30 },
                     ndvi: 0.60,
                     health: 75,
@@ -1509,7 +1525,8 @@ function showDetailedAnalysisPopup(data) {
     popup.innerHTML = `
         <div style="text-align: center; margin-bottom: 15px;">
             <h3 style="margin: 0; color: #EAFE07; font-size: 18px;">🛰️ DETAILED ANALYSIS</h3>
-            <p style="margin: 5px 0; font-size: 12px; color: white;">📍 Location: ${typeof data.location.lat === 'number' ? data.location.lat.toFixed(1) : data.location.lat}, ${typeof data.location.lon === 'number' ? data.location.lon.toFixed(1) : data.location.lon}</p>
+            <p style="margin: 3px 0; font-size: 12px; color: white;">📍 Location: ${typeof data.location.lat === 'number' ? data.location.lat.toFixed(1) : data.location.lat}, ${typeof data.location.lon === 'number' ? data.location.lon.toFixed(1) : data.location.lon}</p>
+            <p style="margin: 3px 0; font-size: 12px; color: #EAFE07;">🎯 Pixel: [${data.pixel ? data.pixel.x : 0}, ${data.pixel ? data.pixel.y : 0}]</p>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
