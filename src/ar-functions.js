@@ -534,29 +534,6 @@ window.createARScene = async function() {
 
     document.body.appendChild(arContainer);
 
-    // Add click event listener to AR container for detailed analysis
-    setTimeout(() => {
-        console.log('🔗 Setting up AR click event listener...');
-
-        const arContainer = document.getElementById('arjs-container');
-        if (arContainer) {
-            arContainer.addEventListener('click', (event) => {
-                console.log('🖱️ AR container clicked!', event.target);
-                window.handlePixelClick(event);
-            });
-
-            arContainer.addEventListener('touchend', (event) => {
-                console.log('👆 AR container touched!', event.target);
-                event.preventDefault();
-                window.handlePixelClick(event);
-            });
-
-            console.log('✅ AR click listeners added to container');
-        } else {
-            console.error('❌ AR container not found');
-        }
-    }, 2000);
-
     // Check A-Frame and AR.js are loaded (now loaded via HTML)
     await window.checkARScripts();
 
@@ -1585,7 +1562,7 @@ function calculateHealthScore(smapData, modisData, landsatData) {
     let healthScore = 50; // Base score
 
     // SMAP soil moisture factor (0-40 points)
-    const soilMoisture = (smapData && (smapData.surface_moisture || smapData.soilMoisture)) || 0.3;
+    const soilMoisture = smapData.soilMoisture || 0.3;
     if (soilMoisture >= 0.25 && soilMoisture <= 0.45) {
         healthScore += 30; // Optimal range
     } else if (soilMoisture >= 0.15 && soilMoisture <= 0.6) {
@@ -1652,7 +1629,7 @@ function showDetailedAnalysisPopup(data) {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
             <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px;">
                 <div style="color: #EAFE07; font-weight: bold; font-size: 14px;">💧 SOIL MOISTURE</div>
-                <div style="font-size: 20px; margin: 5px 0;">${(((data.smap && (data.smap.surface_moisture || data.smap.soilMoisture)) || 0.3) * 100).toFixed(1)}%</div>
+                <div style="font-size: 20px; margin: 5px 0;">${(data.smap.soilMoisture * 100).toFixed(1)}%</div>
                 <div style="font-size: 11px; opacity: 0.7;">NASA SMAP Data</div>
             </div>
 
