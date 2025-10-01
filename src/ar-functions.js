@@ -1028,13 +1028,40 @@ window.stopARScene = function() {
         }
     }
 
-    // Remove mobile AR mode class
-    document.body.classList.remove('mobile-ar-mode');
+    // For mobile devices, keep mobile optimizations but exit AR-specific mode
+    if (isMobile) {
+        // Remove only AR-specific classes but keep mobile optimizations
+        document.body.classList.remove('mobile-ar-mode');
 
-    // Restore viewport meta tag
-    const metaViewport = document.querySelector('meta[name="viewport"]');
-    if (metaViewport) {
-        metaViewport.content = 'width=device-width, initial-scale=1.0';
+        // Ensure we stay in AR ChatGPT tab on mobile
+        const arTab = document.querySelector('.tab[data-tab="ar-chatgpt"]');
+        const arTabContent = document.querySelector('#arChatGPTTab');
+
+        if (arTab && arTabContent) {
+            // Keep AR tab active and visible
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            arTab.classList.add('active');
+            arTabContent.classList.add('active');
+
+            console.log('📱 Maintaining AR ChatGPT tab for mobile');
+        }
+
+        // Restore mobile-friendly viewport but not desktop viewport
+        const metaViewport = document.querySelector('meta[name="viewport"]');
+        if (metaViewport) {
+            metaViewport.content = 'width=device-width, initial-scale=1.0, user-scalable=no';
+        }
+    } else {
+        // Desktop: fully remove mobile AR mode
+        document.body.classList.remove('mobile-ar-mode');
+
+        // Restore normal viewport for desktop
+        const metaViewport = document.querySelector('meta[name="viewport"]');
+        if (metaViewport) {
+            metaViewport.content = 'width=device-width, initial-scale=1.0';
+        }
     }
 
     window.arRunning = false;
