@@ -4831,20 +4831,9 @@
                     this.isListening = true;
                     if (this.onstart) this.onstart();
 
-                    // iOS Safari fallback: show text input dialog
+                    // iOS Safari: show not supported message
                     setTimeout(() => {
-                        const userInput = prompt('🎤 Voice command (type instead of speaking):');
-                        if (userInput && userInput.trim()) {
-                            const event = {
-                                results: [{
-                                    0: { transcript: userInput.trim(), confidence: 1.0 },
-                                    length: 1,
-                                    isFinal: true
-                                }],
-                                resultIndex: 0
-                            };
-                            if (this.onresult) this.onresult(event);
-                        }
+                        alert('🍎 Voice Commands are not supported on iOS Safari.\n\nPlease use the quick command buttons below instead.');
                         this.isListening = false;
                         if (this.onend) this.onend();
                     }, 100);

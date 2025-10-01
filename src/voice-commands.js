@@ -204,8 +204,8 @@ class VoiceCommands {
                         <div class="voice-title">
                             <h3>🎤 Voice Commands</h3>
                             <p id="voice-status">Ready to listen</p>
-                            <p id="ios-info" style="font-size: 12px; color: #EAFE07; margin: 5px 0 0 0; display: none;">
-                                iOS Safari: Voice commands will show text input dialog
+                            <p id="ios-info" style="font-size: 12px; color: #E43700; margin: 5px 0 0 0; display: none;">
+                                ⚠️ iOS Safari: Voice commands not supported - Use quick buttons below
                             </p>
                         </div>
                         <button id="close-voice-modal" class="voice-close-btn">✕</button>
@@ -612,9 +612,10 @@ class VoiceCommands {
             const startBtnText = startBtn?.querySelector('.voice-text');
 
             if (iosInfo) iosInfo.style.display = 'block';
-            if (startBtnText) startBtnText.textContent = 'Type Voice Command';
+            if (startBtnText) startBtnText.textContent = 'Not Supported on iOS';
+            if (startBtn) startBtn.style.opacity = '0.5';
 
-            this.updateVoiceStatus('Ready - Tap to type command');
+            this.updateVoiceStatus('iOS Safari not supported');
         } else {
             // 지원되는 브라우저에서 자동으로 음성 인식 시작
             if (this.isSupported) {
