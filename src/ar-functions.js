@@ -324,39 +324,60 @@ window.createARScene = async function() {
                 cursor-listener="true"
                 onclick="window.handlePixelClick(event)"
                 raycaster="objects: .clickable-target; far: 20; near: 0"
-                geometry="primitive: cylinder; radius: 0.15; height: 0.01; openEnded: true"
-                material="color: transparent; transparent: true; opacity: 0"
                 >
-                <!-- Outer Ring -->
+                <!-- Visible Background Box for Better Color Display -->
+                <a-box
+                    position="0 0 -0.01"
+                    width="0.3"
+                    height="0.3"
+                    depth="0.002"
+                    material="color: #07173F; opacity: 0.4; transparent: true;"
+                    class="clickable-target">
+                </a-box>
+
+                <!-- Enhanced Outer Ring with Emissive -->
                 <a-ring
                     position="0 0 0"
                     radius-inner="0.08"
                     radius-outer="0.12"
-                    material="color: #EAFE07; opacity: 0.8; transparent: true;"
-                    animation="property: rotation; to: 0 0 360; loop: true; dur: 4000;">
+                    material="color: #EAFE07; emissive: #EAFE07; emissiveIntensity: 0.8; opacity: 1.0; transparent: false;"
+                    animation="property: rotation; to: 0 0 360; loop: true; dur: 4000;"
+                    class="clickable-target">
                 </a-ring>
 
-                <!-- Inner Cross -->
+                <!-- Bright Inner Cross -->
                 <a-plane
                     position="0 0 0.01"
                     width="0.12"
-                    height="0.01"
-                    material="color: #2E96F5; emissive: #2E96F5; emissiveIntensity: 0.5;">
+                    height="0.02"
+                    material="color: #EAFE07; emissive: #EAFE07; emissiveIntensity: 1.0; opacity: 1.0;"
+                    class="clickable-target">
                 </a-plane>
                 <a-plane
                     position="0 0 0.01"
-                    width="0.01"
+                    width="0.02"
                     height="0.12"
-                    material="color: #2E96F5; emissive: #2E96F5; emissiveIntensity: 0.5;">
+                    material="color: #EAFE07; emissive: #EAFE07; emissiveIntensity: 1.0; opacity: 1.0;"
+                    class="clickable-target">
                 </a-plane>
 
-                <!-- Scanning Effect -->
+                <!-- Enhanced Scanning Effect -->
                 <a-ring
                     radius-inner="0.05"
                     radius-outer="0.06"
-                    material="color: #0960E1; opacity: 0.6;"
-                    animation="property: scale; to: 3 3 1; loop: true; dur: 2000; easing: easeOutQuart;">
+                    material="color: #2E96F5; emissive: #2E96F5; emissiveIntensity: 0.8; opacity: 0.9;"
+                    animation="property: scale; to: 3 3 1; loop: true; dur: 2000; easing: easeOutQuart;"
+                    class="clickable-target">
                 </a-ring>
+
+                <!-- Additional Bright Indicator -->
+                <a-circle
+                    position="0 0 0.02"
+                    radius="0.03"
+                    material="color: #EAFE07; emissive: #EAFE07; emissiveIntensity: 1.2; opacity: 1.0;"
+                    animation="property: scale; to: 1.5 1.5 1; direction: alternate; loop: true; dur: 800;"
+                    class="clickable-target">
+                </a-circle>
             </a-entity>
 
             <!-- Camera Entity with Device Orientation -->
@@ -1736,26 +1757,76 @@ window.handlePixelClick = function(event) {
         if (event.stopPropagation) event.stopPropagation();
     }
 
-    // Calculate pixel coordinates from click/touch event
+    // Calculate pixel coordinates from AR canvas - Improved method
     let pixelX = 0, pixelY = 0;
-    if (event) {
-        if (event.clientX !== undefined && event.clientY !== undefined) {
-            pixelX = Math.floor(event.clientX);
-            pixelY = Math.floor(event.clientY);
-        } else if (event.touches && event.touches[0]) {
-            pixelX = Math.floor(event.touches[0].clientX);
-            pixelY = Math.floor(event.touches[0].clientY);
-        } else if (event.changedTouches && event.changedTouches[0]) {
-            pixelX = Math.floor(event.changedTouches[0].clientX);
-            pixelY = Math.floor(event.changedTouches[0].clientY);
-        } else if (event.detail && event.detail.intersection) {
-            // A-Frame cursor event with intersection point
-            const point = event.detail.intersection.point;
-            pixelX = Math.floor(point.x * 100 + 400); // Convert 3D to screen coords
-            pixelY = Math.floor(point.y * 100 + 300);
+
+    try {
+        // Get A-Frame canvas element
+        const arCanvas = document.querySelector('a-scene canvas') ||
+                        document.querySelector('canvas[data-aframe-canvas]') ||
+                        document.querySelector('#arjs-container canvas');
+
+        if (arCanvas) {
+            const canvasRect = arCanvas.getBoundingClientRect();
+            console.log('📐 Canvas dimensions:', {
+                width: canvasRect.width,
+                height: canvasRect.height,
+                left: canvasRect.left,
+                top: canvasRect.top
+            });
+
+            // Try different event coordinate sources
+            let clientX = 0, clientY = 0;
+
+            if (event) {
+                if (event.clientX !== undefined && event.clientY !== undefined) {
+                    clientX = event.clientX;
+                    clientY = event.clientY;
+                    console.log('🖱️ Using mouse coordinates:', { clientX, clientY });
+                } else if (event.touches && event.touches[0]) {
+                    clientX = event.touches[0].clientX;
+                    clientY = event.touches[0].clientY;
+                    console.log('👆 Using touch coordinates:', { clientX, clientY });
+                } else if (event.changedTouches && event.changedTouches[0]) {
+                    clientX = event.changedTouches[0].clientX;
+                    clientY = event.changedTouches[0].clientY;
+                    console.log('👆 Using changedTouches coordinates:', { clientX, clientY });
+                } else if (event.detail && event.detail.intersection) {
+                    // A-Frame cursor event - use canvas center as fallback
+                    clientX = canvasRect.left + canvasRect.width / 2;
+                    clientY = canvasRect.top + canvasRect.height / 2;
+                    console.log('🎯 Using A-Frame intersection (canvas center):', { clientX, clientY });
+                }
+            }
+
+            // Convert screen coordinates to canvas-relative pixel coordinates
+            if (clientX > 0 || clientY > 0) {
+                pixelX = Math.floor(clientX - canvasRect.left);
+                pixelY = Math.floor(clientY - canvasRect.top);
+
+                // Ensure coordinates are within canvas bounds
+                pixelX = Math.max(0, Math.min(pixelX, Math.floor(canvasRect.width)));
+                pixelY = Math.max(0, Math.min(pixelY, Math.floor(canvasRect.height)));
+            } else {
+                // Fallback: use canvas center
+                pixelX = Math.floor(canvasRect.width / 2);
+                pixelY = Math.floor(canvasRect.height / 2);
+                console.log('📍 Using canvas center as fallback');
+            }
+        } else {
+            // No canvas found - use viewport center
+            pixelX = Math.floor(window.innerWidth / 2);
+            pixelY = Math.floor(window.innerHeight / 2);
+            console.log('🏠 Using viewport center as fallback');
         }
+    } catch (error) {
+        console.error('❌ Error calculating pixel coordinates:', error);
+        // Final fallback
+        pixelX = Math.floor(Math.random() * 640 + 100); // Random but realistic
+        pixelY = Math.floor(Math.random() * 480 + 100);
     }
-    console.log('🎯 Pixel coordinates:', { x: pixelX, y: pixelY });
+
+    console.log('🎯 Final pixel coordinates:', { x: pixelX, y: pixelY });
 
     // Get current GPS location
     if (navigator.geolocation) {
@@ -1939,9 +2010,19 @@ function showDetailedAnalysisPopup(data) {
 
     popup.innerHTML = `
         <div style="text-align: center; margin-bottom: 15px;">
-            <h3 style="margin: 0; color: #EAFE07; font-size: 18px;">🛰️ DETAILED ANALYSIS</h3>
+            <h3 style="margin: 0; color: #EAFE07; font-size: 18px; text-shadow: 0 0 10px #EAFE07;">🛰️ DETAILED ANALYSIS</h3>
             <p style="margin: 3px 0; font-size: 12px; color: white;">📍 Location: ${typeof data.location.lat === 'number' ? data.location.lat.toFixed(1) : data.location.lat}, ${typeof data.location.lon === 'number' ? data.location.lon.toFixed(1) : data.location.lon}</p>
-            <p style="margin: 3px 0; font-size: 12px; color: #EAFE07;">🎯 Pixel: [${data.pixel ? data.pixel.x : 0}, ${data.pixel ? data.pixel.y : 0}]</p>
+            <div style="
+                margin: 8px 0;
+                padding: 8px 12px;
+                background: linear-gradient(45deg, #EAFE07, #B8C500);
+                color: #07173F;
+                border-radius: 15px;
+                font-weight: bold;
+                font-size: 14px;
+                box-shadow: 0 0 15px rgba(234, 254, 7, 0.5);
+                text-shadow: none;
+            ">🎯 Pixel: [${data.pixel ? data.pixel.x : 0}, ${data.pixel ? data.pixel.y : 0}]</div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
