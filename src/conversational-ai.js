@@ -203,7 +203,7 @@ class ConversationalAI {
                 background: rgba(255, 255, 255, 0.1);
                 padding: 12px 16px;
                 border-radius: 15px;
-                color: #F0F0F0;
+                color: white;
                 line-height: 1.4;
             }
 
