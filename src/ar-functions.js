@@ -371,15 +371,17 @@ window.createARScene = async function() {
             top: 15px;
             left: 15px;
             right: 15px;
-            background: linear-gradient(135deg, rgba(7, 23, 63, 0.95), rgba(9, 96, 225, 0.85));
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(46, 150, 245, 0.3);
+            background: linear-gradient(135deg, rgba(7, 23, 63, 0.98), rgba(9, 96, 225, 0.95));
+            border: 2px solid rgba(46, 150, 245, 0.4);
             border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            z-index: 10001;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 9999;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             padding: 0;
             overflow: hidden;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform;
         ">
             <!-- Header Section -->
             <div style="
