@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🌱 실시간 농장 AR 분석기</title>
+    <title>🌱 Real-time Farm AR Analyzer</title>
     <style>
         * {
             margin: 0;
@@ -47,60 +47,67 @@
             position: absolute;
             background: rgba(7, 23, 63, 0.95);
             border: 2px solid #2E96F5;
-            border-radius: 15px;
-            padding: 15px;
+            border-radius: 12px;
+            padding: 12px;
             color: white;
-            min-width: 280px;
+            max-width: 90vw;
+            min-width: 250px;
             backdrop-filter: blur(10px);
             pointer-events: auto;
+            box-sizing: border-box;
         }
 
         .nasa-panel {
-            top: 10%;
+            top: 8%;
             left: 50%;
             transform: translateX(-50%);
         }
 
         .ai-panel {
-            top: 40%;
+            top: 35%;
             left: 50%;
             transform: translateX(-50%);
         }
 
         .advice-panel {
-            bottom: 10%;
+            bottom: 8%;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(9, 96, 225, 0.95);
             border-color: #EAFE07;
+            max-height: 120px;
+            overflow-y: auto;
         }
 
         .panel-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-align: center;
         }
 
         .data-row {
             display: flex;
             justify-content: space-between;
-            margin: 8px 0;
-            font-size: 16px;
+            margin: 6px 0;
+            font-size: 14px;
+            line-height: 1.3;
         }
 
         .control-panel {
             position: fixed;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 10px;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 10px;
+            border-radius: 8px;
             z-index: 3;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-sizing: border-box;
+            max-height: 60px;
         }
 
         .btn {
@@ -231,97 +238,206 @@
 
         @media (max-width: 768px) {
             .data-panel {
-                min-width: 250px;
-                font-size: 14px;
+                min-width: 280px;
+                max-width: 90vw;
+                padding: 12px;
+                font-size: 13px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            }
+
+            .panel-title {
+                font-size: 15px;
+                margin-bottom: 8px;
+                text-align: center;
+            }
+
+            .data-row {
+                font-size: 13px;
+                margin: 6px 0;
+                line-height: 1.4;
             }
 
             .control-panel {
-                flex-direction: column;
-                gap: 10px;
+                padding: 8px 12px;
+                max-height: 55px;
+                border-radius: 12px;
+            }
+
+            .btn {
+                padding: 10px 16px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+
+            #location-info {
+                font-size: 13px;
+                max-width: 180px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                line-height: 1.3;
+            }
+
+            .intro-title {
+                font-size: 28px;
+                margin-bottom: 16px;
+            }
+
+            .intro-subtitle {
+                font-size: 16px;
+                margin-bottom: 30px;
+                line-height: 1.4;
+            }
+
+            .feature-list li {
+                font-size: 15px;
+                margin: 8px 0;
+            }
+
+            .advice-panel {
+                max-height: 140px;
+                padding: 12px;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .data-panel {
+                min-width: 260px;
+                max-width: 95vw;
+                padding: 10px;
+                font-size: 12px;
+            }
+
+            .panel-title {
+                font-size: 14px;
+                margin-bottom: 6px;
+            }
+
+            .data-row {
+                font-size: 12px;
+                margin: 5px 0;
+            }
+
+            .control-panel {
+                padding: 6px 10px;
+                max-height: 50px;
+            }
+
+            .btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            #location-info {
+                font-size: 12px;
+                max-width: 140px;
+            }
+
+            .intro-title {
+                font-size: 24px;
+                margin-bottom: 12px;
+            }
+
+            .intro-subtitle {
+                font-size: 14px;
+                margin-bottom: 25px;
+            }
+
+            .feature-list li {
+                font-size: 14px;
+                margin: 6px 0;
+            }
+
+            .advice-panel {
+                max-height: 120px;
+                padding: 10px;
+                font-size: 13px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- 인트로 화면 -->
+    <!-- Intro Screen -->
     <div id="intro-screen" class="intro-screen">
-        <div class="intro-title">🌱 농장 AR 분석기</div>
-        <div class="intro-subtitle">NASA 위성 데이터와 AI로 토양을 실시간 분석</div>
+        <div class="intro-title">🌱 Farm AR Analyzer</div>
+        <div class="intro-subtitle">Real-time soil analysis with NASA satellite data and AI</div>
         <ul class="feature-list">
-            <li>📡 실시간 NASA 위성 데이터</li>
-            <li>🤖 AI 토양 상태 분석</li>
-            <li>💡 즉석 농업 조언</li>
-            <li>📱 iOS/Android 호환</li>
+            <li>📡 Real-time NASA satellite data</li>
+            <li>🤖 AI soil condition analysis</li>
+            <li>💡 Instant agricultural advice</li>
+            <li>📱 iOS/Android compatible</li>
         </ul>
-        <button id="intro-start-btn" class="btn" style="font-size: 20px; padding: 15px 30px;">🚀 농장 AR 시작하기</button>
+        <button id="intro-start-btn" class="btn" style="font-size: 20px; padding: 15px 30px;">🚀 Start Farm AR</button>
     </div>
 
-    <!-- 카메라 뷰 -->
+    <!-- Camera View -->
     <div id="ar-container" style="display: none;">
         <video id="video" autoplay playsinline></video>
     </div>
 
-    <!-- 크로스헤어 -->
+    <!-- Crosshair -->
     <div id="crosshair" class="crosshair" style="display: none;"></div>
 
-    <!-- 데이터 오버레이 -->
+    <!-- Data Overlay -->
     <div id="overlay" style="display: none;">
-        <!-- NASA 위성 데이터 -->
+        <!-- NASA Satellite Data -->
         <div class="data-panel nasa-panel">
-            <div class="panel-title">📡 NASA 실시간 데이터</div>
+            <div class="panel-title">📡 NASA Real-time Data</div>
             <div class="data-row">
-                <span>💧 토양 수분:</span>
-                <span id="soil-moisture">측정중...</span>
+                <span>💧 Soil Moisture:</span>
+                <span id="soil-moisture">Measuring...</span>
             </div>
             <div class="data-row">
-                <span>🌿 식생 건강도:</span>
-                <span id="ndvi">측정중...</span>
+                <span>🌿 Vegetation Health:</span>
+                <span id="ndvi">Measuring...</span>
             </div>
             <div class="data-row">
-                <span>🌡️ 지표 온도:</span>
-                <span id="temperature">측정중...</span>
+                <span>🌡️ Surface Temp:</span>
+                <span id="temperature">Measuring...</span>
             </div>
         </div>
 
-        <!-- AI 분석 결과 -->
+        <!-- AI Analysis Results -->
         <div class="data-panel ai-panel">
-            <div class="panel-title">🤖 AI 토양 분석</div>
+            <div class="panel-title">🤖 AI Soil Analysis</div>
             <div class="data-row">
-                <span>🌱 토양 유형:</span>
-                <span id="soil-type">분석중...</span>
+                <span>🌱 Soil Type:</span>
+                <span id="soil-type">Analyzing...</span>
             </div>
             <div class="data-row">
-                <span>🎯 정확도:</span>
-                <span id="ai-confidence">계산중...</span>
+                <span>🎯 Accuracy:</span>
+                <span id="ai-confidence">Calculating...</span>
             </div>
             <div class="data-row">
-                <span>💪 건강 상태:</span>
-                <span id="soil-health">평가중...</span>
+                <span>💪 Health Status:</span>
+                <span id="soil-health">Evaluating...</span>
             </div>
         </div>
 
-        <!-- 농업 조언 -->
+        <!-- Agricultural Advice -->
         <div class="data-panel advice-panel">
-            <div class="panel-title">💡 즉석 농업 조언</div>
-            <div id="advice-text">카메라를 토양에 비추고 분석중...</div>
+            <div class="panel-title">💡 Instant Farm Advice</div>
+            <div id="advice-text">Point camera at soil for analysis...</div>
         </div>
     </div>
 
-    <!-- 컨트롤 패널 -->
+    <!-- Control Panel -->
     <div id="control-panel" class="control-panel" style="display: none;">
-        <div id="location-info">📍 위치: 확인중...</div>
-        <button id="stop-btn" class="btn">❌ 종료</button>
+        <div id="location-info">📍 Location: Detecting...</div>
+        <button id="stop-btn" class="btn">❌ Exit</button>
     </div>
 
-    <!-- 로딩 화면 -->
+    <!-- Loading Screen -->
     <div id="loading" class="loading" style="display: none;">
         <div class="spinner"></div>
-        <div>농장 AR 시스템 시작중...</div>
+        <div>Starting Farm AR System...</div>
         <div style="margin-top: 10px; font-size: 14px; color: #ccc;" id="loading-status"></div>
     </div>
 
     <script>
-        // 메인 AR 시스템
+        // Main AR System
         class FarmARSystem {
             constructor() {
                 this.video = document.getElementById('video');
@@ -352,9 +468,9 @@
             async startAR() {
                 try {
                     this.introScreen.style.display = 'none';
-                    this.showLoading('카메라 접근 권한 요청중...');
+                    this.showLoading('Requesting camera access...');
 
-                    // 카메라 접근 요청
+                    // Request camera access
                     this.stream = await navigator.mediaDevices.getUserMedia({
                         video: {
                             facingMode: 'environment',
@@ -365,14 +481,14 @@
 
                     this.video.srcObject = this.stream;
 
-                    this.showLoading('위치 정보 수집중...');
+                    this.showLoading('Getting location data...');
 
-                    // 위치 정보 수집
+                    // Get location information
                     await this.getCurrentLocation();
 
-                    this.showLoading('AI 분석 시스템 준비중...');
+                    this.showLoading('Preparing AI analysis system...');
 
-                    // NASA 데이터와 AI 분석 시작
+                    // Start NASA data and AI analysis
                     await this.initializeAnalysis();
 
                     this.hideLoading();
@@ -380,11 +496,11 @@
 
                     this.isRunning = true;
 
-                    console.log('✅ AR 시스템 시작 완료');
+                    console.log('✅ AR system started successfully');
 
                 } catch (error) {
-                    console.error('AR 시작 실패:', error);
-                    this.showError(`AR 시작 실패: ${error.message}`);
+                    console.error('AR start failed:', error);
+                    this.showError(`AR start failed: ${error.message}`);
                 }
             }
 
@@ -398,7 +514,7 @@
             async getCurrentLocation() {
                 return new Promise((resolve, reject) => {
                     if (!navigator.geolocation) {
-                        reject(new Error('Geolocation을 지원하지 않는 브라우저입니다'));
+                        reject(new Error('Browser does not support geolocation'));
                         return;
                     }
 
@@ -411,14 +527,14 @@
                             };
 
                             this.locationInfo.textContent =
-                                `📍 위치: ${this.currentLocation.lat.toFixed(4)}°, ${this.currentLocation.lon.toFixed(4)}°`;
+                                `📍 Location: ${this.currentLocation.lat.toFixed(4)}°, ${this.currentLocation.lon.toFixed(4)}°`;
 
                             resolve(this.currentLocation);
                         },
                         (error) => {
-                            // 테스트를 위한 기본 위치 (서울)
+                            // Default location for testing (Seoul)
                             this.currentLocation = { lat: 37.5665, lon: 126.9780 };
-                            this.locationInfo.textContent = '📍 위치: 기본 위치 (서울) 사용중';
+                            this.locationInfo.textContent = '📍 Location: Default (Seoul) used';
                             resolve(this.currentLocation);
                         },
                         {
@@ -431,36 +547,36 @@
             }
 
             async initializeAnalysis() {
-                // 실시간 분석 시작
+                // Start real-time analysis
                 this.analysisInterval = setInterval(() => {
                     this.analyzeSoil();
-                }, 3000); // 3초마다 분석
+                }, 3000); // Analyze every 3 seconds
 
-                // 초기 분석 실행
+                // Execute initial analysis
                 await this.analyzeSoil();
             }
 
             async analyzeSoil() {
                 try {
-                    // NASA 위성 데이터 가져오기
+                    // Fetch NASA satellite data
                     const nasaData = await this.fetchNASAData();
 
-                    // AI 토양 분석 수행
+                    // Perform AI soil analysis
                     const aiAnalysis = await this.performAIAnalysis();
 
-                    // 데이터 업데이트
+                    // Update display data
                     this.updateDisplay(nasaData, aiAnalysis);
 
-                    // 농업 조언 생성
+                    // Generate agricultural advice
                     this.generateAdvice(nasaData, aiAnalysis);
 
                 } catch (error) {
-                    console.error('분석 실패:', error);
+                    console.error('Analysis failed:', error);
                 }
             }
 
             async fetchNASAData() {
-                // 실제 NASA 프록시 서버 사용 (localhost:3001이 실행 중인 경우)
+                // Use actual NASA proxy server (if localhost:3001 is running)
                 try {
                     const response = await fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`);
                     if (response.ok) {
@@ -473,16 +589,16 @@
                             timestamp: new Date().toISOString()
                         };
                     } else {
-                        throw new Error('NASA 프록시 서버 응답 실패');
+                        throw new Error('NASA proxy server response failed');
                     }
                 } catch (error) {
-                    console.warn('NASA 프록시 서버 연결 실패, 시뮬레이션 데이터 사용:', error);
+                    console.warn('NASA proxy server connection failed, using simulation data:', error);
                     return this.generateSimulatedNASAData();
                 }
             }
 
             generateSimulatedNASAData() {
-                // 현재 위치와 시간에 기반한 현실적인 데이터 생성
+                // Generate realistic data based on current location and time
                 const baseMoisture = 25 + (Math.random() * 30); // 25-55%
                 const baseNDVI = 0.3 + (Math.random() * 0.5); // 0.3-0.8
                 const baseTemp = 15 + (Math.random() * 20); // 15-35°C
@@ -497,13 +613,13 @@
             }
 
             async performAIAnalysis() {
-                // 시뮬레이션 AI 분석
+                // Simulated AI analysis
                 return this.simulatedAIAnalysis();
             }
 
             simulatedAIAnalysis() {
-                const soilTypes = ['양토', '식양토', '사질토', '점질토', '미사질토'];
-                const healthLevels = ['매우 양호', '양호', '보통', '주의 필요', '개선 필요'];
+                const soilTypes = ['Loam', 'Clay Loam', 'Sandy', 'Clay', 'Silt Loam'];
+                const healthLevels = ['Excellent', 'Good', 'Fair', 'Poor', 'Critical'];
 
                 const randomType = soilTypes[Math.floor(Math.random() * soilTypes.length)];
                 const randomConfidence = 70 + (Math.random() * 25); // 70-95%
@@ -534,39 +650,39 @@
                 const adviceElement = document.getElementById('advice-text');
                 let advice = '';
 
-                // 토양 수분 기반 조언
+                // Soil moisture based advice
                 if (nasaData.soilMoisture < 20) {
-                    advice += '💧 토양이 매우 건조합니다. 즉시 관수가 필요합니다. ';
+                    advice += '💧 Soil is very dry. Immediate irrigation needed. ';
                 } else if (nasaData.soilMoisture < 35) {
-                    advice += '💧 토양 수분이 약간 부족합니다. 2-3일 내 관수 권장. ';
+                    advice += '💧 Soil moisture slightly low. Irrigation recommended in 2-3 days. ';
                 } else if (nasaData.soilMoisture > 60) {
-                    advice += '💧 토양이 과습 상태입니다. 배수 확인이 필요합니다. ';
+                    advice += '💧 Soil is oversaturated. Check drainage systems. ';
                 } else {
-                    advice += '💧 토양 수분 상태가 양호합니다. ';
+                    advice += '💧 Soil moisture level is good. ';
                 }
 
-                // 식생 건강도 기반 조언
+                // Vegetation health based advice
                 if (nasaData.ndvi < 0.3) {
-                    advice += '🌿 식생이 매우 약합니다. 비료 시비를 고려하세요. ';
+                    advice += '🌿 Vegetation is very weak. Consider fertilization. ';
                 } else if (nasaData.ndvi < 0.5) {
-                    advice += '🌿 식생 상태가 보통입니다. 성장 모니터링 필요. ';
+                    advice += '🌿 Vegetation condition is fair. Monitor growth closely. ';
                 } else {
-                    advice += '🌿 식생이 건강하게 자라고 있습니다. ';
+                    advice += '🌿 Vegetation is growing healthily. ';
                 }
 
-                // AI 분석 기반 조언
-                if (aiAnalysis.health.includes('주의') || aiAnalysis.health.includes('개선')) {
-                    advice += `🤖 ${aiAnalysis.soilType} 토양 개선이 필요합니다. `;
+                // AI analysis based advice
+                if (aiAnalysis.health.includes('Poor') || aiAnalysis.health.includes('Critical')) {
+                    advice += `🤖 ${aiAnalysis.soilType} soil improvement needed. `;
                 }
 
-                // 온도 기반 조언
+                // Temperature based advice
                 if (nasaData.temperature > 30) {
-                    advice += '🌡️ 고온 주의: 작물 스트레스 가능성 있음. ';
+                    advice += '🌡️ High temperature warning: crop stress possible. ';
                 } else if (nasaData.temperature < 10) {
-                    advice += '🌡️ 저온 주의: 생장 저하 가능성 있음. ';
+                    advice += '🌡️ Low temperature warning: growth may be reduced. ';
                 }
 
-                adviceElement.textContent = advice || '현재 상태가 양호합니다. 정기적인 모니터링을 계속하세요.';
+                adviceElement.textContent = advice || 'Current conditions are good. Continue regular monitoring.';
             }
 
             showLoading(message) {
@@ -603,21 +719,21 @@
                 this.crosshair.style.display = 'none';
                 this.introScreen.style.display = 'flex';
 
-                console.log('🛑 AR 시스템 종료');
+                console.log('🛑 AR system stopped');
             }
         }
 
-        // 페이지 로드 시 AR 시스템 시작
+        // Start AR system when page loads
         document.addEventListener('DOMContentLoaded', () => {
             window.farmAR = new FarmARSystem();
 
-            // 모바일 최적화
+            // Mobile optimization
             if (/Mobi|Android/i.test(navigator.userAgent)) {
-                document.body.style.fontSize = '18px'; // 모바일에서 더 큰 글자
+                document.body.style.fontSize = '18px'; // Larger font for mobile
             }
         });
 
-        // 화면 회전 대응
+        // Handle screen rotation
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
                 if (window.farmAR && window.farmAR.isRunning) {
