@@ -200,7 +200,7 @@ class ConversationalAI {
             }
 
             .ai-message-content {
-                background: rgba(255, 255, 255, 0.1);
+                background: #2e96f5;
                 padding: 12px 16px;
                 border-radius: 15px;
                 color: white;

@@ -4805,6 +4805,66 @@
     <!-- Conversational AI -->
     <script src="src/conversational-ai.js"></script>
 
+    <!-- Web Speech API Polyfill for iOS Safari (lightweight fallback) -->
+    <script>
+        // iOS Safari Speech Recognition Fallback
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !('webkitSpeechRecognition' in window)) {
+            console.log('🍎 iOS Safari detected - implementing speech recognition fallback');
+
+            // Create a simplified SpeechRecognition polyfill for iOS
+            window.webkitSpeechRecognition = class iOSSpeechRecognition {
+                constructor() {
+                    this.continuous = false;
+                    this.interimResults = false;
+                    this.lang = 'en-US';
+                    this.maxAlternatives = 1;
+                    this.onstart = null;
+                    this.onresult = null;
+                    this.onerror = null;
+                    this.onend = null;
+                    this.isListening = false;
+                }
+
+                start() {
+                    if (this.isListening) return;
+
+                    this.isListening = true;
+                    if (this.onstart) this.onstart();
+
+                    // iOS Safari fallback: show text input dialog
+                    setTimeout(() => {
+                        const userInput = prompt('🎤 Voice command (type instead of speaking):');
+                        if (userInput && userInput.trim()) {
+                            const event = {
+                                results: [{
+                                    0: { transcript: userInput.trim(), confidence: 1.0 },
+                                    length: 1,
+                                    isFinal: true
+                                }],
+                                resultIndex: 0
+                            };
+                            if (this.onresult) this.onresult(event);
+                        }
+                        this.isListening = false;
+                        if (this.onend) this.onend();
+                    }, 100);
+                }
+
+                stop() {
+                    this.isListening = false;
+                    if (this.onend) this.onend();
+                }
+
+                abort() {
+                    this.stop();
+                }
+            };
+
+            window.SpeechRecognition = window.webkitSpeechRecognition;
+            console.log('✅ iOS Safari speech recognition fallback initialized');
+        }
+    </script>
+
     <!-- Voice Commands -->
     <script src="src/voice-commands.js"></script>
 

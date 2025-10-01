@@ -109,11 +109,28 @@ class VoiceCommands {
         }
     }
 
+    // iOS/모바일 감지
+    isIOSDevice() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
     // 음성 인식 지원 확인
     checkSpeechSupport() {
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const hasWebSpeechAPI = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+        const isIOSDevice = this.isIOSDevice();
+
+        if (hasWebSpeechAPI) {
             this.isSupported = true;
-            console.log('✅ Speech Recognition supported');
+            if (isIOSDevice) {
+                console.log('✅ Speech Recognition supported (iOS text input fallback)');
+            } else {
+                console.log('✅ Speech Recognition supported (native)');
+            }
         } else {
             this.isSupported = false;
             console.log('❌ Speech Recognition not supported');
@@ -126,10 +143,17 @@ class VoiceCommands {
         }
     }
 
-    // 음성 인식 설정
+    // 음성 인식 설정 (iOS Safari polyfill 지원)
     setupSpeechRecognition() {
+        // 기본 Web Speech API 또는 iOS polyfill 사용
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
+
+        if (this.isIOSDevice()) {
+            console.log('🍎 Using iOS Safari text input fallback');
+        } else {
+            console.log('🎤 Using native Web Speech API');
+        }
 
         // 음성 인식 설정
         this.recognition.continuous = false;
@@ -180,6 +204,9 @@ class VoiceCommands {
                         <div class="voice-title">
                             <h3>🎤 Voice Commands</h3>
                             <p id="voice-status">Ready to listen</p>
+                            <p id="ios-info" style="font-size: 12px; color: #EAFE07; margin: 5px 0 0 0; display: none;">
+                                iOS Safari: Voice commands will show text input dialog
+                            </p>
                         </div>
                         <button id="close-voice-modal" class="voice-close-btn">✕</button>
                     </div>
@@ -578,11 +605,23 @@ class VoiceCommands {
         const modal = document.getElementById('voice-commands-modal');
         modal.style.display = 'flex';
 
-        // 지원되는 브라우저에서 자동으로 음성 인식 시작
-        if (this.isSupported) {
-            setTimeout(() => {
-                this.speak("Voice commands ready. You can ask about soil, plants, weather, or irrigation.");
-            }, 500);
+        // iOS 특화 UI 업데이트
+        if (this.isIOSDevice()) {
+            const iosInfo = document.getElementById('ios-info');
+            const startBtn = document.getElementById('start-listening-btn');
+            const startBtnText = startBtn?.querySelector('.voice-text');
+
+            if (iosInfo) iosInfo.style.display = 'block';
+            if (startBtnText) startBtnText.textContent = 'Type Voice Command';
+
+            this.updateVoiceStatus('Ready - Tap to type command');
+        } else {
+            // 지원되는 브라우저에서 자동으로 음성 인식 시작
+            if (this.isSupported) {
+                setTimeout(() => {
+                    this.speak("Voice commands ready. You can ask about soil, plants, weather, or irrigation.");
+                }, 500);
+            }
         }
     }
 
