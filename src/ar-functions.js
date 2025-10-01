@@ -864,16 +864,39 @@ window.startContinuousAnalysis = function() {
                     return;
                 }
 
-                // Check canvas state before using - AR.js uses WebGL context
-                const webglCtx = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                const ctx2d = canvas.getContext('2d', { willReadFrequently: true });
+                // Check canvas state before using - be careful with context conflicts
+                try {
+                    // First try to get existing context without creating new one
+                    let hasContext = false;
 
-                if (webglCtx || ctx2d) {
-                    console.log('🖼️ Canvas ready for AI analysis (WebGL or 2D context available)');
-                    aiResult = await window.aiManager.classifyARCanvas(canvas);
-                    console.log('🤖 AI Classification result:', JSON.stringify(aiResult, null, 2));
-                } else {
-                    console.warn('⚠️ No canvas context available (tried WebGL and 2D)');
+                    // Check if canvas already has a context
+                    const existingWebGL = canvas.getContext('webgl', { preserveDrawingBuffer: true }) ||
+                                         canvas.getContext('experimental-webgl', { preserveDrawingBuffer: true });
+
+                    if (existingWebGL) {
+                        hasContext = true;
+                        console.log('🖼️ Canvas ready for AI analysis (existing WebGL context)');
+                    } else {
+                        // Only try 2D context if no WebGL context exists
+                        try {
+                            const ctx2d = canvas.getContext('2d', { willReadFrequently: true });
+                            if (ctx2d) {
+                                hasContext = true;
+                                console.log('🖼️ Canvas ready for AI analysis (2D context)');
+                            }
+                        } catch (contextError) {
+                            console.warn('⚠️ Canvas context creation failed:', contextError.message);
+                        }
+                    }
+
+                    if (hasContext) {
+                        aiResult = await window.aiManager.classifyARCanvas(canvas);
+                        console.log('🤖 AI Classification result:', JSON.stringify(aiResult, null, 2));
+                    } else {
+                        console.warn('⚠️ No canvas context available');
+                    }
+                } catch (contextError) {
+                    console.warn('⚠️ Canvas context error:', contextError.message);
                 }
             } catch (error) {
                 console.warn('⚠️ AI classification failed:', error);
@@ -886,7 +909,7 @@ window.startContinuousAnalysis = function() {
     };
 
     // Update every 3 seconds for real-time analysis (slower for AI processing)
-    setInterval(updateAnalysis, 3000);
+    window.analysisInterval = setInterval(updateAnalysis, 3000);
     updateAnalysis(); // Initial update
 };
 
@@ -1011,9 +1034,45 @@ window.updateARSoilAnalysis = function(pixelX, pixelY, nasaData, aiResult = null
 window.stopARScene = function() {
     console.log('🛑 Stopping AR scene...');
 
+    // Stop any ongoing analysis intervals first
+    if (window.analysisInterval) {
+        clearInterval(window.analysisInterval);
+        window.analysisInterval = null;
+    }
+
     const arContainer = document.getElementById('arjs-container');
     if (arContainer) {
-        arContainer.remove();
+        try {
+            // Stop A-Frame scene safely
+            const scene = arContainer.querySelector('a-scene');
+            if (scene) {
+                // Pause scene before removal
+                if (scene.pause) scene.pause();
+
+                // Remove all entities first
+                const entities = scene.querySelectorAll('a-entity, a-camera, a-light, a-sky');
+                entities.forEach(entity => {
+                    try {
+                        if (entity.parentNode) {
+                            entity.parentNode.removeChild(entity);
+                        }
+                    } catch (e) {
+                        console.warn('Entity removal warning:', e.message);
+                    }
+                });
+            }
+
+            // Remove container safely
+            if (arContainer.parentNode) {
+                arContainer.parentNode.removeChild(arContainer);
+            }
+        } catch (error) {
+            console.warn('⚠️ AR cleanup warning:', error.message);
+            // Force remove if normal cleanup fails
+            if (arContainer.parentNode) {
+                arContainer.parentNode.removeChild(arContainer);
+            }
+        }
     }
 
     // Exit fullscreen mode if active
@@ -1034,19 +1093,45 @@ window.stopARScene = function() {
         document.body.classList.remove('mobile-ar-mode');
 
         // Ensure we stay in AR ChatGPT tab on mobile
-        const arTab = document.querySelector('.tab[data-tab="ar-chatgpt"]');
-        const arTabContent = document.querySelector('#arChatGPTTab');
+        setTimeout(() => {
+            const arTab = document.querySelector('.tab[data-tab="ar-chatgpt"]');
+            const arTabContent = document.querySelector('#arChatGPTTab');
 
-        if (arTab && arTabContent) {
-            // Keep AR tab active and visible
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            if (arTab && arTabContent) {
+                // Keep AR tab active and visible
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-            arTab.classList.add('active');
-            arTabContent.classList.add('active');
+                arTab.classList.add('active');
+                arTabContent.classList.add('active');
 
-            console.log('📱 Maintaining AR ChatGPT tab for mobile');
-        }
+                // Force mobile UI restoration
+                document.body.style.overflow = 'hidden';
+                arTabContent.style.display = 'block';
+                arTabContent.style.position = 'fixed';
+                arTabContent.style.top = '0';
+                arTabContent.style.left = '0';
+                arTabContent.style.width = '100vw';
+                arTabContent.style.height = '100vh';
+                arTabContent.style.zIndex = '9999';
+
+                console.log('📱 Maintaining AR ChatGPT tab for mobile with forced styles');
+            }
+
+            // Hide other UI elements that might interfere
+            const navigation = document.querySelector('.navigation');
+            const appHeader = document.querySelector('.app-header');
+            const tabContainer = document.querySelector('.tab-container');
+
+            if (navigation) navigation.style.display = 'none';
+            if (appHeader) appHeader.style.display = 'none';
+
+            // Show only AR tab in tab container
+            if (tabContainer) {
+                tabContainer.style.display = 'flex';
+                tabContainer.style.justifyContent = 'center';
+            }
+        }, 100);
 
         // Restore mobile-friendly viewport but not desktop viewport
         const metaViewport = document.querySelector('meta[name="viewport"]');
