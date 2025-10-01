@@ -1087,12 +1087,12 @@ window.stopARScene = function() {
         }
     }
 
-    // For mobile devices, keep mobile optimizations but exit AR-specific mode
+    // For mobile devices, completely restore mobile AR interface
     if (isMobile) {
         // Remove only AR-specific classes but keep mobile optimizations
         document.body.classList.remove('mobile-ar-mode');
 
-        // Ensure we stay in AR ChatGPT tab on mobile
+        // Ensure we stay in AR ChatGPT tab on mobile with proper mobile UI
         setTimeout(() => {
             const arTab = document.querySelector('.tab[data-tab="ar-chatgpt"]');
             const arTabContent = document.querySelector('#arChatGPTTab');
@@ -1105,35 +1105,82 @@ window.stopARScene = function() {
                 arTab.classList.add('active');
                 arTabContent.classList.add('active');
 
-                // Force mobile UI restoration
-                document.body.style.overflow = 'hidden';
-                arTabContent.style.display = 'block';
-                arTabContent.style.position = 'fixed';
-                arTabContent.style.top = '0';
-                arTabContent.style.left = '0';
-                arTabContent.style.width = '100vw';
-                arTabContent.style.height = '100vh';
-                arTabContent.style.zIndex = '9999';
+                // Apply mobile-specific CSS class to maintain mobile layout
+                document.body.classList.add('mobile-view');
 
-                console.log('📱 Maintaining AR ChatGPT tab for mobile with forced styles');
+                // Force mobile UI restoration with CSS from ar-interface.css
+                document.body.style.cssText = `
+                    overflow: hidden !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                `;
+
+                arTabContent.style.cssText = `
+                    display: block !important;
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    z-index: 9999 !important;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                    overflow-y: auto !important;
+                `;
+
+                console.log('📱 Restored AR ChatGPT tab with proper mobile interface');
             }
 
-            // Hide other UI elements that might interfere
+            // Completely hide desktop UI elements
             const navigation = document.querySelector('.navigation');
             const appHeader = document.querySelector('.app-header');
-            const tabContainer = document.querySelector('.tab-container');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
 
             if (navigation) navigation.style.display = 'none';
             if (appHeader) appHeader.style.display = 'none';
+            if (sidebar) sidebar.style.display = 'none';
+            if (mainContent) mainContent.style.display = 'none';
 
-            // Show only AR tab in tab container
+            // Hide tab container completely for mobile
+            const tabContainer = document.querySelector('.tab-container');
             if (tabContainer) {
-                tabContainer.style.display = 'flex';
-                tabContainer.style.justifyContent = 'center';
+                tabContainer.style.display = 'none';
             }
+
+            // Apply mobile CSS overrides
+            const style = document.createElement('style');
+            style.id = 'mobile-ar-exit-styles';
+            style.innerHTML = `
+                @media (max-width: 768px) {
+                    * {
+                        box-sizing: border-box;
+                    }
+                    .sidebar, .navigation, .app-header, .main-content {
+                        display: none !important;
+                    }
+                    #arChatGPTTab {
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        z-index: 9999 !important;
+                    }
+                }
+            `;
+
+            // Remove existing mobile styles if present
+            const existingStyles = document.getElementById('mobile-ar-exit-styles');
+            if (existingStyles) {
+                existingStyles.remove();
+            }
+            document.head.appendChild(style);
+
         }, 100);
 
-        // Restore mobile-friendly viewport but not desktop viewport
+        // Maintain mobile-friendly viewport
         const metaViewport = document.querySelector('meta[name="viewport"]');
         if (metaViewport) {
             metaViewport.content = 'width=device-width, initial-scale=1.0, user-scalable=no';
