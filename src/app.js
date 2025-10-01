@@ -583,12 +583,22 @@ class NASAFarmNavigatorsApp {
         const openaiKeyInput = modal.querySelector('#setupOpenaiKey');
 
         saveBtn.addEventListener('click', () => {
+            console.log('🔥 Start Exploring button clicked!');
+
             const nasaToken = nasaTokenInput.value.trim();
             const openaiKey = openaiKeyInput.value.trim();
 
+            console.log('🔑 Tokens provided:', { nasaToken: !!nasaToken, openaiKey: !!openaiKey });
+
             if (nasaToken) {
                 localStorage.setItem('nasa_earthdata_token', nasaToken);
-                this.updateAuthenticationStatus();
+                try {
+                    if (window.nasaFarmNavigators && window.nasaFarmNavigators.updateAuthenticationStatus) {
+                        window.nasaFarmNavigators.updateAuthenticationStatus();
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Could not update auth status:', error);
+                }
             }
 
             if (openaiKey) {
@@ -601,13 +611,35 @@ class NASAFarmNavigatorsApp {
 
             localStorage.setItem('welcome_shown', 'true');
 
-            this.showNotification('🚀 Setup complete! Ready to explore NASA satellite data!', 'success');
+            try {
+                if (window.nasaFarmNavigators && window.nasaFarmNavigators.showNotification) {
+                    window.nasaFarmNavigators.showNotification('🚀 Setup complete! Ready to explore NASA satellite data!', 'success');
+                } else {
+                    console.log('🚀 Setup complete! Ready to explore NASA satellite data!');
+                }
+            } catch (error) {
+                console.warn('⚠️ Could not show notification:', error);
+            }
+
+            console.log('✅ Removing welcome modal...');
             document.body.removeChild(modal);
         });
 
         laterBtn.addEventListener('click', () => {
+            console.log('⏭️ Skip for Now button clicked!');
+
             localStorage.setItem('welcome_shown', 'true');
-            this.showNotification('You can configure tokens anytime in Settings ⚙️', 'info');
+
+            try {
+                if (window.nasaFarmNavigators && window.nasaFarmNavigators.showNotification) {
+                    window.nasaFarmNavigators.showNotification('You can configure tokens anytime in Settings ⚙️', 'info');
+                } else {
+                    console.log('You can configure tokens anytime in Settings ⚙️');
+                }
+            } catch (error) {
+                console.warn('⚠️ Could not show notification:', error);
+            }
+
             document.body.removeChild(modal);
         });
 
