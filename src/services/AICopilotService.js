@@ -22,11 +22,13 @@ class AICopilotService {
             // Load sample farmland database
             this.farmlandDatabase = await this.loadFarmlandData();
 
-            // Request GPS location permission
-            await this.requestLocationPermission();
+            // Start location request in background (non-blocking)
+            this.requestLocationPermission().catch(error => {
+                console.warn('GPS location failed, continuing without:', error);
+            });
 
             this.isInitialized = true;
-            console.log('🤖 AI Copilot Service initialized successfully');
+            console.log('🤖 AI Copilot Service initialized successfully (location loading in background)');
         } catch (error) {
             console.error('Failed to initialize AI Copilot:', error);
         }
@@ -750,9 +752,9 @@ class AICopilotService {
                     resolve(false);
                 },
                 {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 300000 // 5 minutes
+                    enableHighAccuracy: false, // Faster, less accurate
+                    timeout: 3000, // Reduced from 10s to 3s
+                    maximumAge: 600000 // 10 minutes (allow cached location)
                 }
             );
         });
