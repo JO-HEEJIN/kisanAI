@@ -48,7 +48,13 @@
         <!-- Header -->
         <header class="app-header header-section">
             <div class="header-left">
-                <img src="assets/Space_Apps_Logo_Files/(R) Space Apps Default Logo/Colorway=2-Color White.svg" alt="NASA Space Apps Challenge" class="nasa-logo-img">
+                <img src="assets/Space_Apps_Logo_Files/(R) Space Apps Default Logo/Colorway=2-Color White.svg"
+                     alt="NASA Space Apps Challenge"
+                     class="nasa-logo-img desktop-logo">
+                <img src="assets/Space_Apps_Logo_Files/(R) Space Apps Small Logo/Colorway=1-Color White.png"
+                     alt="NASA Space Apps Challenge"
+                     class="nasa-logo-img mobile-logo"
+                     style="display: none;">
                 <div class="app-title-section">
                     <h1>Farm Navigators</h1>
                     <div class="version-badge">International Space Apps Challenge 2025</div>
@@ -1349,6 +1355,30 @@
             height: 60px;
             width: auto;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        /* Mobile NASA Logo - Smaller for limited space */
+        @media (max-width: 768px) {
+            .desktop-logo {
+                display: none;
+            }
+
+            .mobile-logo {
+                display: block !important;
+                height: 35px;
+            }
+
+            .header-left {
+                gap: 0.5rem;
+            }
+
+            .app-title-section h1 {
+                font-size: 1.2rem;
+            }
+
+            .version-badge {
+                font-size: 0.7rem;
+            }
         }
 
         .nasa-logo-loading {

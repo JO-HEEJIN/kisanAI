@@ -367,12 +367,17 @@ window.createARScene = async function() {
                         animation: pulse 2s infinite;
                         box-shadow: 0 0 10px #EAFE07;
                     "></div>
-                    <span style="
-                        color: #FFFFFF;
-                        font-size: 16px;
-                        font-weight: 600;
-                        letter-spacing: 0.5px;
-                    ">🛰️ LIVE AR SCANNER</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <img src="assets/Space_Apps_Logo_Files/(R) Space Apps Small Logo/Colorway=1-Color White.png"
+                             alt="NASA"
+                             style="height: 20px; width: auto; filter: brightness(1.1);">
+                        <span style="
+                            color: #FFFFFF;
+                            font-size: 16px;
+                            font-weight: 600;
+                            letter-spacing: 0.5px;
+                        ">LIVE AR SCANNER</span>
+                    </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <button id="toggle-panel" onclick="window.toggleARPanel()" style="
@@ -1074,7 +1079,7 @@ window.shareARResults = function() {
 
         // Generate share data
         const shareData = {
-            title: '🛰️ NASA Farm Navigator AR Analysis',
+            title: '🛡️ NASA Farm Navigator AR Analysis',
             text: 'Real-time soil and vegetation analysis using NASA satellite data',
             url: window.location.href
         };
