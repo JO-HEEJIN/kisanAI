@@ -53,15 +53,14 @@ window.fetchNASAData = async function(lat, lon) {
 window.arRunning = false;
 window.aiManager = null;
 
-// MindAR Implementation for better iOS compatibility
-console.log('🎯 Defining window.launchRealAR with MindAR...');
-window.mindARManager = null;
-window.mindAROverlay = null;
-
+// Real AR.js Implementation for iOS compatibility
+console.log('🎯 Defining window.launchRealAR function...');
 window.launchRealAR = async function() {
-    console.log('🚀 Starting MindAR for iOS compatibility');
+    console.log('🚀 launchRealAR function called!');
     // Reset AR state properly
     window.arRunning = false;
+
+    console.log('🚀 Starting Real AR.js AR for iOS');
 
     try {
         // Check device capabilities
@@ -84,12 +83,17 @@ window.launchRealAR = async function() {
             }
         });
 
-        // Stop the stream as MindAR will create its own
+        // Stop the stream as AR.js will create its own
         stream.getTracks().forEach(track => track.stop());
         console.log('✅ Camera permission granted');
 
-        // Initialize MindAR instead of AR.js
-        await window.initializeMindAR();
+        // Request iOS device orientation permissions
+        if (isIOS) {
+            await window.requestIOSPermissions();
+        }
+
+        // Create AR.js scene
+        await window.createARScene();
 
     } catch (error) {
         console.error('❌ Real AR failed:', error);
@@ -98,40 +102,7 @@ window.launchRealAR = async function() {
     }
 };
 
-// Initialize MindAR system
-window.initializeMindAR = async function() {
-    console.log('🎯 Initializing MindAR system...');
-
-    try {
-        // Create MindAR manager
-        window.mindARManager = new MindARManager();
-        window.mindAROverlay = new MindARNASAOverlay();
-
-        // Initialize MindAR
-        const success = await window.mindARManager.initialize();
-
-        if (success) {
-            window.arRunning = true;
-
-            // Create NASA overlays
-            window.mindAROverlay.create();
-
-            // Start real-time soil analysis
-            setTimeout(() => {
-                window.startSoilAnalysis();
-            }, 2000);
-
-            console.log('✅ MindAR initialized successfully');
-        } else {
-            throw new Error('Failed to initialize MindAR');
-        }
-    } catch (error) {
-        console.error('❌ MindAR initialization failed:', error);
-        throw error;
-    }
-};
-
-// Legacy AR.js scene creation (kept for compatibility)
+// Create AR.js scene with NASA data integration
 window.createARScene = async function() {
     console.log('🎬 Creating AR.js scene...');
     window.arRunning = true;
@@ -546,23 +517,6 @@ window.updateARSoilAnalysis = function(pixelX, pixelY, nasaData, aiResult = null
         console.log('  - NASA data:', JSON.stringify(nasaData, null, 2));
         console.log('  - AI result:', JSON.stringify(aiResult, null, 2));
 
-    // Update MindAR overlays if using MindAR
-    if (window.mindAROverlay) {
-        // Add location to NASA data
-        nasaData.location = window.currentLocation ?
-            `${window.currentLocation.lat.toFixed(4)}°, ${window.currentLocation.lon.toFixed(4)}°` :
-            'GPS Acquiring...';
-
-        window.mindAROverlay.updateNASAData(nasaData);
-        window.mindAROverlay.updateAIAnalysis(aiResult || nasaData);
-
-        // Also update Three.js scene if available
-        if (window.mindARManager) {
-            window.mindARManager.updateNASAData(nasaData);
-        }
-        return; // Exit early for MindAR
-    }
-
     // Update NASA Data Panel
     const pixelInfoText = document.getElementById('pixel-info-text');
     const moistureText = document.getElementById('moisture-text');
@@ -659,25 +613,6 @@ window.updateARSoilAnalysis = function(pixelX, pixelY, nasaData, aiResult = null
 window.stopARScene = function() {
     console.log('🛑 Stopping AR scene...');
 
-    // Stop MindAR if it's running
-    if (window.mindARManager) {
-        window.mindARManager.stop();
-        window.mindARManager = null;
-    }
-
-    // Remove MindAR container
-    const mindARContainer = document.getElementById('mindar-container');
-    if (mindARContainer) {
-        mindARContainer.remove();
-    }
-
-    // Remove NASA overlay
-    if (window.mindARNASAOverlay) {
-        window.mindARNASAOverlay.remove();
-        window.mindARNASAOverlay = null;
-    }
-
-    // Fallback: Remove AR.js container if it exists
     const arContainer = document.getElementById('arjs-container');
     if (arContainer) {
         arContainer.remove();

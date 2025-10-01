@@ -570,9 +570,14 @@
     <!-- Mobile Debugger for Testing -->
     <script src="src/debug/MobileDebugger.js"></script>
 
-    <!-- A-Frame and AR.js - ESSENTIAL FOR AR -->
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+    <!-- MindAR for better iOS compatibility -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
+
+    <!-- MindAR NASA Integration -->
+    <script src="src/ar/MindARManager.js"></script>
+    <script src="src/ar/MindARNASAOverlay.js"></script>
 
     <!-- Essential AR scripts -->
     <script src="src/ar/AgriculturalAIManager.js"></script>
