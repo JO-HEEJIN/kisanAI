@@ -837,14 +837,16 @@ window.startContinuousAnalysis = function() {
                     return;
                 }
 
-                // Check canvas state before using
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    console.log('🖼️ Canvas ready for AI analysis');
+                // Check canvas state before using - AR.js uses WebGL context
+                const webglCtx = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                const ctx2d = canvas.getContext('2d', { willReadFrequently: true });
+
+                if (webglCtx || ctx2d) {
+                    console.log('🖼️ Canvas ready for AI analysis (WebGL or 2D context available)');
                     aiResult = await window.aiManager.classifyARCanvas(canvas);
                     console.log('🤖 AI Classification result:', JSON.stringify(aiResult, null, 2));
                 } else {
-                    console.warn('⚠️ Canvas context not available');
+                    console.warn('⚠️ No canvas context available (tried WebGL and 2D)');
                 }
             } catch (error) {
                 console.warn('⚠️ AI classification failed:', error);
@@ -1362,9 +1364,18 @@ window.forceMobileCameraPortrait = function() {
 
         // Disable screen rotation lock that might force landscape
         if (screen.orientation && screen.orientation.unlock) {
-            screen.orientation.unlock()
-                .then(() => console.log('🔓 Screen orientation unlocked'))
-                .catch(e => console.log('🔒 Screen orientation already unlocked'));
+            try {
+                const unlockPromise = screen.orientation.unlock();
+                if (unlockPromise && typeof unlockPromise.then === 'function') {
+                    unlockPromise
+                        .then(() => console.log('🔓 Screen orientation unlocked'))
+                        .catch(e => console.log('🔒 Screen orientation already unlocked'));
+                } else {
+                    console.log('🔓 Screen orientation unlock called (no promise returned)');
+                }
+            } catch (error) {
+                console.log('🔒 Screen orientation unlock not supported:', error.message);
+            }
         }
 
         console.log('✅ Mobile portrait camera setup completed');
