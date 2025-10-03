@@ -2079,19 +2079,24 @@ window.handlePixelClick = function(event) {
                     console.log('🔍 Is localhost:', isLocalhost);
                     console.log('🔍 Is Vercel:', isVercelDeployment);
 
-                    if (!isLocalhost || isVercelDeployment) {
-                        // For deployed environment (Vercel), use realistic Houston data directly
-                        console.log('📱 Vercel deployment detected - using pre-fetched Houston NASA data');
-                        throw new Error('Using realistic data for Vercel deployment');
+                    // Determine API base URL
+                    let apiBase;
+                    if (isLocalhost && !isVercelDeployment) {
+                        apiBase = 'http://localhost:3001';
+                        console.log('🏠 Using localhost NASA proxy server');
+                    } else {
+                        apiBase = 'https://kisan-ai-one.vercel.app';
+                        console.log('☁️ Using Vercel Functions for NASA data');
                     }
 
-                    // Fetch detailed NASA data for this location (localhost only)
+                    // Fetch detailed NASA data for this location
                     console.log('📡 Starting NASA API requests for coords:', { lat, lon });
+                    console.log('🌐 API Base URL:', apiBase);
 
                     const requests = [
-                        fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${lat}&lon=${lon}`),
-                        fetch(`http://localhost:3001/api/modis/ndvi?lat=${lat}&lon=${lon}`),
-                        fetch(`http://localhost:3001/api/landsat/imagery?lat=${lat}&lon=${lon}`)
+                        fetch(`${apiBase}/api/smap/soil-moisture?lat=${lat}&lon=${lon}`),
+                        fetch(`${apiBase}/api/modis/ndvi?lat=${lat}&lon=${lon}`),
+                        fetch(`${apiBase}/api/landsat/imagery?lat=${lat}&lon=${lon}`)
                     ];
 
                     const responses = await Promise.all(requests);
@@ -2140,11 +2145,13 @@ window.handlePixelClick = function(event) {
                         (houstonSoilMoisture * 100 * 0.4) + (houstonNdvi * 100 * 0.6)
                     ); // Calculated: ~74%
 
-                    console.log('📍 Using realistic Houston NASA data (Vercel deployment):', {
+                    const errorContext = isVercelDeployment ? 'Vercel Functions error' : 'API error';
+                    console.log(`📍 Using realistic Houston NASA data (${errorContext}):`, {
                         soilMoisture: houstonSoilMoisture,
                         ndvi: houstonNdvi,
                         health: houstonHealth,
-                        hostname: window.location.hostname
+                        hostname: window.location.hostname,
+                        apiBase: isVercelDeployment ? 'https://kisan-ai-one.vercel.app' : 'localhost:3001'
                     });
 
                     showDetailedAnalysisPopup({
