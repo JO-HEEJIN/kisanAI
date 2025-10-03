@@ -1235,26 +1235,189 @@ window.stopARScene = function() {
     console.log('✅ AR scene stopped and mobile mode restored');
 };
 
-// Request iOS device permissions
+// Create custom permission dialog with improved styling
+function createPermissionDialog() {
+    return new Promise((resolve) => {
+        // Remove existing dialog
+        const existing = document.getElementById('motion-permission-dialog');
+        if (existing) existing.remove();
+
+        // Create dialog overlay with dark theme matching AR interface
+        const overlay = document.createElement('div');
+        overlay.id = 'motion-permission-dialog';
+        overlay.style.cssText = `
+            position: fixed !important;
+            inset: 0 !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            z-index: 999999 !important;
+            background: rgba(7, 23, 63, 0.95) !important;
+            backdrop-filter: blur(15px) !important;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        `;
+
+        // Create dialog content with AR theme
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: linear-gradient(135deg, #07173F 0%, #0960E1 100%) !important;
+            border: 3px solid #EAFE07 !important;
+            border-radius: 20px !important;
+            padding: 30px 25px !important;
+            color: white !important;
+            text-align: center !important;
+            max-width: 320px !important;
+            width: 90% !important;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+            position: relative !important;
+            transform: scale(0.9) !important;
+            animation: dialog-appear 0.3s ease-out forwards !important;
+        `;
+
+        dialog.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
+                <h2 style="margin: 0 0 10px 0; color: #EAFE07; font-size: 20px; font-weight: 700; text-shadow: 0 0 10px rgba(234, 254, 7, 0.3);">
+                    Motion Sensor Access
+                </h2>
+                <p style="margin: 0; font-size: 16px; line-height: 1.4; color: rgba(255, 255, 255, 0.9);">
+                    To enable AR features, we need access to your device motion sensors for accurate tracking.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 25px;">
+                <button id="permission-deny" style="
+                    flex: 1;
+                    background: rgba(228, 55, 0, 0.8) !important;
+                    color: white !important;
+                    border: 2px solid rgba(228, 55, 0, 0.6) !important;
+                    border-radius: 12px !important;
+                    padding: 14px 20px !important;
+                    font-size: 16px !important;
+                    font-weight: 600 !important;
+                    cursor: pointer !important;
+                    transition: all 0.2s ease !important;
+                    touch-action: manipulation !important;
+                    min-height: 50px !important;
+                ">
+                    Deny
+                </button>
+                <button id="permission-allow" style="
+                    flex: 1;
+                    background: linear-gradient(45deg, #EAFE07, #B8C500) !important;
+                    color: #07173F !important;
+                    border: 2px solid #EAFE07 !important;
+                    border-radius: 12px !important;
+                    padding: 14px 20px !important;
+                    font-size: 16px !important;
+                    font-weight: 700 !important;
+                    cursor: pointer !important;
+                    transition: all 0.2s ease !important;
+                    touch-action: manipulation !important;
+                    min-height: 50px !important;
+                    box-shadow: 0 0 20px rgba(234, 254, 7, 0.3) !important;
+                ">
+                    Allow
+                </button>
+            </div>
+        `;
+
+        // Add animation CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes dialog-appear {
+                from {
+                    opacity: 0;
+                    transform: scale(0.8) translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
+            }
+
+            #permission-allow:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 6px 25px rgba(234, 254, 7, 0.4) !important;
+            }
+
+            #permission-deny:hover {
+                background: rgba(228, 55, 0, 1) !important;
+                transform: translateY(-2px) !important;
+            }
+
+            #permission-allow:active, #permission-deny:active {
+                transform: translateY(0) scale(0.98) !important;
+            }
+        `;
+        document.head.appendChild(style);
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        // Event listeners
+        document.getElementById('permission-allow').addEventListener('click', () => {
+            overlay.remove();
+            style.remove();
+            resolve(true);
+        });
+
+        document.getElementById('permission-deny').addEventListener('click', () => {
+            overlay.remove();
+            style.remove();
+            resolve(false);
+        });
+
+        // Prevent background interaction
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                // Don't auto-close on backdrop click - require explicit choice
+            }
+        });
+    });
+}
+
+// Request iOS device permissions with custom dialog
 window.requestIOSPermissions = async function() {
     console.log('📱 Requesting iOS device permissions...');
 
     try {
+        // Check if we need to request permissions (iOS 13+)
+        const needsPermission = typeof DeviceOrientationEvent.requestPermission === 'function' ||
+                               typeof DeviceMotionEvent.requestPermission === 'function';
+
+        if (needsPermission) {
+            // Show custom permission dialog first
+            const userConsent = await createPermissionDialog();
+
+            if (!userConsent) {
+                console.log('📱 User denied motion sensor access');
+                return { orientation: 'denied', motion: 'denied' };
+            }
+
+            console.log('📱 User granted consent, requesting device permissions...');
+        }
+
+        let orientationPermission = 'granted';
+        let motionPermission = 'granted';
+
         // Request device orientation permission (iOS 13+)
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            const orientationPermission = await DeviceOrientationEvent.requestPermission();
+            orientationPermission = await DeviceOrientationEvent.requestPermission();
             console.log('📱 Orientation permission:', orientationPermission);
         }
 
         // Request device motion permission (iOS 13+)
         if (typeof DeviceMotionEvent.requestPermission === 'function') {
-            const motionPermission = await DeviceMotionEvent.requestPermission();
+            motionPermission = await DeviceMotionEvent.requestPermission();
             console.log('📱 Motion permission:', motionPermission);
         }
 
         console.log('✅ iOS permissions requested');
+        return { orientation: orientationPermission, motion: motionPermission };
     } catch (error) {
         console.warn('⚠️ iOS permissions failed:', error);
+        return { orientation: 'denied', motion: 'denied' };
     }
 };
 
