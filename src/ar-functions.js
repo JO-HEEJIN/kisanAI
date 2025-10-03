@@ -2073,11 +2073,16 @@ window.handlePixelClick = function(event) {
                 try {
                     // Check if we're on localhost or deployed
                     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                    const isVercelDeployment = window.location.hostname.includes('vercel.app');
 
-                    if (!isLocalhost) {
-                        // For deployed environment, use realistic Houston data directly
-                        console.log('📱 Mobile/deployed environment detected - using Houston NASA data');
-                        throw new Error('Using realistic data for deployed environment');
+                    console.log('🌐 Current hostname:', window.location.hostname);
+                    console.log('🔍 Is localhost:', isLocalhost);
+                    console.log('🔍 Is Vercel:', isVercelDeployment);
+
+                    if (!isLocalhost || isVercelDeployment) {
+                        // For deployed environment (Vercel), use realistic Houston data directly
+                        console.log('📱 Vercel deployment detected - using pre-fetched Houston NASA data');
+                        throw new Error('Using realistic data for Vercel deployment');
                     }
 
                     // Fetch detailed NASA data for this location (localhost only)
@@ -2135,10 +2140,11 @@ window.handlePixelClick = function(event) {
                         (houstonSoilMoisture * 100 * 0.4) + (houstonNdvi * 100 * 0.6)
                     ); // Calculated: ~74%
 
-                    console.log('📍 Using realistic Houston NASA data (mobile environment):', {
+                    console.log('📍 Using realistic Houston NASA data (Vercel deployment):', {
                         soilMoisture: houstonSoilMoisture,
                         ndvi: houstonNdvi,
-                        health: houstonHealth
+                        health: houstonHealth,
+                        hostname: window.location.hostname
                     });
 
                     showDetailedAnalysisPopup({
