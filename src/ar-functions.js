@@ -2488,15 +2488,46 @@ function calculateHealthScore(smapData, modisData, landsatData) {
     }
 
     const finalScore = Math.min(100, Math.max(5, healthScore));
-    console.log('🎯 Final health score calculation:', {
-        baseScore: 30,
-        soilMoistureContribution: soilMoisture >= 0.25 && soilMoisture <= 0.45 ? 35 :
-                                 soilMoisture >= 0.15 && soilMoisture <= 0.6 ? 25 : 15,
-        ndviContribution: surfaceAnalysis.isVegetation && ndvi >= 0.7 ? 30 :
-                         surfaceAnalysis.isVegetation && ndvi >= 0.5 ? 25 : 20,
-        surfaceType: surfaceAnalysis,
-        finalScore
+
+    // Detailed calculation breakdown for debugging
+    const soilMoistureContrib = soilMoisture >= 0.25 && soilMoisture <= 0.45 ? 35 :
+                               soilMoisture >= 0.15 && soilMoisture <= 0.6 ? 25 :
+                               soilMoisture >= 0.1 ? 15 : 5;
+
+    let ndviContrib = 0;
+    if (surfaceAnalysis.isVegetation) {
+        if (ndvi >= 0.7) ndviContrib = 30;
+        else if (ndvi >= 0.5) ndviContrib = 25;
+        else if (ndvi >= 0.3) ndviContrib = 15;
+        else ndviContrib = 8;
+    } else if (surfaceAnalysis.isSoil) {
+        if (ndvi >= 0.6) ndviContrib = 25;
+        else if (ndvi >= 0.4) ndviContrib = 20;
+        else ndviContrib = 10;
+    }
+
+    const qualityBonus = smapData.quality === 'real' ? 5 : 0;
+    const surfacePenalty = (!surfaceAnalysis.isVegetation && !surfaceAnalysis.isSoil) ? -20 : 0;
+
+    console.log('🎯 DETAILED Health Score Breakdown:', {
+        step1_baseScore: 30,
+        step2_soilMoisture: soilMoisture,
+        step3_soilMoisturePoints: soilMoistureContrib,
+        step4_ndvi: ndvi,
+        step5_ndviPoints: ndviContrib,
+        step6_qualityBonus: qualityBonus,
+        step7_surfacePenalty: surfacePenalty,
+        step8_beforeMinMax: healthScore,
+        step9_finalScore: finalScore,
+        surfaceAnalysis: surfaceAnalysis
     });
+
+    // Emergency fallback if something is wrong
+    if (finalScore < 10) {
+        console.error('🚨 ABNORMAL LOW SCORE DETECTED! Using fallback calculation');
+        const fallbackScore = Math.max(30, 30 + soilMoistureContrib + ndviContrib);
+        return Math.min(100, fallbackScore);
+    }
 
     return finalScore;
 }
