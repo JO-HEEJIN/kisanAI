@@ -866,11 +866,11 @@ window.startSoilAnalysis = function() {
             window.startContinuousAnalysis();
 
             // Start pixel visualization overlay
-            console.log('🎨 DEBUG Phase2: Scheduling pixel visualization in 5 seconds for camera readiness...');
+            console.log('🎨 DEBUG Phase4: Scheduling pixel visualization in 10 seconds for extended camera readiness...');
             setTimeout(() => {
-                console.log('🎨 DEBUG Phase2: 5-second timeout executed, calling startPixelVisualization...');
+                console.log('🎨 DEBUG Phase4: 10-second timeout executed, calling startPixelVisualization...');
                 window.startPixelVisualization();
-            }, 5000); // Wait 5s for AR and camera to fully initialize
+            }, 10000); // Wait 10s for AR and camera to fully initialize
         },
         (error) => {
             console.warn('GPS failed:', error);
@@ -880,11 +880,11 @@ window.startSoilAnalysis = function() {
             window.startContinuousAnalysis();
 
             // Start pixel visualization overlay
-            console.log('🎨 DEBUG Phase2: Scheduling pixel visualization in 5 seconds for camera readiness...');
+            console.log('🎨 DEBUG Phase4: Scheduling pixel visualization in 10 seconds for extended camera readiness...');
             setTimeout(() => {
-                console.log('🎨 DEBUG Phase2: 5-second timeout executed, calling startPixelVisualization...');
+                console.log('🎨 DEBUG Phase4: 10-second timeout executed, calling startPixelVisualization...');
                 window.startPixelVisualization();
-            }, 5000); // Wait 5s for AR and camera to fully initialize
+            }, 10000); // Wait 10s for AR and camera to fully initialize
         }
     );
 };
@@ -976,13 +976,71 @@ window.createPixelVisualization = function() {
     return pixelOverlay;
 };
 
+// Wait for video to be ready with event listeners
+window.waitForVideoReady = function(video, timeout = 15000) {
+    return new Promise((resolve, reject) => {
+        if (!video) {
+            reject(new Error('No video element provided'));
+            return;
+        }
+
+        // Check if already ready
+        if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+            window.updateARDebugPanel('Phase 4: 비디오 이미 준비됨! ✅');
+            resolve(video);
+            return;
+        }
+
+        window.updateARDebugPanel(`Phase 4: 비디오 준비 대기 중...
+이벤트 리스너 등록됨
+최대 ${timeout/1000}초 대기`);
+
+        let resolved = false;
+        const timer = setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                window.updateARDebugPanel('Phase 4: 비디오 대기 시간 초과 ⏰');
+                reject(new Error('Video ready timeout'));
+            }
+        }, timeout);
+
+        const checkReady = () => {
+            if (!resolved && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+                resolved = true;
+                clearTimeout(timer);
+                window.updateARDebugPanel(`Phase 4: 비디오 준비 완료! ✅
+Ready State: ${video.readyState}/4
+크기: ${video.videoWidth}x${video.videoHeight}`);
+                resolve(video);
+            }
+        };
+
+        // Add multiple event listeners
+        video.addEventListener('loadeddata', checkReady, { once: true });
+        video.addEventListener('canplay', checkReady, { once: true });
+        video.addEventListener('canplaythrough', checkReady, { once: true });
+
+        // Also check periodically in case events don't fire
+        const intervalCheck = setInterval(() => {
+            if (resolved) {
+                clearInterval(intervalCheck);
+                return;
+            }
+            checkReady();
+        }, 200);
+    });
+};
+
 // Extract color grid from camera feed
 window.extractColorGrid = function(gridSize = 16) {
     try {
-        // Get camera video element
+        // Enhanced video element search with more selectors
         const video = document.querySelector('video[autoplay]') ||
+                     document.querySelector('video[muted]') ||
+                     document.querySelector('video[playsinline]') ||
                      document.querySelector('.a-video video') ||
                      document.querySelector('a-video video') ||
+                     document.querySelector('a-scene video') ||
                      document.querySelector('video');
 
         const videoStatus = {
@@ -1003,8 +1061,25 @@ Ready State: ${videoStatus.readyState}/4
 현재 시간: ${videoStatus.currentTime?.toFixed(1)}s`);
 
         if (!video || video.readyState < 2) {
-            console.log('🎨 DEBUG Phase2: Video not ready, returning null');
-            window.updateARDebugPanel(`Phase 2: 비디오 준비 안됨 ❌
+            console.log('🎨 DEBUG Phase4: Video not ready, attempting enhanced wait...');
+
+            // Try enhanced video waiting for the first few attempts
+            if (video && !window.videoWaitAttempted) {
+                window.videoWaitAttempted = true;
+                window.updateARDebugPanel(`Phase 4: 향상된 비디오 대기 시도
+이벤트 리스너 활성화 중...`);
+
+                // Attempt to wait for video ready with event listeners
+                window.waitForVideoReady(video, 5000).then((readyVideo) => {
+                    window.updateARDebugPanel(`Phase 4: 이벤트 대기 성공! ✅
+다음 업데이트에서 픽셀 추출 시도`);
+                }).catch((error) => {
+                    window.updateARDebugPanel(`Phase 4: 이벤트 대기 실패
+기존 재시도 로직 계속...`);
+                });
+            }
+
+            window.updateARDebugPanel(`Phase 4: 비디오 준비 안됨
 Ready State: ${videoStatus.readyState}/4
 다음 500ms 후 재시도...`);
             return null;
@@ -1132,8 +1207,8 @@ window.startPixelVisualization = function() {
     window.createPixelVisualization();
 
     // Wait a bit more for camera to initialize, then start updating
-    console.log('🎨 DEBUG Phase2: Starting pixel visualization with extended camera wait...');
-    window.updateARDebugPanel('Phase 2: 카메라 초기화 대기\n5초 지연 후 시작 예정...');
+    console.log('🎨 DEBUG Phase4: Starting pixel visualization with enhanced camera wait...');
+    window.updateARDebugPanel('Phase 4: 향상된 카메라 대기\n10초 지연 + 강화된 감지 로직');
 
     // Update every 500ms for smooth real-time effect
     const pixelInterval = setInterval(() => {
