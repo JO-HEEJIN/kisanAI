@@ -1355,11 +1355,10 @@ function createPermissionDialog() {
 
         dialog.innerHTML = `
             <div style="margin-bottom: 20px;">
-                <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
-                <h2 style="margin: 0 0 10px 0; color: #FFFFFF; font-size: 20px; font-weight: 700; text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);">
-                    📱 Rotate Your Phone to Landscape
+                <h2 style="margin: 0 0 15px 0; color: #FFFFFF; font-size: 22px; font-weight: 700; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);">
+                    Rotate Your Phone to Landscape
                 </h2>
-                <p style="margin: 0; font-size: 16px; line-height: 1.4; color: #FFFFFF;">
+                <p style="margin: 0; font-size: 18px; line-height: 1.5; color: #FFFFFF; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);">
                     For the best AR experience, please rotate your phone to landscape mode (horizontal).
                 </p>
             </div>
