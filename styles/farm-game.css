@@ -2205,11 +2205,6 @@
     margin-bottom: 15px;
 }
 
-/* NASA Data Panel 내부 스타일 오버라이드 */
-.nasa-data-panel .satellite-metrics {
-    display: block !important;
-}
-
 .metric {
     background: rgba(228, 0, 43, 0.1);
     border: 2px solid rgba(228, 0, 43, 0.3);
@@ -2217,12 +2212,6 @@
     border-radius: 10px;
     font-size: 0.95em;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-/* NASA Data Panel 내부 metric 스타일 오버라이드 */
-.nasa-data-panel .metric {
-    display: block !important;
-    margin-bottom: 10px;
 }
 
 .metric strong {
