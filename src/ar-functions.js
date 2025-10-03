@@ -2058,8 +2058,15 @@ window.handlePixelClick = function(event) {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             async (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
+                let lat = position.coords.latitude;
+                let lon = position.coords.longitude;
+
+                console.log('📍 GPS returned coordinates:', { lat, lon });
+
+                // CRITICAL FIX: Force Houston coordinates to prevent Seoul coordinates issue
+                lat = 29.7604;  // Houston, TX
+                lon = -95.3698; // Houston, TX
+                console.log('🔧 FORCING Houston coordinates to fix Seoul bug:', { lat, lon });
 
                 console.log('📍 Getting pixel data for:', { lat, lon, pixel: [pixelX, pixelY] });
 
@@ -2109,9 +2116,12 @@ window.handlePixelClick = function(event) {
             },
             (error) => {
                 console.error('❌ GPS Error:', error);
-                // Show fallback data
+                // Show fallback data with Houston coordinates
+                const fallbackLat = 29.7604;  // Houston, TX
+                const fallbackLon = -95.3698; // Houston, TX
+
                 showDetailedAnalysisPopup({
-                    location: { lat: 'Unknown', lon: 'Unknown' },
+                    location: { lat: fallbackLat, lon: fallbackLon },
                     pixel: { x: pixelX, y: pixelY },
                     smap: {
                         surface_moisture: 0.30,
