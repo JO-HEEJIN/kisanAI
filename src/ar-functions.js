@@ -1106,10 +1106,20 @@ Autoplay: ${videoStatus.autoplay ? '✅' : '❌'}`);
 
                 // Try to play the video if it's paused
                 if (video.paused) {
+                    // First set necessary attributes
+                    video.setAttribute('muted', 'true');
+                    video.setAttribute('playsinline', 'true');
+                    video.muted = true;
+                    video.playsInline = true;
+
                     video.play().then(() => {
                         window.updateARDebugPanel('Phase 5: 비디오 재생 성공! ✅');
                     }).catch((error) => {
-                        window.updateARDebugPanel(`Phase 5: 재생 실패: ${error.message}`);
+                        window.updateARDebugPanel(`Phase 5: 재생 실패
+에러: ${error.name}
+메시지: ${error.message}
+Muted: ${video.muted}
+URL: ${window.location.protocol}`);
                     });
                 }
 
