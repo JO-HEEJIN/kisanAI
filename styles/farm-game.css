@@ -4070,7 +4070,8 @@
 }
 
 .tutorial-header h2 {
-    margin: 0 0 16px 0;
+    margin: 8px 0 16px 0;
+    padding: 0 16px;
     font-size: 1.6rem;
     font-weight: 600;
 }

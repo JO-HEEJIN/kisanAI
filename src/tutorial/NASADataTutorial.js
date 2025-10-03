@@ -1704,7 +1704,8 @@ const tutorialStyles = `
     border-bottom: 2px solid var(--modal-border-color) !important;
 
 .tutorial-header h2, .lesson-header h2 {
-    margin: 0 !important;
+    margin: 8px 0 0 0 !important;
+    padding: 0 16px !important;
     font-size: 1.75rem !important;
     font-weight: 600 !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
