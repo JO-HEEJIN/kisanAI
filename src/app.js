@@ -576,13 +576,26 @@ class NASAFarmNavigatorsApp {
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
 
-        // Add event listeners
-        const saveBtn = modal.querySelector('#setupSave');
-        const laterBtn = modal.querySelector('#setupLater');
-        const nasaTokenInput = modal.querySelector('#setupNasaToken');
-        const openaiKeyInput = modal.querySelector('#setupOpenaiKey');
+        // Add event listeners after a brief delay to ensure DOM is ready
+        setTimeout(() => {
+            const saveBtn = modal.querySelector('#setupSave');
+            const laterBtn = modal.querySelector('#setupLater');
+            const nasaTokenInput = modal.querySelector('#setupNasaToken');
+            const openaiKeyInput = modal.querySelector('#setupOpenaiKey');
 
-        saveBtn.addEventListener('click', () => {
+            console.log('🔍 Button check:', {
+                saveBtn: !!saveBtn,
+                laterBtn: !!laterBtn,
+                nasaTokenInput: !!nasaTokenInput,
+                openaiKeyInput: !!openaiKeyInput
+            });
+
+            if (!saveBtn) {
+                console.error('❌ setupSave button not found!');
+                return;
+            }
+
+            saveBtn.addEventListener('click', () => {
             console.log('🔥 Start Exploring button clicked!');
 
             const nasaToken = nasaTokenInput.value.trim();
@@ -625,6 +638,11 @@ class NASAFarmNavigatorsApp {
             document.body.removeChild(modal);
         });
 
+        if (!laterBtn) {
+            console.error('❌ setupLater button not found!');
+            return;
+        }
+
         laterBtn.addEventListener('click', () => {
             console.log('⏭️ Skip for Now button clicked!');
 
@@ -643,31 +661,32 @@ class NASAFarmNavigatorsApp {
             document.body.removeChild(modal);
         });
 
-        // Close on outside click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                laterBtn.click();
-            }
-        });
+            // Close on outside click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    laterBtn.click();
+                }
+            });
 
-        // Add hover effects
-        saveBtn.addEventListener('mouseenter', () => {
-            saveBtn.style.transform = 'translateY(-2px)';
-            saveBtn.style.boxShadow = '0 6px 20px rgba(228, 55, 0, 0.4)';
-        });
+            // Add hover effects
+            saveBtn.addEventListener('mouseenter', () => {
+                saveBtn.style.transform = 'translateY(-2px)';
+                saveBtn.style.boxShadow = '0 6px 20px rgba(228, 55, 0, 0.4)';
+            });
 
-        saveBtn.addEventListener('mouseleave', () => {
-            saveBtn.style.transform = 'translateY(0)';
-            saveBtn.style.boxShadow = '0 4px 15px rgba(228, 55, 0, 0.3)';
-        });
+            saveBtn.addEventListener('mouseleave', () => {
+                saveBtn.style.transform = 'translateY(0)';
+                saveBtn.style.boxShadow = '0 4px 15px rgba(228, 55, 0, 0.3)';
+            });
 
-        laterBtn.addEventListener('mouseenter', () => {
-            laterBtn.style.background = 'rgba(255,255,255,0.2)';
-        });
+            laterBtn.addEventListener('mouseenter', () => {
+                laterBtn.style.background = 'rgba(255,255,255,0.2)';
+            });
 
-        laterBtn.addEventListener('mouseleave', () => {
-            laterBtn.style.background = 'rgba(255,255,255,0.1)';
-        });
+            laterBtn.addEventListener('mouseleave', () => {
+                laterBtn.style.background = 'rgba(255,255,255,0.1)';
+            });
+        }, 100); // End of setTimeout
     }
 
     /**
