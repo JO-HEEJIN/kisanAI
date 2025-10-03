@@ -395,12 +395,12 @@ class ConversationalAI {
                     },
                     (error) => {
                         console.warn('⚠️ GPS Error:', error);
-                        this.currentLocation = { lat: 37.5665, lon: 126.9780 }; // 서울 기본값
+                        this.currentLocation = { lat: 29.7604, lon: -95.3698 }; // 서울 기본값
                         resolve();
                     }
                 );
             } else {
-                this.currentLocation = { lat: 37.5665, lon: 126.9780 };
+                this.currentLocation = { lat: 29.7604, lon: -95.3698 };
                 resolve();
             }
         });

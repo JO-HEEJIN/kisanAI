@@ -764,12 +764,12 @@ class PlantRecognition {
                     },
                     (error) => {
                         console.warn('⚠️ GPS Error for plant recognition:', error);
-                        this.currentLocation = { lat: 37.5665, lon: 126.9780 };
+                        this.currentLocation = { lat: 29.7604, lon: -95.3698 };
                         resolve();
                     }
                 );
             } else {
-                this.currentLocation = { lat: 37.5665, lon: 126.9780 };
+                this.currentLocation = { lat: 29.7604, lon: -95.3698 };
                 resolve();
             }
         });

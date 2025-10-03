@@ -27,7 +27,7 @@ class NASAFarmNavigatorsApp {
         };
 
         // Default location (fallback)
-        this.defaultLocation = { lat: 37.5665, lon: 126.978 }; // Seoul
+        this.defaultLocation = { lat: 29.7604, lon: -95.3698 }; // Houston, TX (NASA Johnson Space Center)
         this.userLocation = null;
 
         // Bind methods
@@ -365,7 +365,7 @@ class NASAFarmNavigatorsApp {
 
             // Show notification about fallback
             this.showNotification(
-                'Using default location (Seoul). You can change coordinates manually.',
+                'Using default location (Houston, TX). You can change coordinates manually.',
                 'info'
             );
         }
