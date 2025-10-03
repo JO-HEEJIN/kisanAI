@@ -2346,22 +2346,41 @@ function analyzeSurfaceType() {
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
 
+        console.log('📸 Image data captured:', {
+            dataLength: data.length,
+            expectedPixels: width * height * 4,
+            firstPixels: Array.from(data.slice(0, 16))
+        });
+
         let brownPixels = 0;
         let greenPixels = 0;
         let vibrantGreenPixels = 0;
         let darkPixels = 0;
+        let brightPixels = 0;
         let totalPixels = 0;
+        let sampleColors = [];
+
+        // Sample every 100th pixel for debugging
+        const sampleInterval = Math.floor(data.length / 1600) || 1000; // ~400 samples
 
         // Analyze pixels for different surface types
         for (let i = 0; i < data.length; i += 4) {
             const r = data[i];
             const g = data[i + 1];
             const b = data[i + 2];
-
-            // Skip very dark or very bright pixels
             const brightness = (r + g + b) / 3;
-            if (brightness < 20 || brightness > 240) {
-                if (brightness < 20) darkPixels++;
+
+            // Sample colors for debugging
+            if (i % sampleInterval === 0 && sampleColors.length < 10) {
+                sampleColors.push({ r, g, b, brightness: Math.round(brightness) });
+            }
+
+            // Classify brightness levels
+            if (brightness < 20) {
+                darkPixels++;
+                continue;
+            } else if (brightness > 240) {
+                brightPixels++;
                 continue;
             }
 
@@ -2397,39 +2416,58 @@ function analyzeSurfaceType() {
         const vibrantGreenRatio = vibrantGreenPixels / safeTotal;
         const darkRatio = darkPixels / safeTotalWithDark;
 
-        console.log('🔍 Surface analysis:', {
+        console.log('🔍 Surface analysis DETAILED:', {
             brownRatio: brownRatio.toFixed(3),
             greenRatio: greenRatio.toFixed(3),
             vibrantGreenRatio: vibrantGreenRatio.toFixed(3),
             darkRatio: darkRatio.toFixed(3),
-            totalPixels
+            brightRatio: (brightPixels / safeTotalWithDark).toFixed(3),
+            totalPixels,
+            darkPixels,
+            brightPixels,
+            sampleColors
         });
 
-        // Surface type determination (더 관대한 기준)
+        // Surface type determination (매우 관대한 기준)
         let surfaceType = 'other';
         let isSoil = false;
         let isVegetation = false;
 
-        // 식물 판단 (우선순위)
-        if (vibrantGreenRatio > 0.15 || greenRatio > 0.25) {
+        // 식물 판단 (더 관대하게)
+        if (vibrantGreenRatio > 0.08 || greenRatio > 0.15) {
             surfaceType = 'vegetation';
             isVegetation = true;
             console.log('✅ Vegetation detected (vibrant green or high green ratio)');
         }
-        // 토양 판단 (식물이 아닌 경우)
-        else if (brownRatio > 0.05 && greenRatio < 0.20) {
+        // 토양 판단 (더 관대하게)
+        else if (brownRatio > 0.02 && greenRatio < 0.30) {
             surfaceType = 'soil';
             isSoil = true;
             console.log('✅ Soil detected (brown ratio with low green)');
         }
-        // 혼합 표면 (토양 + 일부 식물)
-        else if (brownRatio > 0.03 && greenRatio > 0.10 && greenRatio < 0.35) {
+        // 혼합 표면 (매우 관대하게)
+        else if (brownRatio > 0.01 || greenRatio > 0.05) {
             surfaceType = 'mixed';
             isSoil = true; // 농업 용도로 간주
-            console.log('✅ Mixed surface detected (soil with some vegetation)');
+            console.log('✅ Mixed surface detected (any agricultural hints)');
+        }
+        // 완전 어두운 화면 체크
+        else if (darkRatio > 0.8) {
+            surfaceType = 'dark_screen';
+            isSoil = true; // 어두운 화면도 토양으로 간주 (관대하게)
+            console.log('⚫ Dark screen detected - treating as soil');
+        }
+        // 완전 밝은 화면 체크
+        else if ((brightPixels / safeTotalWithDark) > 0.8) {
+            surfaceType = 'bright_screen';
+            isVegetation = true; // 밝은 화면은 식물로 간주 (관대하게)
+            console.log('⚪ Bright screen detected - treating as vegetation');
         }
         else {
-            console.log('❌ Non-agricultural surface detected');
+            // 최후의 수단: 농업 표면으로 간주
+            surfaceType = 'assumed_agricultural';
+            isSoil = true;
+            console.log('🌾 Defaulting to agricultural surface for better user experience');
         }
 
         return {
