@@ -465,6 +465,28 @@ class NASAFarmNavigatorsApp {
         // Default NASA token for easy setup
         const defaultNASAToken = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImphbmdfYW1lcnkiLCJleHAiOjE3NjMwNzgzOTksImlhdCI6MTc1NzgyNzAwMCwiaXNzIjoiaHR0cHM6Ly91cnMuZWFydGhkYXRhLm5hc2EuZ292IiwiaWRlbnRpdHlfcHJvdmlkZXIiOiJlZGxfb3BzIiwiYWNyIjoiZWRsIiwiYXNzdXJhbmNlX2xldmVsIjozfQ.sExaSzrCShT33AHjikx2nCGWAX9bqkoUgO2s09EToZ9yzZrA7dwK_2J8216VwZbdTesbwVYg2ysOV3eNqtxzlU2ALWbrmjSh06xaLSET_xiOICKnjeSgfn_VR6Ew4Dedg6uyDknW1WExZNgJ1lNO6L2a41W5B9plAJqxXeV5rdle-rRCzR51VAAj0vzA5mtFXCLDNgb2or7dOxvJpRjv12_x57Az1i7Y3SQhVQmqgfiP9Hdan-wVu5eR6JCs2ewqJYtKPlec4WGmn2nQ1IHDbabiKVPZhtZqb8nzeDVBkf-4zLTWRRBzt8ZquBWl3l-0P9p0-6A_msif53I-F4pNIw';
 
+        // Auto-save default NASA token if not already stored (for competition reliability)
+        if (!hasNASAToken) {
+            localStorage.setItem('nasa_earthdata_token', defaultNASAToken);
+            console.log('🚀 Default NASA token auto-saved for competition reliability');
+
+            // Update auth status immediately
+            try {
+                if (window.nasaFarmNavigators && window.nasaFarmNavigators.updateAuthenticationStatus) {
+                    window.nasaFarmNavigators.updateAuthenticationStatus();
+                }
+            } catch (error) {
+                console.warn('⚠️ Could not update auth status:', error);
+            }
+        }
+
+        // Auto-save default OpenAI API key if not already stored (for competition reliability)
+        if (!hasOpenAIKey) {
+            const defaultOpenAIKey = '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';
+            localStorage.setItem('openai_api_key', defaultOpenAIKey);
+            console.log('🔑 Default OpenAI API key auto-saved for competition reliability');
+        }
+
         modalContent.innerHTML = `
             <div class="setup-header">
                 <h1 style="color: #EAFE07; font-size: 28px; margin-bottom: 10px; text-align: center;">
@@ -616,10 +638,7 @@ class NASAFarmNavigatorsApp {
 
             if (openaiKey) {
                 localStorage.setItem('openai_api_key', openaiKey);
-                // Reinitialize ConversationalAI if it exists
-                if (window.conversationalAI) {
-                    window.conversationalAI.loadAPIKey();
-                }
+                // Note: ConversationalAI does not need reinitialization
             }
 
             localStorage.setItem('welcome_shown', 'true');
@@ -7367,10 +7386,7 @@ class NASAFarmNavigatorsApp {
                     localStorage.setItem('openai_api_key', apiKey);
                     this.showAlert('✅ OpenAI API key saved successfully!', 'success');
 
-                    // Reinitialize ConversationalAI if it exists
-                    if (window.conversationalAI) {
-                        window.conversationalAI.loadAPIKey();
-                    }
+                    // Note: ConversationalAI does not need reinitialization
                 } else {
                     localStorage.removeItem('openai_api_key');
                 }
@@ -7425,10 +7441,7 @@ class NASAFarmNavigatorsApp {
                 // Update UI
                 this.updateAuthenticationStatus();
 
-                // Reinitialize ConversationalAI
-                if (window.conversationalAI) {
-                    window.conversationalAI.loadAPIKey();
-                }
+                // Note: ConversationalAI does not need reinitialization
 
                 this.showAlert('🔄 Settings reset to defaults', 'info');
                 this.closeSettingsModal();
