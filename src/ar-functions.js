@@ -1031,42 +1031,78 @@ Ready State: ${video.readyState}/4
     });
 };
 
-// Alternative: Extract color grid directly from A-Frame canvas
+// Alternative: Extract real colors from WebGL canvas using readPixels
 window.extractColorFromCanvas = function(gridSize = 16) {
     try {
-        // Try to get pixels from A-Frame canvas directly
+        // Try WebGL approach to get real camera pixels
         const aframeCanvas = document.querySelector('a-scene canvas');
-        if (aframeCanvas && aframeCanvas.width > 0 && aframeCanvas.height > 0) {
-            window.updateARDebugPanel(`Alternative: Canvas 직접 추출
-Canvas 크기: ${aframeCanvas.width}x${aframeCanvas.height}`);
+        if (!aframeCanvas) return null;
 
-            // Use simple color sampling
+        // Try to get WebGL context and read pixels
+        const gl = aframeCanvas.getContext('webgl') || aframeCanvas.getContext('webgl2');
+        if (gl && aframeCanvas.width > 0 && aframeCanvas.height > 0) {
+            window.updateARDebugPanel(`WebGL: 실제 픽셀 추출 시도
+Canvas: ${aframeCanvas.width}x${aframeCanvas.height}`);
+
+            const width = aframeCanvas.width;
+            const height = aframeCanvas.height;
+
+            // Read pixels from WebGL
+            const pixels = new Uint8Array(width * height * 4);
+            gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+            // Sample pixels to create color grid
             const colors = [];
-            const cellWidth = aframeCanvas.width / gridSize;
-            const cellHeight = aframeCanvas.height / gridSize;
+            const stepX = Math.floor(width / gridSize);
+            const stepY = Math.floor(height / gridSize);
 
-            // Create simple color grid
             for (let y = 0; y < gridSize; y++) {
                 const row = [];
                 for (let x = 0; x < gridSize; x++) {
-                    // Generate sample colors based on position (fallback)
-                    const hue = (x + y) * 10 % 360;
+                    const px = x * stepX;
+                    const py = (gridSize - 1 - y) * stepY; // Flip Y for WebGL
+                    const idx = (py * width + px) * 4;
+
+                    const r = pixels[idx];
+                    const g = pixels[idx + 1];
+                    const b = pixels[idx + 2];
+
                     row.push({
-                        r: 100 + (x * 10) % 155,
-                        g: 100 + (y * 10) % 155,
-                        b: 150,
-                        hex: `hsl(${hue}, 50%, 50%)`
+                        r, g, b,
+                        hex: `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
                     });
                 }
                 colors.push(row);
             }
 
-            window.updateARDebugPanel(`Alternative: 샘플 색상 생성 ✅
+            // Check if we got real colors (not all black)
+            const hasRealColors = pixels.some(p => p > 0);
+            if (hasRealColors) {
+                window.updateARDebugPanel(`WebGL: 실제 색상 추출 성공! ✅
 그리드: ${gridSize}x${gridSize}`);
-            return colors;
+                return colors;
+            }
         }
-        return null;
+
+        // Fallback to sample colors
+        window.updateARDebugPanel(`Alternative: 샘플 색상 사용`);
+        const colors = [];
+        for (let y = 0; y < gridSize; y++) {
+            const row = [];
+            for (let x = 0; x < gridSize; x++) {
+                const hue = (x + y) * 10 % 360;
+                row.push({
+                    r: 100 + (x * 10) % 155,
+                    g: 100 + (y * 10) % 155,
+                    b: 150,
+                    hex: `hsl(${hue}, 50%, 50%)`
+                });
+            }
+            colors.push(row);
+        }
+        return colors;
     } catch (error) {
+        console.error('Canvas extraction error:', error);
         return null;
     }
 };
