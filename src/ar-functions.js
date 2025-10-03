@@ -1252,7 +1252,7 @@ window.startPixelVisualization = function() {
 
     // Wait a bit more for camera to initialize, then start updating
     console.log('🎨 DEBUG Phase4: Starting pixel visualization with enhanced camera wait...');
-    window.updateARDebugPanel('Phase 4: 향상된 카메라 대기\n10초 지연 + 강화된 감지 로직');
+    window.updateARDebugPanel('Phase 5: 종합 진단 시스템\n10초 지연 + 완전한 비디오 복구');
 
     // Update every 500ms for smooth real-time effect
     const pixelInterval = setInterval(() => {
