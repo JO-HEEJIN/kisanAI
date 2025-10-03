@@ -864,6 +864,11 @@ window.startSoilAnalysis = function() {
 
             // Start continuous analysis with AI
             window.startContinuousAnalysis();
+
+            // Start pixel visualization overlay
+            setTimeout(() => {
+                window.startPixelVisualization();
+            }, 2000); // Wait 2s for AR to fully initialize
         },
         (error) => {
             console.warn('GPS failed:', error);
@@ -871,6 +876,11 @@ window.startSoilAnalysis = function() {
             window.currentLocation = { lat: 33.4255, lon: -111.9400 };
             // Start analysis anyway with default location
             window.startContinuousAnalysis();
+
+            // Start pixel visualization overlay
+            setTimeout(() => {
+                window.startPixelVisualization();
+            }, 2000); // Wait 2s for AR to fully initialize
         }
     );
 };
@@ -891,6 +901,139 @@ window.initializeAIManager = async function() {
         console.error('❌ AI Manager initialization failed:', error);
         window.aiManager = null;
     }
+};
+
+// Create real-time pixel visualization overlay
+window.createPixelVisualization = function() {
+    console.log('🎨 Creating pixel visualization overlay...');
+
+    // Find AR scene
+    const arScene = document.querySelector('a-scene');
+    if (!arScene) {
+        console.error('❌ AR scene not found for pixel visualization');
+        return;
+    }
+
+    // Remove existing pixel overlay
+    const existingOverlay = document.getElementById('pixel-overlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+
+    // Create pixel overlay container
+    const pixelOverlay = document.createElement('a-entity');
+    pixelOverlay.id = 'pixel-overlay';
+    pixelOverlay.setAttribute('position', '0 0 -3');
+    arScene.appendChild(pixelOverlay);
+
+    console.log('✅ Pixel visualization container created');
+    return pixelOverlay;
+};
+
+// Extract color grid from camera feed
+window.extractColorGrid = function(gridSize = 16) {
+    try {
+        // Get camera video element
+        const video = document.querySelector('video[autoplay]') ||
+                     document.querySelector('.a-video video') ||
+                     document.querySelector('a-video video') ||
+                     document.querySelector('video');
+
+        if (!video || video.readyState < 2) {
+            return null;
+        }
+
+        // Create canvas for color extraction
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = gridSize;
+        canvas.height = gridSize;
+
+        // Draw scaled down video frame
+        ctx.drawImage(video, 0, 0, gridSize, gridSize);
+
+        // Extract pixel colors
+        const imageData = ctx.getImageData(0, 0, gridSize, gridSize);
+        const colors = [];
+
+        for (let y = 0; y < gridSize; y++) {
+            const row = [];
+            for (let x = 0; x < gridSize; x++) {
+                const index = (y * gridSize + x) * 4;
+                const r = imageData.data[index];
+                const g = imageData.data[index + 1];
+                const b = imageData.data[index + 2];
+
+                row.push({
+                    r, g, b,
+                    hex: `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+                });
+            }
+            colors.push(row);
+        }
+
+        return colors;
+    } catch (error) {
+        console.error('❌ Color grid extraction failed:', error);
+        return null;
+    }
+};
+
+// Update pixel visualization in AR
+window.updatePixelVisualization = function() {
+    const pixelOverlay = document.getElementById('pixel-overlay');
+    if (!pixelOverlay) return;
+
+    const colors = window.extractColorGrid(12); // 12x12 grid
+    if (!colors) return;
+
+    // Clear existing pixels
+    while (pixelOverlay.firstChild) {
+        pixelOverlay.removeChild(pixelOverlay.firstChild);
+    }
+
+    const pixelSize = 0.15;
+    const gridSize = colors.length;
+    const startX = -(gridSize * pixelSize) / 2;
+    const startY = (gridSize * pixelSize) / 2;
+
+    // Create pixel grid
+    colors.forEach((row, y) => {
+        row.forEach((color, x) => {
+            const pixel = document.createElement('a-box');
+            pixel.setAttribute('width', pixelSize);
+            pixel.setAttribute('height', pixelSize);
+            pixel.setAttribute('depth', 0.02);
+            pixel.setAttribute('color', color.hex);
+            pixel.setAttribute('position', `${startX + x * pixelSize} ${startY - y * pixelSize} 0`);
+            pixel.setAttribute('material', 'opacity: 0.8');
+
+            // Add gentle animation
+            pixel.setAttribute('animation',
+                'property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear');
+
+            pixelOverlay.appendChild(pixel);
+        });
+    });
+
+    console.log(`🎨 Updated pixel visualization: ${gridSize}x${gridSize} grid`);
+};
+
+// Start pixel visualization loop
+window.startPixelVisualization = function() {
+    // Create initial overlay
+    window.createPixelVisualization();
+
+    // Update every 500ms for smooth real-time effect
+    const pixelInterval = setInterval(() => {
+        if (window.arRunning && document.getElementById('pixel-overlay')) {
+            window.updatePixelVisualization();
+        } else {
+            clearInterval(pixelInterval);
+        }
+    }, 500);
+
+    console.log('🎨 Pixel visualization loop started');
 };
 
 // Continuous analysis using Pixel Hunt data system + AI
@@ -1148,6 +1291,13 @@ window.stopARScene = function() {
     if (window.analysisInterval) {
         clearInterval(window.analysisInterval);
         window.analysisInterval = null;
+    }
+
+    // Remove pixel visualization overlay
+    const pixelOverlay = document.getElementById('pixel-overlay');
+    if (pixelOverlay) {
+        pixelOverlay.remove();
+        console.log('🎨 Pixel visualization overlay removed');
     }
 
     const arContainer = document.getElementById('arjs-container');
