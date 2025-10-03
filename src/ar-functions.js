@@ -2330,13 +2330,17 @@ function detectSoilFromCamera() {
 
             totalPixels++;
 
-            // Detect brown/soil colors (more red and green than blue)
-            if (r > b && g > b && r > 80 && g > 60) {
+            // Detect brown/soil colors (더 넓은 범위)
+            // 갈색, 베이지, 회갈색, 어두운 황토색 등 포함
+            if ((r > b && g > b && r > 50 && g > 40) || // 기본 갈색
+                (r > g && r > b && r > 60) || // 적갈색
+                (Math.abs(r - g) < 30 && r > b && r > 70) || // 베이지/연갈색
+                (r > 100 && g > 80 && b < 70)) { // 황토색
                 brownPixels++;
             }
 
-            // Detect green vegetation
-            if (g > r && g > b && g > 80) {
+            // Detect green vegetation (더 엄격하게)
+            if (g > r + 20 && g > b + 20 && g > 100) {
                 greenPixels++;
             }
         }
@@ -2350,8 +2354,8 @@ function detectSoilFromCamera() {
             totalPixels
         });
 
-        // Consider it soil if >15% brown and <30% green
-        const isSoil = brownRatio > 0.15 && greenRatio < 0.30;
+        // 더 관대한 토양 판단 기준: 갈색 8% 이상 + 초록 25% 미만
+        const isSoil = brownRatio > 0.08 && greenRatio < 0.25;
 
         console.log(isSoil ? '✅ Soil detected' : '❌ No soil detected');
         return isSoil;
