@@ -1356,11 +1356,11 @@ function createPermissionDialog() {
         dialog.innerHTML = `
             <div style="margin-bottom: 20px;">
                 <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
-                <h2 style="margin: 0 0 10px 0; color: #EAFE07; font-size: 20px; font-weight: 700; text-shadow: 0 0 10px rgba(234, 254, 7, 0.3);">
-                    Motion Sensor Access
+                <h2 style="margin: 0 0 10px 0; color: #FFFFFF; font-size: 20px; font-weight: 700; text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);">
+                    📱 Rotate Your Phone to Landscape
                 </h2>
-                <p style="margin: 0; font-size: 16px; line-height: 1.4; color: rgba(255, 255, 255, 0.9);">
-                    To enable AR features, we need access to your device motion sensors for accurate tracking.
+                <p style="margin: 0; font-size: 16px; line-height: 1.4; color: #FFFFFF;">
+                    For the best AR experience, please rotate your phone to landscape mode (horizontal).
                 </p>
             </div>
 
@@ -1384,7 +1384,7 @@ function createPermissionDialog() {
                 <button id="permission-allow" style="
                     flex: 1;
                     background: linear-gradient(45deg, #EAFE07, #B8C500) !important;
-                    color: #07173F !important;
+                    color: #FFFFFF !important;
                     border: 2px solid #EAFE07 !important;
                     border-radius: 12px !important;
                     padding: 14px 20px !important;
@@ -2007,8 +2007,9 @@ function setupGlobalTouchHandler() {
                         Math.pow(touchX - centerX, 2) + Math.pow(touchY - centerY, 2)
                     );
 
-                    if (distanceFromCenter < 100 && eventType === 'touchend') {
-                        console.log('🎯 Touch detected in targeting area, triggering pixel click');
+                    // Allow touch anywhere on screen for detailed analysis
+                    if (eventType === 'touchend') {
+                        console.log('🎯 Touch detected anywhere on screen, triggering pixel click');
                         event.preventDefault();
                         window.handlePixelClick(event);
                     }
@@ -2024,10 +2025,9 @@ function setupGlobalTouchHandler() {
                         Math.pow(clickX - centerX, 2) + Math.pow(clickY - centerY, 2)
                     );
 
-                    if (distanceFromCenter < 100) {
-                        console.log('🎯 Click detected in targeting area, triggering pixel click');
-                        window.handlePixelClick(event);
-                    }
+                    // Allow click anywhere on screen for detailed analysis
+                    console.log('🎯 Click detected anywhere on screen, triggering pixel click');
+                    window.handlePixelClick(event);
                 }
             });
         });
