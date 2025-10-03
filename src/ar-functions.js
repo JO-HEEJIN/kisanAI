@@ -1034,47 +1034,91 @@ Ready State: ${video.readyState}/4
 // Extract color grid from camera feed
 window.extractColorGrid = function(gridSize = 16) {
     try {
-        // Enhanced video element search with more selectors
-        const video = document.querySelector('video[autoplay]') ||
-                     document.querySelector('video[muted]') ||
-                     document.querySelector('video[playsinline]') ||
-                     document.querySelector('.a-video video') ||
-                     document.querySelector('a-video video') ||
-                     document.querySelector('a-scene video') ||
-                     document.querySelector('video');
+        // Phase 5: Comprehensive video element search including AR.js specific methods
+        let video = null;
+
+        // Method 1: Standard selectors
+        video = document.querySelector('video[autoplay]') ||
+                document.querySelector('video[muted]') ||
+                document.querySelector('video[playsinline]') ||
+                document.querySelector('.a-video video') ||
+                document.querySelector('a-video video') ||
+                document.querySelector('a-scene video') ||
+                document.querySelector('video');
+
+        // Method 2: Try AR.js camera component access
+        if (!video) {
+            const arCamera = document.querySelector('[arjs-device-orientation-controls]') ||
+                            document.querySelector('[camera]') ||
+                            document.querySelector('a-camera');
+            if (arCamera) {
+                video = arCamera.querySelector('video');
+            }
+        }
+
+        // Method 3: Check all video elements and find the one with camera stream
+        if (!video) {
+            const allVideos = document.querySelectorAll('video');
+            for (let v of allVideos) {
+                if (v.srcObject || v.currentSrc.includes('blob:') || v.mozSrcObject) {
+                    video = v;
+                    break;
+                }
+            }
+            window.updateARDebugPanel(`Phase 5: 비디오 검색 확장
+전체 비디오 수: ${allVideos.length}개
+카메라 스트림 검색 중...`);
+        }
 
         const videoStatus = {
             foundVideo: !!video,
             videoWidth: video?.videoWidth,
             videoHeight: video?.videoHeight,
             readyState: video?.readyState,
-            currentTime: video?.currentTime
+            currentTime: video?.currentTime,
+            srcObject: !!video?.srcObject,
+            currentSrc: video?.currentSrc?.substring(0, 50) || 'none',
+            paused: video?.paused,
+            muted: video?.muted,
+            autoplay: video?.autoplay
         };
 
         console.log('🎨 DEBUG Phase2: Video readiness check:', videoStatus);
 
-        // Update debug panel with video status
-        window.updateARDebugPanel(`Phase 2: 비디오 상태 확인
+        // Update debug panel with comprehensive video status
+        window.updateARDebugPanel(`Phase 5: 완전한 비디오 진단
 비디오 발견: ${videoStatus.foundVideo ? '✅' : '❌'}
 Ready State: ${videoStatus.readyState}/4
 크기: ${videoStatus.videoWidth}x${videoStatus.videoHeight}
-현재 시간: ${videoStatus.currentTime?.toFixed(1)}s`);
+SrcObject: ${videoStatus.srcObject ? '✅' : '❌'}
+Paused: ${videoStatus.paused ? '❌' : '✅'}
+Muted: ${videoStatus.muted ? '✅' : '❌'}
+Autoplay: ${videoStatus.autoplay ? '✅' : '❌'}`);
 
         if (!video || video.readyState < 2) {
             console.log('🎨 DEBUG Phase4: Video not ready, attempting enhanced wait...');
 
-            // Try enhanced video waiting for the first few attempts
+            // Try enhanced video waiting and play attempt
             if (video && !window.videoWaitAttempted) {
                 window.videoWaitAttempted = true;
-                window.updateARDebugPanel(`Phase 4: 향상된 비디오 대기 시도
-이벤트 리스너 활성화 중...`);
+                window.updateARDebugPanel(`Phase 5: 비디오 복구 시도
+이벤트 리스너 + 강제 재생`);
+
+                // Try to play the video if it's paused
+                if (video.paused) {
+                    video.play().then(() => {
+                        window.updateARDebugPanel('Phase 5: 비디오 재생 성공! ✅');
+                    }).catch((error) => {
+                        window.updateARDebugPanel(`Phase 5: 재생 실패: ${error.message}`);
+                    });
+                }
 
                 // Attempt to wait for video ready with event listeners
                 window.waitForVideoReady(video, 5000).then((readyVideo) => {
-                    window.updateARDebugPanel(`Phase 4: 이벤트 대기 성공! ✅
+                    window.updateARDebugPanel(`Phase 5: 이벤트 대기 성공! ✅
 다음 업데이트에서 픽셀 추출 시도`);
                 }).catch((error) => {
-                    window.updateARDebugPanel(`Phase 4: 이벤트 대기 실패
+                    window.updateARDebugPanel(`Phase 5: 이벤트 대기 실패
 기존 재시도 로직 계속...`);
                 });
             }
