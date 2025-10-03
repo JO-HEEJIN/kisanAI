@@ -2142,10 +2142,8 @@ window.handlePixelClick = function(event) {
 
                 console.log('📍 GPS returned coordinates:', { lat, lon });
 
-                // CRITICAL FIX: Force Houston coordinates to prevent Seoul coordinates issue
-                lat = 29.7604;  // Houston, TX
-                lon = -95.3698; // Houston, TX
-                console.log('🔧 FORCING Houston coordinates to fix Seoul bug:', { lat, lon });
+                // Use actual GPS coordinates (removed forced Houston override)
+                console.log('✅ Using real GPS coordinates:', { lat, lon });
 
                 console.log('📍 Getting pixel data for:', { lat, lon, pixel: [pixelX, pixelY] });
 
@@ -2290,11 +2288,93 @@ window.handleTargetClick = function(event) {
     }
 };
 
+// Detect if camera is looking at soil/ground
+function detectSoilFromCamera() {
+    try {
+        // Get camera video element
+        const video = document.querySelector('video[autoplay]') ||
+                     document.querySelector('#camera-video') ||
+                     document.querySelector('video');
+
+        if (!video) {
+            console.log('❌ No camera video found - assuming not soil');
+            return false;
+        }
+
+        // Create canvas for image analysis
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth || 320;
+        canvas.height = video.videoHeight || 240;
+
+        // Draw current frame
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Get image data for color analysis
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        let brownPixels = 0;
+        let greenPixels = 0;
+        let totalPixels = 0;
+
+        // Analyze pixels for soil-like colors
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+
+            // Skip very dark or very bright pixels
+            const brightness = (r + g + b) / 3;
+            if (brightness < 30 || brightness > 220) continue;
+
+            totalPixels++;
+
+            // Detect brown/soil colors (more red and green than blue)
+            if (r > b && g > b && r > 80 && g > 60) {
+                brownPixels++;
+            }
+
+            // Detect green vegetation
+            if (g > r && g > b && g > 80) {
+                greenPixels++;
+            }
+        }
+
+        const brownRatio = brownPixels / totalPixels;
+        const greenRatio = greenPixels / totalPixels;
+
+        console.log('🔍 Soil detection analysis:', {
+            brownRatio: brownRatio.toFixed(3),
+            greenRatio: greenRatio.toFixed(3),
+            totalPixels
+        });
+
+        // Consider it soil if >15% brown and <30% green
+        const isSoil = brownRatio > 0.15 && greenRatio < 0.30;
+
+        console.log(isSoil ? '✅ Soil detected' : '❌ No soil detected');
+        return isSoil;
+
+    } catch (error) {
+        console.error('❌ Soil detection error:', error);
+        return false; // Default to no soil if detection fails
+    }
+}
+
 // Calculate health score from NASA data
 function calculateHealthScore(smapData, modisData, landsatData) {
-    let healthScore = 50; // Base score
+    // Detect if we're actually looking at soil
+    const isSoilDetected = detectSoilFromCamera();
 
-    console.log('🔍 calculateHealthScore input:', { smapData, modisData, landsatData });
+    // Start with appropriate base score based on soil detection
+    let healthScore = isSoilDetected ? 50 : 5; // High score only if soil detected
+
+    if (!isSoilDetected) {
+        console.log('⚠️ Low health score: No soil detected in camera view');
+    }
+
+    console.log('🔍 calculateHealthScore input:', { smapData, modisData, landsatData, isSoilDetected });
 
     // SMAP soil moisture factor (0-40 points)
     const soilMoisture = smapData.surface_moisture !== undefined ?
