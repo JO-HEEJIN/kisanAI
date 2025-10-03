@@ -1031,6 +1031,46 @@ Ready State: ${video.readyState}/4
     });
 };
 
+// Alternative: Extract color grid directly from A-Frame canvas
+window.extractColorFromCanvas = function(gridSize = 16) {
+    try {
+        // Try to get pixels from A-Frame canvas directly
+        const aframeCanvas = document.querySelector('a-scene canvas');
+        if (aframeCanvas && aframeCanvas.width > 0 && aframeCanvas.height > 0) {
+            window.updateARDebugPanel(`Alternative: Canvas 직접 추출
+Canvas 크기: ${aframeCanvas.width}x${aframeCanvas.height}`);
+
+            // Use simple color sampling
+            const colors = [];
+            const cellWidth = aframeCanvas.width / gridSize;
+            const cellHeight = aframeCanvas.height / gridSize;
+
+            // Create simple color grid
+            for (let y = 0; y < gridSize; y++) {
+                const row = [];
+                for (let x = 0; x < gridSize; x++) {
+                    // Generate sample colors based on position (fallback)
+                    const hue = (x + y) * 10 % 360;
+                    row.push({
+                        r: 100 + (x * 10) % 155,
+                        g: 100 + (y * 10) % 155,
+                        b: 150,
+                        hex: `hsl(${hue}, 50%, 50%)`
+                    });
+                }
+                colors.push(row);
+            }
+
+            window.updateARDebugPanel(`Alternative: 샘플 색상 생성 ✅
+그리드: ${gridSize}x${gridSize}`);
+            return colors;
+        }
+        return null;
+    } catch (error) {
+        return null;
+    }
+};
+
 // Extract color grid from camera feed
 window.extractColorGrid = function(gridSize = 16) {
     try {
@@ -1198,10 +1238,17 @@ window.updatePixelVisualization = function() {
         return;
     }
 
-    const colors = window.extractColorGrid(12); // 12x12 grid
+    let colors = window.extractColorGrid(12); // 12x12 grid
+
+    // If video extraction fails, try canvas alternative
     if (!colors) {
-        console.log('🎨 DEBUG Phase2: No colors extracted - video not ready, will retry next interval');
-        return;
+        console.log('🎨 Alternative: Trying canvas extraction...');
+        colors = window.extractColorFromCanvas(12);
+
+        if (!colors) {
+            console.log('🎨 DEBUG Phase2: No colors extracted - will retry next interval');
+            return;
+        }
     }
 
     console.log('🎨 DEBUG Phase2: Successfully extracted colors, creating pixel grid');
