@@ -25,11 +25,11 @@ class ClimateRiskUI {
                     <div class="input-grid">
                         <div class="input-group">
                             <label for="farmLatitude">Latitude:</label>
-                            <input type="number" id="farmLatitude" value="37.5665" step="0.001" min="-90" max="90">
+                            <input type="number" id="farmLatitude" value="29.7604" step="0.001" min="-90" max="90">
                         </div>
                         <div class="input-group">
                             <label for="farmLongitude">Longitude:</label>
-                            <input type="number" id="farmLongitude" value="126.978" step="0.001" min="-180" max="180">
+                            <input type="number" id="farmLongitude" value="-95.3698" step="0.001" min="-180" max="180">
                         </div>
                         <div class="input-group">
                             <label for="cropType">Primary Crop:</label>

@@ -775,8 +775,8 @@ class AICopilotService {
 
         // Fallback to default location (Seoul, Korea)
         return {
-            latitude: 37.5665,
-            longitude: 126.9780,
+            latitude: 29.7604,
+            longitude: -95.36980,
             source: 'fallback',
             accuracy: null
         };

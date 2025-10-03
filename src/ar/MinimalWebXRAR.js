@@ -673,8 +673,8 @@ class MinimalWebXRAR {
             console.log('📡 NASA data update started');
 
             // Get current location (or use default values)
-            const lat = 37.5674;
-            const lon = 127.1873;
+            const lat = 29.7604;
+            const lon = -95.3698;
 
             // Request NASA data
             const [soilData, ndviData] = await Promise.all([

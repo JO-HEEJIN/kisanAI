@@ -496,11 +496,11 @@ class DataStoryInterface {
                     <h3>📍 농장 위치를 입력해주세요</h3>
                     <p>실제 NASA 데이터를 가져오기 위해 좌표가 필요합니다</p>
                     <div class="location-inputs">
-                        <input type="number" id="lat" placeholder="위도 (예: 37.5665)" step="any">
-                        <input type="number" id="lon" placeholder="경도 (예: 126.9780)" step="any">
+                        <input type="number" id="lat" placeholder="위도 (예: 29.7604)" step="any">
+                        <input type="number" id="lon" placeholder="경도 (예: -95.36980)" step="any">
                     </div>
                     <div class="location-examples">
-                        <button class="example-btn" data-lat="37.5665" data-lon="126.9780">서울</button>
+                        <button class="example-btn" data-lat="29.7604" data-lon="-95.36980">서울</button>
                         <button class="example-btn" data-lat="35.1796" data-lon="129.0756">부산</button>
                         <button class="example-btn" data-lat="40.7128" data-lon="-74.0060">뉴욕</button>
                     </div>
