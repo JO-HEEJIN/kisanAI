@@ -1247,6 +1247,28 @@
 }
 
 /* NASA Panel responsive positioning */
+@media (max-width: 768px) {
+    .nasa-data-panel {
+        right: 12px;
+        bottom: 12px;
+        left: auto;
+        min-width: 250px;
+        max-width: calc(100vw - 24px);
+    }
+
+    .game-instructions-panel {
+        left: 12px;
+        bottom: 80px;
+        max-width: calc(100vw - 24px);
+    }
+
+    .decision-panel {
+        right: 12px;
+        top: 12px;
+        min-width: 200px;
+        max-height: calc(100vh - 120px);
+    }
+}
 
 .decision-buttons {
     display: flex;
@@ -2032,6 +2054,7 @@
     background: linear-gradient(135deg, #d32f2f, #f44336);
 }
 
+
 .game-notification.fade-out {
     animation: slideOut 0.3s ease;
 }
@@ -2079,6 +2102,35 @@
         margin: 20px auto;
         width: 100%;
         max-width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .game-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .farm-stats {
+        justify-content: center;
+    }
+
+    .overview-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+    }
+
+    .crops-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .resources-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .irrigation-options {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -2217,6 +2269,7 @@
     flex-direction: column;
     overflow: hidden;
 }
+
 
 .universal-decision-panel {
     flex: 0 0 350px;
@@ -2913,6 +2966,26 @@
 }
 
 /* Responsive design for farm selection */
+@media (max-width: 768px) {
+    .farm-type-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .comparison-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .farm-type-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .selection-header h2 {
+        font-size: 2em;
+    }
+}
 
 /* Decision Feedback Dialog Styles */
 .decision-feedback-dialog {
@@ -3087,6 +3160,7 @@
 .learning-points li:last-child, .recommendation-list li:last-child {
     border-bottom: none;
 }
+
 
 .water-rate-config {
     background: #e3f2fd;
@@ -3400,6 +3474,44 @@
 }
 
 /* Responsive Design for Feedback Dialogs */
+@media (max-width: 768px) {
+    .decision-feedback-dialog, .nasa-data-dialog {
+        margin: 10px;
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+    }
+
+    .feedback-content, .nasa-content {
+        padding: 16px;
+    }
+
+    .feedback-section {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .progress-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .progress-label {
+        min-width: auto;
+    }
+
+    .progress-bar {
+        width: 100%;
+    }
+
+    .feedback-actions {
+        flex-direction: column;
+    }
+
+    .data-specs {
+        justify-content: center;
+    }
+}
 
 /* Seasonal Progress View Styles */
 .seasonal-progress-container {
@@ -3833,6 +3945,61 @@
 }
 
 /* Responsive Design for Seasonal Progress */
+@media (max-width: 768px) {
+    .seasonal-progress-container {
+        margin: 10px;
+        padding: 16px;
+    }
+
+    .season-overview, .seasonal-activities, .season-timeline, .weekly-summary, .market-prices, .seasonal-events {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .season-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .season-meta {
+        gap: 8px;
+    }
+
+    .activities-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .activity-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .crop-status-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .crop-status-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .prices-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .event-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
 
 /* Tutorial and Onboarding Styles */
 .tutorial-overlay {
@@ -5071,8 +5238,89 @@
 }
 
 /* Mobile responsiveness improvements */
+@media (max-width: 768px) {
+    .tutorial-modal {
+        width: 95vw;
+        max-height: 90vh;
+        margin: 0 !important;
+    }
+
+    .lesson-body {
+        padding: 20px !important;
+    }
+
+    .conservation-options {
+        grid-template-columns: 1fr;
+    }
+
+    .ndvi-explanation,
+    .cloud-effect-demo,
+    .farming-simulation,
+    .conservation-planner {
+        margin: 10px;
+        padding: 15px;
+    }
+}
 
 /* Responsive Design for Tutorial */
+@media (max-width: 768px) {
+    .tutorial-modal {
+        width: 95vw;
+        max-height: 95vh;
+        margin: 0 !important;
+    }
+
+    .tutorial-content {
+        padding: 20px;
+    }
+
+    .tutorial-actions {
+        flex-direction: column;
+        padding: 20px;
+    }
+
+    .tutorial-btn {
+        width: 100%;
+    }
+
+    .time-breakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .nasa-systems {
+        gap: 16px;
+    }
+
+    .decision-types {
+        gap: 16px;
+    }
+
+    .feedback-features {
+        grid-template-columns: 1fr;
+    }
+
+    .seasonal-guide {
+        grid-template-columns: 1fr;
+    }
+
+    .next-step-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .nav-item {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .completion-content {
+        padding: 20px;
+    }
+
+    .completion-actions {
+        flex-direction: column;
+        padding: 20px;
+    }
+}
 
 /* Crop Area Selection Dialog Styles */
 .crop-area-selection {
@@ -5443,6 +5691,12 @@
 }
 
 /* Responsive design for satellite data */
+@media (max-width: 768px) {
+    .satellite-data-horizontal {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
 
 /* === COMPREHENSIVE MOBILE OPTIMIZATION === */
 
@@ -5484,8 +5738,390 @@
 }
 
 /* Portrait Mobile Optimization */
+@media (max-width: 768px) and (orientation: portrait) {
+    .farm-game-container {
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile */
+    }
+
+    .game-header {
+        padding: 12px 16px !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    /* Mobile Header Structure Optimization */
+    .header-top {
+        flex-direction: column !important;
+        gap: 8px !important;
+        width: 100% !important;
+        margin-right: 0 !important;
+    }
+
+    .time-section {
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    .current-time {
+        display: flex !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        font-size: 0.9rem !important;
+    }
+
+    .satellite-import-btn {
+        font-size: 0.8rem !important;
+        padding: 8px 12px !important;
+        margin-top: 4px !important;
+    }
+
+    .satellite-location-info {
+        text-align: center !important;
+        font-size: 0.8rem !important;
+    }
+
+    .game-controls {
+        display: flex !important;
+        gap: 8px !important;
+        justify-content: center !important;
+    }
+
+    .game-controls button {
+        font-size: 0.8rem !important;
+        padding: 6px 12px !important;
+    }
+
+    .farm-stats {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+        padding: 8px 12px !important;
+    }
+
+    .stat-item {
+        text-align: center !important;
+        padding: 4px !important;
+    }
+
+    .stat-label, .stat-value {
+        font-size: 0.8rem !important;
+    }
+
+    /* NASA Data Section Mobile */
+    .nasa-live-data {
+        display: flex !important;
+        justify-content: space-around !important;
+        gap: 4px !important;
+        margin-top: 8px !important;
+    }
+
+    .nasa-stat {
+        text-align: center !important;
+        min-width: 60px !important;
+    }
+
+    .nasa-label, .nasa-value {
+        font-size: 0.7rem !important;
+    }
+
+    /* Mobile Navigation Optimization for Portrait */
+    .game-nav {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        padding: 0 8px !important;
+    }
+
+    .game-nav::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .nav-tab {
+        flex-shrink: 0 !important;
+        min-width: 120px !important;
+        padding: 14px 18px !important;
+        font-size: 0.85rem !important;
+        min-height: 44px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Mobile Layout Structure Optimization */
+    .game-layout {
+        flex-direction: column !important;
+        gap: 0 !important;
+        height: auto !important;
+    }
+
+    .game-main-area {
+        order: 1 !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+    }
+
+    .universal-decision-panel {
+        order: 2 !important;
+        flex: none !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-height: 200px !important;
+        overflow-y: auto !important;
+        margin-top: 8px !important;
+    }
+
+    .decision-panel.fixed-panel {
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: 180px !important;
+        margin: 0 !important;
+        padding: 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    .decision-header h3 {
+        font-size: 1rem !important;
+        margin-bottom: 8px !important;
+    }
+
+    .decision-content {
+        max-height: 120px !important;
+        overflow-y: auto !important;
+    }
+
+    /* Touch Target Optimization for Portrait Mobile */
+    button, .btn, .game-btn, .action-btn {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        padding: 12px 18px !important;
+        font-size: 0.9rem !important;
+        margin: 6px 4px !important;
+        border-radius: 8px !important;
+        touch-action: manipulation !important;
+    }
+
+    .modal button, .modal .btn {
+        min-height: 48px !important;
+        padding: 14px 24px !important;
+        font-size: 1rem !important;
+        margin: 8px 6px !important;
+    }
+
+    input[type="text"], input[type="number"], input[type="email"],
+    select, textarea {
+        min-height: 44px !important;
+        padding: 14px !important;
+        font-size: 16px !important; /* Prevents zoom on iOS */
+        border-radius: 8px !important;
+        margin: 6px 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .stat-item, .nasa-stat, .satellite-item {
+        padding: 10px !important;
+        margin: 6px !important;
+        border-radius: 8px !important;
+    }
+
+    .crop-card, .livestock-card, .resource-card {
+        padding: 16px !important;
+        margin: 8px 0 !important;
+        border-radius: 12px !important;
+    }
+
+    /* Typography and Readability Optimization for Portrait Mobile */
+    .farm-game-container {
+        font-size: 16px !important;
+        line-height: 1.4 !important;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        line-height: 1.3 !important;
+        margin-bottom: 12px !important;
+    }
+
+    h1 { font-size: 1.8rem !important; }
+    h2 { font-size: 1.5rem !important; }
+    h3 { font-size: 1.3rem !important; }
+    h4 { font-size: 1.1rem !important; }
+    h5 { font-size: 1rem !important; }
+    h6 { font-size: 0.9rem !important; }
+
+    p, div, span {
+        line-height: 1.5 !important;
+        font-size: 0.95rem !important;
+    }
+
+    .crop-card h4, .livestock-card h4, .resource-card h4 {
+        font-size: 1.1rem !important;
+        margin-bottom: 8px !important;
+    }
+
+    .modal-content h3 {
+        font-size: 1.4rem !important;
+        margin-bottom: 16px !important;
+    }
+
+    .modal-content p, .modal-content div {
+        font-size: 1rem !important;
+        line-height: 1.5 !important;
+    }
+
+    /* Improve text contrast and spacing */
+    .game-content {
+        color: #333 !important;
+        font-weight: 400 !important;
+    }
+
+    .stat-label {
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+    }
+
+    .stat-value {
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+    }
+
+    .overview-container {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        padding: 12px !important;
+    }
+
+    .crops-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    .resources-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    .irrigation-options {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+}
 
 /* Landscape Mobile Optimization - Main Fix for User Request */
+@media (max-width: 1024px) and (orientation: landscape) {
+    .farm-game-container {
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height */
+        overflow: hidden;
+    }
+
+    .game-header {
+        padding: 8px 16px !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 16px !important;
+        min-height: 60px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .farm-stats {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+        padding: 6px 12px !important;
+    }
+
+    .stat-item {
+        padding: 6px !important;
+        min-height: auto !important;
+    }
+
+    .stat-value {
+        font-size: 1rem !important;
+    }
+
+    .stat-label {
+        font-size: 0.75rem !important;
+    }
+
+    /* Optimize main game area for landscape */
+    .game-view {
+        height: calc(100vh - 120px) !important;
+        height: calc(100dvh - 120px) !important;
+        overflow-y: auto !important;
+        padding: 8px 12px !important;
+    }
+
+    .overview-container {
+        grid-template-columns: 2fr 1fr !important;
+        gap: 16px !important;
+        height: 100% !important;
+    }
+
+    .crops-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    .crop-card {
+        padding: 12px !important;
+        margin: 0 !important;
+    }
+
+    .resources-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    /* Optimize modals for landscape */
+    .farm-selection-modal {
+        width: 90vw !important;
+        height: 85vh !important;
+        height: 85dvh !important;
+        max-height: none !important;
+    }
+
+    .farm-type-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 16px !important;
+    }
+
+    .decision-feedback-dialog,
+    .nasa-data-dialog {
+        width: 85vw !important;
+        height: 80vh !important;
+        height: 80dvh !important;
+        max-height: none !important;
+    }
+
+    /* Optimize navigation for landscape */
+    .view-tabs {
+        padding: 0 8px !important;
+        min-height: 40px !important;
+    }
+
+    .view-tab {
+        padding: 6px 12px !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Optimize panels for landscape */
+    .decision-panel {
+        width: 280px !important;
+        max-height: calc(100vh - 80px) !important;
+        max-height: calc(100dvh - 80px) !important;
+    }
+
+    .nasa-data-panel {
+        width: 260px !important;
+        max-height: calc(100vh - 100px) !important;
+        max-height: calc(100dvh - 100px) !important;
+    }
+}
 
 /* Extra Small Mobile Devices */
 @media (max-width: 480px) {
@@ -5718,6 +6354,38 @@
 }
 
 /* Touch-friendly improvements for all mobile devices */
+@media (max-width: 1024px) {
+    /* Increase touch targets */
+    button {
+        min-height: 44px !important;
+        padding: 8px 16px !important;
+        font-size: 16px !important; /* Prevents zoom on iOS */
+    }
+
+    .view-tab {
+        min-height: 44px !important;
+        padding: 8px 16px !important;
+    }
+
+    .crop-option {
+        min-height: 50px !important;
+        padding: 12px !important;
+    }
+
+    /* Improve scrolling */
+    .game-view,
+    .modal-content,
+    .decision-panel,
+    .nasa-data-panel {
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior: contain !important;
+    }
+
+    /* Optimize text sizing */
+    input, textarea, select {
+        font-size: 16px !important; /* Prevents zoom on iOS */
+    }
+}
 
     .satellite-item {
         flex-direction: row;
@@ -5814,6 +6482,7 @@
     color: #6c757d;
     line-height: 1.5;
 }
+
 
 /* Feed Livestock UI Improvement */
 .feed-livestock {
@@ -5978,6 +6647,8 @@ h4, h5 {
     color: #2c3e50 !important;
     font-weight: 700 !important;
 }
+
+
 
 /* Game Header and Navigation Improvements */
 .game-header {
@@ -6224,6 +6895,7 @@ h4, h5 {
     font-weight: 800 !important;
     font-size: 1.8rem;
 }
+
 
 /* Decision History Styles */
 .decision-history {
