@@ -334,39 +334,91 @@ class NASAFarmNavigatorsApp {
         try {
             // Check if geolocation is supported
             if (!navigator.geolocation) {
-                console.warn('Geolocation not supported, using default location');
+                console.warn('❌ Geolocation API not supported in this browser');
                 this.setLocationInputs(this.defaultLocation);
+                this.showNotification(
+                    '⚠️ GPS not supported. Using Houston, TX. Change coordinates if needed.',
+                    'warning'
+                );
                 return;
             }
 
-            // Get current position with timeout
+            // Check permission status if available
+            if (navigator.permissions) {
+                try {
+                    const permission = await navigator.permissions.query({name: 'geolocation'});
+                    console.log(`🔐 Geolocation permission status: ${permission.state}`);
+
+                    if (permission.state === 'denied') {
+                        console.warn('❌ Geolocation permission denied by user');
+                        this.setLocationInputs(this.defaultLocation);
+                        this.showNotification(
+                            '🚫 Location permission denied. Using Houston, TX. Enable location access to auto-detect.',
+                            'warning'
+                        );
+                        return;
+                    }
+                } catch (permError) {
+                    console.log('Permission API not available, proceeding with location request');
+                }
+            }
+
+            // Show loading notification
+            this.showNotification('🔍 Detecting your location...', 'info');
+
+            // Get current position with improved error handling
             const position = await this.getCurrentPosition();
             this.userLocation = {
                 lat: position.coords.latitude,
                 lon: position.coords.longitude
             };
 
-            console.log(`📍 User location detected: ${this.userLocation.lat.toFixed(4)}, ${this.userLocation.lon.toFixed(4)}`);
+            console.log(`✅ GPS location detected: ${this.userLocation.lat.toFixed(4)}, ${this.userLocation.lon.toFixed(4)}`);
+            console.log(`📍 Accuracy: ${position.coords.accuracy}m`);
 
             // Update location inputs with user's location
             this.setLocationInputs(this.userLocation);
 
-            // Show notification
+            // Show success notification
             this.showNotification(
-                `📍 Location auto-detected: ${this.userLocation.lat.toFixed(2)}°, ${this.userLocation.lon.toFixed(2)}°`,
+                `📍 Location detected: ${this.userLocation.lat.toFixed(2)}°, ${this.userLocation.lon.toFixed(2)}° (±${Math.round(position.coords.accuracy)}m)`,
                 'success'
             );
 
         } catch (error) {
-            console.warn('Failed to get user location:', error.message);
+            let errorMsg = 'GPS detection failed';
+            let detailedMsg = 'Using Houston, TX as default location.';
+
+            // Detailed error analysis
+            switch (error.code) {
+                case 1: // PERMISSION_DENIED
+                    errorMsg = '🚫 Location permission denied';
+                    detailedMsg = 'Please enable location access in browser settings.';
+                    console.warn('❌ GPS Error: Permission denied by user');
+                    break;
+                case 2: // POSITION_UNAVAILABLE
+                    errorMsg = '📡 GPS signal unavailable';
+                    detailedMsg = 'Location services might be disabled or no GPS signal.';
+                    console.warn('❌ GPS Error: Position unavailable (no signal or disabled)');
+                    break;
+                case 3: // TIMEOUT
+                    errorMsg = '⏱️ GPS detection timeout';
+                    detailedMsg = 'Location detection took too long.';
+                    console.warn('❌ GPS Error: Timeout after 45 seconds');
+                    break;
+                default:
+                    console.warn('❌ GPS Error:', error.message || 'Unknown error');
+                    errorMsg = '❌ GPS detection failed';
+                    detailedMsg = error.message || 'Unknown error occurred.';
+            }
 
             // Use default location as fallback
             this.setLocationInputs(this.defaultLocation);
 
-            // Show notification about fallback
+            // Show detailed error notification
             this.showNotification(
-                'Using default location (Houston, TX). You can change coordinates manually.',
-                'info'
+                `${errorMsg}. ${detailedMsg} Using Houston, TX (${this.defaultLocation.lat}°, ${this.defaultLocation.lon}°).`,
+                'warning'
             );
         }
     }
@@ -376,13 +428,29 @@ class NASAFarmNavigatorsApp {
      */
     getCurrentPosition() {
         return new Promise((resolve, reject) => {
-            const options = {
-                enableHighAccuracy: true,
-                timeout: 10000, // 10 seconds timeout
-                maximumAge: 300000 // Accept cached position up to 5 minutes old
+            // First try with basic options for faster response
+            const basicOptions = {
+                enableHighAccuracy: false,
+                timeout: 15000, // 15 seconds timeout
+                maximumAge: 600000 // Accept cached position up to 10 minutes old
             };
 
-            navigator.geolocation.getCurrentPosition(resolve, reject, options);
+            navigator.geolocation.getCurrentPosition(
+                resolve,
+                (error) => {
+                    console.warn('Basic GPS failed, trying high accuracy...', error.message);
+
+                    // Fallback to high accuracy if basic fails
+                    const highAccuracyOptions = {
+                        enableHighAccuracy: true,
+                        timeout: 30000, // 30 seconds timeout for high accuracy
+                        maximumAge: 300000 // Accept cached position up to 5 minutes old
+                    };
+
+                    navigator.geolocation.getCurrentPosition(resolve, reject, highAccuracyOptions);
+                },
+                basicOptions
+            );
         });
     }
 
