@@ -866,7 +866,9 @@ window.startSoilAnalysis = function() {
             window.startContinuousAnalysis();
 
             // Start pixel visualization overlay
+            console.log('🎨 DEBUG Phase1: Scheduling pixel visualization in 2 seconds...');
             setTimeout(() => {
+                console.log('🎨 DEBUG Phase1: 2-second timeout executed, calling startPixelVisualization...');
                 window.startPixelVisualization();
             }, 2000); // Wait 2s for AR to fully initialize
         },
@@ -878,7 +880,9 @@ window.startSoilAnalysis = function() {
             window.startContinuousAnalysis();
 
             // Start pixel visualization overlay
+            console.log('🎨 DEBUG Phase1: Scheduling pixel visualization in 2 seconds...');
             setTimeout(() => {
+                console.log('🎨 DEBUG Phase1: 2-second timeout executed, calling startPixelVisualization...');
                 window.startPixelVisualization();
             }, 2000); // Wait 2s for AR to fully initialize
         }
@@ -1021,6 +1025,7 @@ window.updatePixelVisualization = function() {
 
 // Start pixel visualization loop
 window.startPixelVisualization = function() {
+    console.log('🎨 DEBUG Phase1: startPixelVisualization function called!');
     // Create initial overlay
     window.createPixelVisualization();
 
