@@ -4233,6 +4233,11 @@
     text-align: center;
 }
 
+.nav-details {
+    color: #2c3e50;
+    line-height: 1.4;
+}
+
 .nav-details strong {
     color: #1976d2;
     display: block;
