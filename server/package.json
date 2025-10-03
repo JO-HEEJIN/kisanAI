@@ -1,0 +1,25 @@
+{
+  "name": "nasa-proxy-server",
+  "version": "1.0.0",
+  "description": "NASA API Proxy Server for KisanAI",
+  "main": "nasa-proxy.js",
+  "scripts": {
+    "start": "node nasa-proxy.js",
+    "dev": "nodemon nasa-proxy.js"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.5.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["nasa", "api", "proxy", "agriculture", "satellite", "smap", "modis"],
+  "author": "KisanAI Team",
+  "license": "MIT"
+}

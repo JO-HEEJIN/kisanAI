@@ -3,7 +3,7 @@
  * Path: /api/modis/ndvi
  */
 
-const axios = require('axios');
+// Use native fetch (available in Vercel runtime)
 
 // NASA Earthdata credentials
 const NASA_CONFIG = {
@@ -91,13 +91,25 @@ export default async function handler(req, res) {
                     sort_key: '-start_date'
                 });
 
-                const earthdataResponse = await axios.get(`${earthdataUrl}?${params}`, {
+                // Create abort controller for timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+                const earthdataResponse = await fetch(`${earthdataUrl}?${params}`, {
                     headers: getAuthHeaders(userToken),
-                    timeout: 20000
+                    signal: controller.signal
                 });
 
-                if (earthdataResponse.data?.feed?.entry?.length > 0) {
-                    const entry = earthdataResponse.data.feed.entry[0];
+                clearTimeout(timeoutId);
+
+                if (!earthdataResponse.ok) {
+                    throw new Error(`EarthData API error: ${earthdataResponse.status}`);
+                }
+
+                const earthdataData = await earthdataResponse.json();
+
+                if (earthdataData?.feed?.entry?.length > 0) {
+                    const entry = earthdataData.feed.entry[0];
 
                     realData = {
                         ndvi: getRealisticNDVI(parseFloat(lat)),
@@ -128,11 +140,23 @@ export default async function handler(req, res) {
                     kmLeftRight: 0
                 });
 
-                const ornlResponse = await axios.get(`${ornlUrl}?${params}`, {
-                    timeout: 15000
+                // Create abort controller for timeout
+                const ornlController = new AbortController();
+                const ornlTimeoutId = setTimeout(() => ornlController.abort(), 15000);
+
+                const ornlResponse = await fetch(`${ornlUrl}?${params}`, {
+                    signal: ornlController.signal
                 });
 
-                if (ornlResponse.data && ornlResponse.data.subset) {
+                clearTimeout(ornlTimeoutId);
+
+                if (!ornlResponse.ok) {
+                    throw new Error(`ORNL DAAC API error: ${ornlResponse.status}`);
+                }
+
+                const ornlData = await ornlResponse.json();
+
+                if (ornlData && ornlData.subset) {
                     realData = {
                         ndvi: getRealisticNDVI(parseFloat(lat)),
                         source: 'NASA ORNL DAAC MODIS Web Service',

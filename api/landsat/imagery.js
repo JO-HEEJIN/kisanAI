@@ -3,7 +3,7 @@
  * Path: /api/landsat/imagery
  */
 
-const axios = require('axios');
+// Use native fetch (available in Vercel runtime)
 
 // NASA Earthdata credentials
 const NASA_CONFIG = {

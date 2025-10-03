@@ -3,7 +3,7 @@
  * Path: /api/smap/soil-moisture
  */
 
-const axios = require('axios');
+// Use native fetch (available in Vercel runtime)
 
 // NASA Earthdata credentials
 const NASA_CONFIG = {
@@ -85,13 +85,25 @@ export default async function handler(req, res) {
                     sort_key: '-start_date'
                 });
 
-                const earthdataResponse = await axios.get(`${earthdataUrl}?${params}`, {
+                // Create abort controller for timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+                const earthdataResponse = await fetch(`${earthdataUrl}?${params}`, {
                     headers: getAuthHeaders(userToken),
-                    timeout: 20000
+                    signal: controller.signal
                 });
 
-                if (earthdataResponse.data?.feed?.entry?.length > 0) {
-                    const entry = earthdataResponse.data.feed.entry[0];
+                clearTimeout(timeoutId);
+
+                if (!earthdataResponse.ok) {
+                    throw new Error(`EarthData API error: ${earthdataResponse.status}`);
+                }
+
+                const earthdataData = await earthdataResponse.json();
+
+                if (earthdataData?.feed?.entry?.length > 0) {
+                    const entry = earthdataData.feed.entry[0];
 
                     realData = {
                         surface_moisture: 0.15 + Math.random() * 0.25,
