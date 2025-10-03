@@ -1,190 +1,75 @@
-# Farm Game UI Mobile Optimization Plan
+# AR Pixel Visualization Debug and Fix Plan
 
 ## Problem Statement
-The Farm Game UI is **NOT mobile-optimized at all**, causing poor user experience on mobile devices. This is a **CRITICAL** issue that needs immediate attention.
+픽셀 시각화가 전혀 작동하지 않고 있습니다. AR이 실행되어도 카메라 색상의 픽셀 그리드가 화면에 나타나지 않습니다.
 
 ## Analysis
-**Root Cause Issues Identified:**
-- **Header Overcrowding**: Time section, satellite data, and controls are crammed together on mobile
-- **Navigation Problems**: 7 tabs in horizontal layout don't work on small screens
-- **Layout Issues**: Two-column layout (main content + decision panel) breaks on mobile
-- **Touch Targets**: Buttons and interactive elements are too small for mobile (< 44px)
-- **Text Readability**: Font sizes are insufficient for mobile devices
-- **Missing Mobile-First CSS**: Existing media queries are incomplete and inconsistent
 
-**Files to Modify:**
-- `styles/farm-game.css` (Primary focus - mobile CSS optimization)
-- `src/game/FarmGameUI.js` (Minor layout adjustments if needed)
+**Root Cause Investigation Needed:**
+1. **Function Execution Check**: 픽셀 시각화 함수들이 실제로 실행되는지 확인
+2. **AR Scene Integration**: A-Frame 씬에 픽셀 오버레이가 제대로 추가되는지 확인
+3. **Video Element Access**: 카메라 비디오 요소에 제대로 접근하는지 확인
+4. **Color Extraction**: 색상 추출 로직이 작동하는지 확인
+5. **DOM Element Creation**: A-Frame 요소들이 제대로 생성되는지 확인
+
+**Files to Investigate:**
+- `src/ar-functions.js` (픽셀 시각화 함수들)
+- Browser console logs (실행 상태 확인)
 
 ## Todo Tasks
 
-### ✅ Phase 1: Critical Header Mobile Optimization
-- [ ] **Task 1.1**: Implement mobile-responsive header layout
-  - Stack header elements vertically on mobile instead of horizontal
-  - Reduce header padding and improve spacing
-  - Make satellite data section collapsible or more compact
+### ✅ Phase 1: Function Execution Debugging
+- [x] **Task 1.1**: 콘솔 로그로 함수 실행 확인
+  - startPixelVisualization 함수 호출 여부 확인
+  - createPixelVisualization 함수 실행 여부 확인
+  - 2초 setTimeout 실행 여부 확인
 
-### ✅ Phase 2: Navigation Tab Mobile Optimization
-- [ ] **Task 2.1**: Convert horizontal tabs to mobile-friendly navigation
-  - Implement horizontal scrolling for tabs on mobile
-  - Increase touch target sizes for tabs (minimum 44px height)
-  - Improve tab spacing and readability
+### ✅ Phase 2: Video Element Access Debugging
+- [x] **Task 2.1**: 카메라 비디오 요소 접근 확인
+  - ✅ extractColorGrid 함수에서 video 요소 찾기 성공
+  - ❌ **문제 발견**: video.readyState=0, videoWidth=0, videoHeight=0
+  - ❌ 카메라 준비되지 않아 픽셀 데이터 추출 실패
 
-### ✅ Phase 3: Layout Structure Mobile Optimization
-- [ ] **Task 3.1**: Fix two-column layout for mobile
-  - Make decision panel collapsible/toggleable on mobile
-  - Stack layout vertically instead of side-by-side
-  - Optimize content area for single-column mobile viewing
+- [x] **Task 2.2**: Phase 2 수정 사항 적용
+  - ✅ extractColorGrid에 Phase2 디버깅 로그 추가
+  - ✅ updatePixelVisualization에 재시도 로직 및 디버깅 추가
+  - ✅ 초기 지연시간 2초 → 5초로 증가 (카메라 초기화 대기)
+  - ✅ 500ms 간격으로 비디오 준비 상태 재시도 메커니즘 구현
 
-### ✅ Phase 4: Touch and Interaction Optimization
-- [ ] **Task 4.1**: Improve touch targets and button sizes
-  - Ensure all buttons have minimum 44px height for touch
-  - Add proper spacing between interactive elements
-  - Improve modal and form input sizes for mobile
+### 🔄 Phase 3: Test Phase 2 Fixes & AR Scene Integration
+- [ ] **Task 3.1**: Phase 2 수정사항 테스트
+  - AR 실행하여 Phase2 디버깅 로그 확인
+  - 5초 지연 후 video readyState 개선 여부 확인
+  - extractColorGrid 성공 여부 확인
 
-### ✅ Phase 5: Typography and Readability
-- [ ] **Task 5.1**: Optimize text sizes and readability for mobile
-  - Increase base font sizes for mobile devices
-  - Improve contrast and line spacing
-  - Ensure all text is readable without zooming
+- [ ] **Task 3.2**: A-Frame 씬 요소 생성 확인
+  - createPixelVisualization에서 a-scene 요소 찾기 성공 여부
+  - pixel-overlay 요소 생성 및 DOM 추가 확인
+  - 색상 추출 성공 시 a-box 요소들이 씬에 추가되는지 확인
 
-### ✅ Phase 6: Testing and Polish
-- [ ] **Task 6.1**: Test mobile optimizations across devices
-  - Test on various mobile screen sizes (320px, 375px, 414px)
-  - Verify touch interactions work properly
-  - Ensure no horizontal scrolling issues
+### ⏳ Phase 4: Interval Loop Verification
+- [ ] **Task 4.1**: 500ms 업데이트 루프 동작 확인
+  - startPixelVisualization에서 setInterval 실행 확인
+  - updatePixelVisualization 함수 반복 호출 확인
+  - arRunning 상태 및 pixel-overlay 존재 여부 체크
+
+### ⏳ Phase 5: Final Review & Documentation
+- [ ] **Task 5.1**: 최종 검증 및 문서화
+  - 픽셀 시각화 완전 작동 확인 (12x12 그리드 표시)
+  - 실시간 색상 업데이트 확인 (500ms 간격)
+  - Review Section에 변경사항 요약 작성
 
 ## Implementation Strategy
-- **Keep changes simple and focused** - follow CLAUDE.md principles
-- **Impact minimal code** for each fix - primarily CSS changes
-- **Test each change individually** before moving to next task
-- **Prioritize most critical mobile issues first** - header and navigation
+- **CLAUDE.md 가이드라인 엄격 준수**
+- **단계별 디버깅**: 각 단계마다 로그 확인 후 다음 단계 진행
+- **최소 코드 변경**: 문제 원인만 정확히 수정
+- **중복 함수 체크**: 새 함수 생성 전 기존 함수 확인
 
 ## Success Criteria
-- ✅ Farm Game UI works seamlessly on mobile devices
-- ✅ All interactive elements are touch-friendly (44px+ targets)
-- ✅ Text is readable without zooming
-- ✅ Navigation is intuitive on mobile
-- ✅ No horizontal scrolling issues
-- ✅ Header information is accessible but not cluttered
-- ✅ Decision panel doesn't dominate mobile screen space
+- ✅ AR 실행 시 12x12 색상 픽셀 그리드가 화면에 표시됨
+- ✅ 500ms마다 실시간으로 색상이 업데이트됨
+- ✅ 카메라가 보는 실제 색상이 픽셀 박스에 반영됨
+- ✅ 콘솔에 픽셀 시각화 관련 로그가 정상적으로 출력됨
 
 ## Review Section
-
-### ✅ **SUCCESSFULLY COMPLETED - All 6 Phases**
-
-**Implementation Summary:**
-Successfully transformed the Farm Game UI from **NOT mobile-optimized** to **fully mobile-responsive** while preserving the PC version structure.
-
-### **📱 Phase 1: Mobile Header Optimization** ✅ COMPLETE
-**Changes Made:**
-- **Portrait Mobile (768px)**: Stacked header elements vertically, optimized spacing
-- **Small Mobile (480px)**: Further reduced padding and font sizes
-- **NASA Data Section**: Made more compact with centered layout
-- **Time/Controls**: Improved spacing and reduced clutter
-
-**Key Improvements:**
-- Header no longer overcrowded on mobile
-- All elements properly centered and accessible
-- Satellite data and controls properly spaced
-- Responsive text sizes (0.9rem → 0.7rem on small screens)
-
-### **📱 Phase 2: Navigation Tab Optimization** ✅ COMPLETE
-**Changes Made:**
-- **Horizontal Scrolling**: Enabled smooth touch scrolling for 7 tabs
-- **Touch Targets**: Increased tab height to 44px minimum
-- **Typography**: Optimized tab text sizes (0.85rem portrait, 0.8rem small)
-- **Spacing**: Improved padding and margins for better usability
-
-**Key Improvements:**
-- Navigation tabs now work seamlessly on mobile
-- Hidden scrollbars for clean appearance
-- All tabs accessible via horizontal swipe
-- Touch-friendly interface with proper target sizes
-
-### **📱 Phase 3: Layout Structure Optimization** ✅ COMPLETE
-**Changes Made:**
-- **Single Column**: Converted two-column to stacked mobile layout
-- **Decision Panel**: Made collapsible with max-height constraints
-- **Content Area**: Prioritized main content, decision panel below
-- **Scrolling**: Optimized overflow handling for mobile
-
-**Key Improvements:**
-- No more side-by-side layout breaking on mobile
-- Decision panel doesn't dominate screen space (200px max portrait, 150px small)
-- Main content gets priority screen real estate
-- Proper vertical stacking for mobile UX
-
-### **📱 Phase 4: Touch Interaction Optimization** ✅ COMPLETE
-**Changes Made:**
-- **Button Sizes**: Minimum 44px height/width for all interactive elements
-- **Modal Buttons**: Increased to 48px for better accessibility
-- **Input Fields**: Font-size 16px to prevent iOS zoom
-- **Spacing**: Added proper margins between touch targets
-
-**Key Improvements:**
-- All buttons meet accessibility standards (44px+)
-- No accidental taps due to proper spacing
-- iOS Safari won't zoom on input focus
-- Touch-friendly interface throughout
-
-### **📱 Phase 5: Typography Optimization** ✅ COMPLETE
-**Changes Made:**
-- **Base Font Size**: 16px portrait, 14px small mobile
-- **Heading Hierarchy**: Responsive scaling (h1: 1.8rem → 1.5rem)
-- **Line Height**: Improved readability (1.4-1.5)
-- **Content Text**: Optimized sizes (0.95rem → 0.85rem)
-
-**Key Improvements:**
-- All text readable without zooming
-- Proper contrast and spacing
-- Hierarchical typography maintained
-- Mobile-optimized reading experience
-
-### **📱 Phase 6: Testing & Polish** ✅ COMPLETE
-**Changes Made:**
-- **Horizontal Scroll Prevention**: `overflow-x: hidden` on containers
-- **Box Model**: Consistent `box-sizing: border-box`
-- **Viewport Constraints**: `max-width: 100vw` enforcement
-- **Touch Scrolling**: Enhanced `-webkit-overflow-scrolling: touch`
-
-**Key Improvements:**
-- Zero horizontal scrolling issues
-- Smooth touch scrolling performance
-- No layout breaking elements
-- Responsive images and media
-
-### **🎯 Final Result - Complete Mobile Optimization**
-
-**✅ Success Criteria Achieved:**
-- ✅ Farm Game UI works seamlessly on mobile devices
-- ✅ All interactive elements are touch-friendly (44px+ targets)
-- ✅ Text is readable without zooming
-- ✅ Navigation is intuitive on mobile
-- ✅ No horizontal scrolling issues
-- ✅ Header information accessible but not cluttered
-- ✅ Decision panel doesn't dominate mobile screen space
-
-**🔧 Technical Excellence:**
-- **Minimal Code Impact**: Only CSS changes, no JavaScript modifications
-- **Preserved PC Layout**: Desktop experience unchanged
-- **Progressive Enhancement**: Mobile-first responsive design
-- **Performance Optimized**: Touch scrolling and viewport handling
-- **Cross-Device Compatible**: Portrait/landscape, 320px-768px+ screens
-
-**📱 Device Coverage:**
-- **iPhone SE (320px)**: Extra small mobile optimizations
-- **iPhone 12 (375px)**: Standard mobile optimizations
-- **iPhone 12 Pro Max (428px)**: Portrait mobile optimizations
-- **iPad Mini (768px)**: Tablet-friendly layout
-- **All Android equivalents**: Responsive breakpoint coverage
-
-**🚀 User Experience:**
-- **Header**: Clean, organized, no overcrowding
-- **Navigation**: Smooth horizontal scrolling tabs
-- **Layout**: Single-column mobile-first design
-- **Interactions**: Touch-friendly buttons and inputs
-- **Typography**: Readable, well-scaled text hierarchy
-- **Performance**: Smooth scrolling, no layout shifts
-
-This represents a **complete mobile transformation** of the Farm Game UI while maintaining the original PC experience - exactly as requested!
+*(작업 완료 후 작성 예정)*

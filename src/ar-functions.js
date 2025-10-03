@@ -866,11 +866,11 @@ window.startSoilAnalysis = function() {
             window.startContinuousAnalysis();
 
             // Start pixel visualization overlay
-            console.log('🎨 DEBUG Phase1: Scheduling pixel visualization in 2 seconds...');
+            console.log('🎨 DEBUG Phase2: Scheduling pixel visualization in 5 seconds for camera readiness...');
             setTimeout(() => {
-                console.log('🎨 DEBUG Phase1: 2-second timeout executed, calling startPixelVisualization...');
+                console.log('🎨 DEBUG Phase2: 5-second timeout executed, calling startPixelVisualization...');
                 window.startPixelVisualization();
-            }, 2000); // Wait 2s for AR to fully initialize
+            }, 5000); // Wait 5s for AR and camera to fully initialize
         },
         (error) => {
             console.warn('GPS failed:', error);
@@ -880,11 +880,11 @@ window.startSoilAnalysis = function() {
             window.startContinuousAnalysis();
 
             // Start pixel visualization overlay
-            console.log('🎨 DEBUG Phase1: Scheduling pixel visualization in 2 seconds...');
+            console.log('🎨 DEBUG Phase2: Scheduling pixel visualization in 5 seconds for camera readiness...');
             setTimeout(() => {
-                console.log('🎨 DEBUG Phase1: 2-second timeout executed, calling startPixelVisualization...');
+                console.log('🎨 DEBUG Phase2: 5-second timeout executed, calling startPixelVisualization...');
                 window.startPixelVisualization();
-            }, 2000); // Wait 2s for AR to fully initialize
+            }, 5000); // Wait 5s for AR and camera to fully initialize
         }
     );
 };
@@ -905,6 +905,48 @@ window.initializeAIManager = async function() {
         console.error('❌ AI Manager initialization failed:', error);
         window.aiManager = null;
     }
+};
+
+// Create AR debugging panel for mobile debugging
+window.createARDebugPanel = function() {
+    // Remove existing debug panel
+    const existingPanel = document.getElementById('ar-debug-panel');
+    if (existingPanel) {
+        existingPanel.remove();
+    }
+
+    // Create debug panel as HTML overlay (not A-Frame)
+    const debugPanel = document.createElement('div');
+    debugPanel.id = 'ar-debug-panel';
+    debugPanel.style.cssText = `
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.8);
+        color: #00ff00;
+        font-family: monospace;
+        font-size: 12px;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 9999;
+        max-width: 300px;
+        white-space: pre-line;
+    `;
+    debugPanel.innerHTML = '🎨 AR Debug Panel\n대기 중...';
+    document.body.appendChild(debugPanel);
+
+    console.log('🎨 DEBUG: AR Debug Panel created');
+    return debugPanel;
+};
+
+// Update debug panel with status info
+window.updateARDebugPanel = function(info) {
+    const panel = document.getElementById('ar-debug-panel');
+    if (!panel) return;
+
+    const timestamp = new Date().toLocaleTimeString();
+    panel.innerHTML = `🎨 AR Debug Panel [${timestamp}]
+${info}`;
 };
 
 // Create real-time pixel visualization overlay
@@ -943,9 +985,36 @@ window.extractColorGrid = function(gridSize = 16) {
                      document.querySelector('a-video video') ||
                      document.querySelector('video');
 
+        const videoStatus = {
+            foundVideo: !!video,
+            videoWidth: video?.videoWidth,
+            videoHeight: video?.videoHeight,
+            readyState: video?.readyState,
+            currentTime: video?.currentTime
+        };
+
+        console.log('🎨 DEBUG Phase2: Video readiness check:', videoStatus);
+
+        // Update debug panel with video status
+        window.updateARDebugPanel(`Phase 2: 비디오 상태 확인
+비디오 발견: ${videoStatus.foundVideo ? '✅' : '❌'}
+Ready State: ${videoStatus.readyState}/4
+크기: ${videoStatus.videoWidth}x${videoStatus.videoHeight}
+현재 시간: ${videoStatus.currentTime?.toFixed(1)}s`);
+
         if (!video || video.readyState < 2) {
+            console.log('🎨 DEBUG Phase2: Video not ready, returning null');
+            window.updateARDebugPanel(`Phase 2: 비디오 준비 안됨 ❌
+Ready State: ${videoStatus.readyState}/4
+다음 500ms 후 재시도...`);
             return null;
         }
+
+        // Video is ready! Update debug panel with success
+        window.updateARDebugPanel(`Phase 2: 비디오 준비 완료 ✅
+Ready State: ${videoStatus.readyState}/4
+크기: ${videoStatus.videoWidth}x${videoStatus.videoHeight}
+색상 추출 중...`);
 
         // Create canvas for color extraction
         const canvas = document.createElement('canvas');
@@ -976,9 +1045,18 @@ window.extractColorGrid = function(gridSize = 16) {
             colors.push(row);
         }
 
+        // Color extraction successful!
+        window.updateARDebugPanel(`Phase 2: 색상 추출 성공 ✅
+비디오 크기: ${videoStatus.videoWidth}x${videoStatus.videoHeight}
+그리드 크기: ${gridSize}x${gridSize}
+추출된 색상: ${colors.length}x${colors[0]?.length}`);
+
         return colors;
     } catch (error) {
         console.error('❌ Color grid extraction failed:', error);
+        window.updateARDebugPanel(`Phase 2: 색상 추출 실패 ❌
+에러: ${error.message}
+다음 500ms 후 재시도...`);
         return null;
     }
 };
@@ -986,10 +1064,23 @@ window.extractColorGrid = function(gridSize = 16) {
 // Update pixel visualization in AR
 window.updatePixelVisualization = function() {
     const pixelOverlay = document.getElementById('pixel-overlay');
-    if (!pixelOverlay) return;
+    if (!pixelOverlay) {
+        console.log('🎨 DEBUG Phase2: No pixel overlay found');
+        return;
+    }
 
     const colors = window.extractColorGrid(12); // 12x12 grid
-    if (!colors) return;
+    if (!colors) {
+        console.log('🎨 DEBUG Phase2: No colors extracted - video not ready, will retry next interval');
+        return;
+    }
+
+    console.log('🎨 DEBUG Phase2: Successfully extracted colors, creating pixel grid');
+
+    // Update debug panel with pixel creation status
+    window.updateARDebugPanel(`Phase 3: 픽셀 그리드 생성 중 ✅
+색상 데이터: ${colors.length}x${colors[0]?.length}
+A-Frame 요소 생성 중...`);
 
     // Clear existing pixels
     while (pixelOverlay.firstChild) {
@@ -1021,19 +1112,35 @@ window.updatePixelVisualization = function() {
     });
 
     console.log(`🎨 Updated pixel visualization: ${gridSize}x${gridSize} grid`);
+
+    // Final success status in debug panel
+    window.updateARDebugPanel(`Phase 3: 픽셀 시각화 완료! 🎉
+그리드 크기: ${gridSize}x${gridSize}
+픽셀 박스 수: ${gridSize * gridSize}개
+실시간 업데이트 중... (500ms 간격)`);
 };
 
 // Start pixel visualization loop
 window.startPixelVisualization = function() {
     console.log('🎨 DEBUG Phase1: startPixelVisualization function called!');
+
+    // Create debug panel for mobile debugging
+    window.createARDebugPanel();
+    window.updateARDebugPanel('Phase 1: 픽셀 시각화 시작\n함수 호출 성공 ✅');
+
     // Create initial overlay
     window.createPixelVisualization();
+
+    // Wait a bit more for camera to initialize, then start updating
+    console.log('🎨 DEBUG Phase2: Starting pixel visualization with extended camera wait...');
+    window.updateARDebugPanel('Phase 2: 카메라 초기화 대기\n5초 지연 후 시작 예정...');
 
     // Update every 500ms for smooth real-time effect
     const pixelInterval = setInterval(() => {
         if (window.arRunning && document.getElementById('pixel-overlay')) {
             window.updatePixelVisualization();
         } else {
+            console.log('🎨 DEBUG Phase2: Stopping pixel visualization interval');
             clearInterval(pixelInterval);
         }
     }, 500);
