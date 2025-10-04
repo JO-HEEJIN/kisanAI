@@ -2354,15 +2354,7 @@ window.requestIOSPermissions = async function() {
                                typeof DeviceMotionEvent.requestPermission === 'function';
 
         if (needsPermission) {
-            // Show custom permission dialog first
-            const userConsent = await createPermissionDialog();
-
-            if (!userConsent) {
-                console.log('📱 User denied motion sensor access');
-                return { orientation: 'denied', motion: 'denied' };
-            }
-
-            console.log('📱 User granted consent, requesting device permissions...');
+            console.log('📱 Requesting device permissions directly (iOS 13+)...');
         }
 
         let orientationPermission = 'granted';
