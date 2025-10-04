@@ -3169,10 +3169,243 @@ window.handleTargetClick = function(event) {
     }
 };
 
+// Helper function to analyze color grid from extractColorFromCanvas
+function analyzeColorGrid(gridColors) {
+    try {
+        let brownPixels = 0;
+        let greenPixels = 0;
+        let vibrantGreenPixels = 0;
+        let darkPixels = 0;
+        let brightPixels = 0;
+        let redPixels = 0;
+        let whitePixels = 0;
+        let grayPixels = 0;
+        let totalPixels = 0;
+        let blackPixels = 0;
+        let sampleColors = [];
+
+        // Flatten the 2D grid and analyze each pixel
+        for (let row = 0; row < gridColors.length; row++) {
+            for (let col = 0; col < gridColors[row].length; col++) {
+                const pixel = gridColors[row][col];
+                const r = pixel.r;
+                const g = pixel.g;
+                const b = pixel.b;
+                const brightness = (r + g + b) / 3;
+
+                // Sample colors for debugging (first 10 pixels)
+                if (sampleColors.length < 10) {
+                    sampleColors.push({ r, g, b, brightness: Math.round(brightness) });
+                }
+
+                // Classify brightness levels
+                if (brightness < 20) {
+                    darkPixels++;
+                    blackPixels++;
+                    continue;
+                } else if (brightness > 240) {
+                    brightPixels++;
+                    continue;
+                }
+
+                totalPixels++;
+
+                // 1. Red detection (highest priority - danger/error indicator)
+                const isRed = (
+                    (r > 120 && r > g + 40 && r > b + 40) || // Deep red
+                    (r > 180 && g < 100 && b < 100) || // Bright red
+                    (r > 100 && r > g + 50 && r > b + 30 && g < 80) // Reddish
+                );
+                if (isRed) {
+                    redPixels++;
+                }
+
+                // 2. White detection
+                if (r > 200 && g > 200 && b > 200) {
+                    const colorVariation = Math.max(r, g, b) - Math.min(r, g, b);
+                    if (colorVariation < 30) {
+                        whitePixels++;
+                    }
+                }
+
+                // 3. Gray detection
+                if (Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && Math.abs(r - b) < 20 &&
+                    r > 50 && r < 200 && g > 50 && g < 200 && b > 50 && b < 200) {
+                    grayPixels++;
+                }
+
+                // 4. Brown/soil color detection
+                if ((r > b && g > b && r > 45 && g > 35) ||
+                    (r > g && r > b && r > 55) ||
+                    (Math.abs(r - g) < 35 && r > b && r > 65) ||
+                    (r > 90 && g > 70 && b < 80) ||
+                    (r > 80 && g > 60 && r > g && g > b)) {
+                    brownPixels++;
+                }
+
+                // 5. Green/vegetation detection (two levels)
+                if (g > r + 15 && g > b + 10 && g > 80) {
+                    greenPixels++;
+
+                    // Vibrant green (healthy plants)
+                    if (g > r + 25 && g > b + 20 && g > 120) {
+                        vibrantGreenPixels++;
+                    }
+                }
+            }
+        }
+
+        // Prevent division by zero and NaN
+        const safeTotal = Math.max(1, totalPixels);
+        const safeTotalWithDark = Math.max(1, totalPixels + darkPixels);
+
+        const redRatio = redPixels / safeTotal;
+        const whiteRatio = whitePixels / safeTotal;
+        const grayRatio = grayPixels / safeTotal;
+        const blackRatio = blackPixels / safeTotalWithDark;
+        const brownRatio = brownPixels / safeTotal;
+        const greenRatio = greenPixels / safeTotal;
+        const vibrantGreenRatio = vibrantGreenPixels / safeTotal;
+        const darkRatio = darkPixels / safeTotalWithDark;
+        const colorfulRatio = 1 - (whiteRatio + grayRatio + blackRatio);
+
+        const colorAnalysis = {
+            redRatio: (redRatio * 100).toFixed(1) + '%',
+            whiteRatio: (whiteRatio * 100).toFixed(1) + '%',
+            grayRatio: (grayRatio * 100).toFixed(1) + '%',
+            blackRatio: (blackRatio * 100).toFixed(1) + '%',
+            brownRatio: (brownRatio * 100).toFixed(1) + '%',
+            greenRatio: (greenRatio * 100).toFixed(1) + '%',
+            vibrantGreenRatio: (vibrantGreenRatio * 100).toFixed(1) + '%',
+            darkRatio: (darkRatio * 100).toFixed(1) + '%',
+            brightRatio: ((brightPixels / safeTotalWithDark) * 100).toFixed(1) + '%',
+            colorfulRatio: (colorfulRatio * 100).toFixed(1) + '%',
+            totalPixels,
+            sampleColors
+        };
+
+        console.log('🔍 Detailed Color Analysis (from extractColorFromCanvas):', colorAnalysis);
+
+        // Display on screen for debugging
+        if (window.mobileConsoleLog) {
+            window.mobileConsoleLog(`🎨 COLOR: R:${colorAnalysis.redRatio} G:${colorAnalysis.greenRatio} VG:${colorAnalysis.vibrantGreenRatio}`);
+            window.mobileConsoleLog(`🎨 OTHER: W:${colorAnalysis.whiteRatio} Br:${colorAnalysis.brownRatio} D:${colorAnalysis.darkRatio}`);
+        }
+
+        // Color-based scoring system (strict criteria)
+        let surfaceType = 'non_agricultural';
+        let isSoil = false;
+        let isVegetation = false;
+        let baseScore = 0;
+
+        // Priority 1: Red (1-5 points) - danger/error
+        if (redRatio > 0.30) {
+            surfaceType = 'red_danger';
+            baseScore = 1;
+            console.log(`🔴 Red danger surface detected (${(redRatio * 100).toFixed(1)}%) - critical`);
+            console.log('🔴 Red danger surface: base 1 point (critical)');
+            console.log('🛑 Non-agricultural surface - ending analysis');
+        }
+        // Priority 2: White/gray (5 points) - non-agricultural
+        else if (whiteRatio > 0.70 || grayRatio > 0.70) {
+            surfaceType = 'white_gray_surface';
+            baseScore = 5;
+            console.log(`⚪ White/gray surface detected: ${(whiteRatio * 100).toFixed(1)}% white, ${(grayRatio * 100).toFixed(1)}% gray`);
+            console.log('⚪ White/gray non-agricultural surface: base 5 points');
+        }
+        // Priority 3: Black (5 points) - non-agricultural
+        else if (blackRatio > 0.70) {
+            surfaceType = 'black_surface';
+            baseScore = 5;
+            console.log(`⚫ Black surface detected (${(blackRatio * 100).toFixed(1)}%)`);
+            console.log('⚫ Black non-agricultural surface: base 5 points');
+        }
+        // Priority 4: Colorless (5 points) - non-agricultural
+        else if (colorfulRatio < 0.20) {
+            surfaceType = 'colorless_surface';
+            baseScore = 5;
+            console.log(`⚪ Colorless surface detected (colorful: ${(colorfulRatio * 100).toFixed(1)}%)`);
+            console.log('⚪ Colorless non-agricultural surface: base 5 points');
+        }
+        // Priority 5: Healthy vegetation (88-100 points) - highest grade
+        else if (vibrantGreenRatio > 0.15 || greenRatio > 0.30) {
+            surfaceType = 'healthy_vegetation';
+            isVegetation = true;
+            baseScore = vibrantGreenRatio > 0.15 ? 98 : 92;
+            console.log(`🌿 Healthy vegetation detected (green: ${(greenRatio * 100).toFixed(1)}%, vibrant: ${(vibrantGreenRatio * 100).toFixed(1)}%)`);
+            console.log(`🌿 Healthy vegetation: base ${baseScore} points`);
+        }
+        // Priority 6: Soil only (60 points)
+        else if (brownRatio > 0.10 && greenRatio < 0.25) {
+            surfaceType = 'soil';
+            isSoil = true;
+            baseScore = 60;
+            console.log(`🟤 Soil detected (brown: ${(brownRatio * 100).toFixed(1)}%, green: ${(greenRatio * 100).toFixed(1)}%)`);
+            console.log('🟤 Soil surface: base 60 points');
+        }
+        // Priority 7: Mixed agricultural (75 points)
+        else if (brownRatio > 0.05 && greenRatio > 0.10) {
+            surfaceType = 'mixed_agricultural';
+            isSoil = true;
+            isVegetation = true;
+            baseScore = 75;
+            console.log(`🌾 Mixed agricultural surface (brown: ${(brownRatio * 100).toFixed(1)}%, green: ${(greenRatio * 100).toFixed(1)}%)`);
+            console.log('🌾 Mixed agricultural surface: base 75 points');
+        }
+        // Priority 8: Weak vegetation (45 points)
+        else if (greenRatio > 0.05) {
+            surfaceType = 'weak_vegetation';
+            isVegetation = true;
+            baseScore = 45;
+            console.log(`🌱 Weak vegetation detected (green: ${(greenRatio * 100).toFixed(1)}%)`);
+            console.log('🌱 Weak vegetation: base 45 points');
+        }
+        // Priority 9: Other non-agricultural (12 points)
+        else {
+            surfaceType = 'non_agricultural';
+            baseScore = 12;
+            console.log('❌ Non-agricultural surface detected');
+            console.log('❌ Other non-agricultural: base 12 points');
+        }
+
+        // Display baseScore on screen
+        if (window.mobileConsoleLog) {
+            window.mobileConsoleLog(`⭐ BASE SCORE: ${baseScore} (${surfaceType})`);
+        }
+
+        return {
+            isSoil,
+            isVegetation,
+            surfaceType,
+            baseScore,
+            ratios: { redRatio, whiteRatio, grayRatio, blackRatio, brownRatio, greenRatio, vibrantGreenRatio, darkRatio, colorfulRatio }
+        };
+
+    } catch (error) {
+        console.error('❌ Grid color analysis error:', error);
+        if (window.mobileConsoleLog) {
+            window.mobileConsoleLog(`❌ Grid analysis error: ${error.message}`);
+        }
+        return { isSoil: false, isVegetation: false, surfaceType: 'error', baseScore: 10 };
+    }
+}
+
 // Analyze surface type from camera (soil, vegetation, other)
 function analyzeSurfaceType() {
     try {
-        // Get camera video element with better detection
+        // First try to use extractColorFromCanvas if available and successful
+        if (window.extractColorFromCanvas) {
+            const gridColors = window.extractColorFromCanvas(12);
+            if (gridColors && gridColors.length > 0) {
+                if (window.mobileConsoleLog) {
+                    window.mobileConsoleLog(`✅ Using extractColorFromCanvas data (${gridColors.length}x${gridColors[0].length})`);
+                }
+                // Analyze the grid colors
+                return analyzeColorGrid(gridColors);
+            }
+        }
+
+        // Fallback to video element extraction
         const video = document.querySelector('video[autoplay]') ||
                      document.querySelector('#camera-video') ||
                      document.querySelector('.a-video video') ||
@@ -3187,8 +3420,15 @@ function analyzeSurfaceType() {
             currentTime: video?.currentTime
         });
 
+        if (window.mobileConsoleLog) {
+            window.mobileConsoleLog(`📹 Video fallback: ${video ? `${video.videoWidth}x${video.videoHeight} ready:${video.readyState}` : 'NOT FOUND'}`);
+        }
+
         if (!video || video.readyState < 2) {
             console.log('❌ No camera video found or not ready - using fallback analysis');
+            if (window.mobileConsoleLog) {
+                window.mobileConsoleLog(`❌ VIDEO NOT READY (readyState: ${video?.readyState || 'null'}) - USING FALLBACK baseScore:60`);
+            }
             // Fallback: assume mixed agricultural surface
             return {
                 isSoil: true,
