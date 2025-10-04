@@ -3349,10 +3349,10 @@ function analyzeSurfaceType() {
         let baseScore = 0;
 
         // 1순위: 빨간색 (0-5점) - 위험/오류
-        if (redRatio > 0.20) {
+        if (redRatio > 0.10) {
             surfaceType = 'red_danger';
             baseScore = 1;
-            console.log('🔴 Red danger surface detected - score: 1');
+            console.log(`🔴 Red danger surface detected (${(redRatio * 100).toFixed(1)}%) - score: 1`);
         }
         // 2순위: 흰색/회색 (5-15점) - 비농업
         else if (whiteRatio > 0.60 || grayRatio > 0.60) {
@@ -3361,11 +3361,11 @@ function analyzeSurfaceType() {
             console.log('⚪ White/gray surface - score: 8');
         }
         // 3순위: 건강한 녹색 (88-100점) - 최고 등급
-        else if (vibrantGreenRatio > 0.15 || greenRatio > 0.30) {
+        else if (vibrantGreenRatio > 0.10 || greenRatio > 0.20) {
             surfaceType = 'healthy_vegetation';
             isVegetation = true;
-            baseScore = vibrantGreenRatio > 0.20 ? 95 : 90;
-            console.log(`🌿 Healthy vegetation detected - score: ${baseScore}`);
+            baseScore = vibrantGreenRatio > 0.15 ? 98 : 92;
+            console.log(`🌿 Healthy vegetation detected (green: ${(greenRatio * 100).toFixed(1)}%, vibrant: ${(vibrantGreenRatio * 100).toFixed(1)}%) - score: ${baseScore}`);
         }
         // 4순위: 토양+식물 혼합 (70-85점)
         else if (brownRatio > 0.05 && greenRatio > 0.10) {
