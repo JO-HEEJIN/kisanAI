@@ -1440,17 +1440,35 @@ window.startPixelVisualization = function() {
     window.updateARDebugPanel('Phase 1: 픽셀 시각화 시작\n함수 호출 성공 ✅');
 
     // Check if EnhancedARPixelView is available (new integrated version)
+    console.log('🔍 Checking window.EnhancedARPixelView:', typeof window.EnhancedARPixelView);
+
     if (window.EnhancedARPixelView) {
         console.log('🚀 Using EnhancedARPixelView with camera+NASA fusion!');
         window.updateARDebugPanel('Enhanced Mode: 카메라+NASA 융합 활성화 ✅');
 
         const arScene = document.querySelector('a-scene');
+        console.log('📍 AR Scene found:', !!arScene);
+
         if (arScene) {
-            // Use the new integrated pixel view
-            window.enhancedPixelView = new window.EnhancedARPixelView(arScene);
-            window.enhancedPixelView.start();
-            return; // Exit here, no need for old system
+            try {
+                // Use the new integrated pixel view
+                console.log('🎯 Creating EnhancedARPixelView instance...');
+                window.enhancedPixelView = new window.EnhancedARPixelView(arScene);
+                console.log('🎬 Starting EnhancedARPixelView...');
+                window.enhancedPixelView.start();
+                console.log('✅ EnhancedARPixelView started successfully!');
+                return; // Exit here, no need for old system
+            } catch (error) {
+                console.error('❌ EnhancedARPixelView failed:', error);
+                window.updateARDebugPanel(`Enhanced 실패: ${error.message}`);
+            }
+        } else {
+            console.warn('⚠️ No a-scene found for EnhancedARPixelView');
+            window.updateARDebugPanel('Enhanced Mode: a-scene 없음');
         }
+    } else {
+        console.log('📸 EnhancedARPixelView not available, using fallback');
+        window.updateARDebugPanel('Enhanced 클래스 없음 - fallback 사용');
     }
 
     // Fallback to original system if EnhancedARPixelView not available

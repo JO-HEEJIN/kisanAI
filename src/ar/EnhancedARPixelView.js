@@ -10,6 +10,8 @@
  * Authors: momo + stagmate collaboration
  */
 
+console.log('🚀 EnhancedARPixelView.js loaded successfully!');
+
 class EnhancedARPixelView {
     constructor(sceneEl) {
         // 기본 설정 (stagmate 구조 유지)
@@ -437,3 +439,4 @@ class EnhancedARPixelView {
 
 // 전역 참조
 window.EnhancedARPixelView = EnhancedARPixelView;
+console.log('✅ window.EnhancedARPixelView assigned:', typeof window.EnhancedARPixelView);
