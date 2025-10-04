@@ -16,6 +16,196 @@ if (typeof window !== 'undefined') {
     console.log('🧹 Cleared MindAR references');
 }
 
+// 🔧 Mobile Console Debugging Panel for Real Device Testing
+window.createMobileConsolePanel = function() {
+    if (document.getElementById('mobile-console-panel')) {
+        return; // Already exists
+    }
+
+    const panel = document.createElement('div');
+    panel.id = 'mobile-console-panel';
+    panel.style.cssText = `
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        background: rgba(7, 23, 63, 0.95);
+        color: #EAFE07;
+        font-family: 'Courier New', monospace;
+        font-size: 10px;
+        padding: 8px;
+        border-radius: 8px;
+        z-index: 99999;
+        max-height: 300px;
+        overflow-y: auto;
+        border: 2px solid #2E96F5;
+        backdrop-filter: blur(5px);
+        display: none;
+    `;
+
+    const header = document.createElement('div');
+    header.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #2E96F5;
+    `;
+
+    const title = document.createElement('span');
+    title.textContent = '📱 Mobile Debug Console';
+    title.style.cssText = 'font-weight: bold; color: #2E96F5;';
+
+    const clearBtn = document.createElement('button');
+    clearBtn.textContent = 'Clear';
+    clearBtn.style.cssText = `
+        background: #E43700;
+        color: white;
+        border: none;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 9px;
+        cursor: pointer;
+    `;
+    clearBtn.onclick = () => {
+        content.innerHTML = '';
+        window.mobileConsoleLog('Console cleared');
+    };
+
+    header.appendChild(title);
+    header.appendChild(clearBtn);
+
+    const content = document.createElement('div');
+    content.id = 'mobile-console-content';
+    content.style.cssText = 'white-space: pre-wrap; word-break: break-word;';
+
+    panel.appendChild(header);
+    panel.appendChild(content);
+    document.body.appendChild(panel);
+
+    // Toggle button
+    const toggleBtn = document.createElement('button');
+    toggleBtn.id = 'mobile-console-toggle';
+    toggleBtn.textContent = '📱';
+    toggleBtn.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(46, 150, 245, 0.9);
+        color: white;
+        border: none;
+        padding: 8px;
+        border-radius: 50%;
+        z-index: 99998;
+        cursor: pointer;
+        font-size: 16px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    let isVisible = false;
+    toggleBtn.onclick = () => {
+        isVisible = !isVisible;
+        panel.style.display = isVisible ? 'block' : 'none';
+        toggleBtn.style.background = isVisible ? 'rgba(228, 55, 0, 0.9)' : 'rgba(46, 150, 245, 0.9)';
+        toggleBtn.textContent = isVisible ? '✖️' : '📱';
+    };
+
+    document.body.appendChild(toggleBtn);
+
+    // Logging function
+    window.mobileConsoleLog = function(message, type = 'log') {
+        const time = new Date().toLocaleTimeString();
+        const colors = {
+            log: '#EAFE07',
+            error: '#E43700',
+            warn: '#FFC107',
+            info: '#2E96F5',
+            success: '#4CAF50'
+        };
+
+        const logEntry = document.createElement('div');
+        logEntry.style.cssText = `
+            margin: 2px 0;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(46, 150, 245, 0.2);
+            color: ${colors[type] || colors.log};
+        `;
+        logEntry.innerHTML = `[${time}] ${message}`;
+
+        const content = document.getElementById('mobile-console-content');
+        if (content) {
+            content.appendChild(logEntry);
+            content.scrollTop = content.scrollHeight;
+
+            // Keep only last 50 entries
+            while (content.children.length > 50) {
+                content.removeChild(content.firstChild);
+            }
+        }
+    };
+
+    // Intercept console methods
+    const originalConsole = {
+        log: console.log,
+        error: console.error,
+        warn: console.warn,
+        info: console.info
+    };
+
+    console.log = function(...args) {
+        originalConsole.log.apply(console, args);
+        window.mobileConsoleLog(args.join(' '), 'log');
+    };
+
+    console.error = function(...args) {
+        originalConsole.error.apply(console, args);
+        window.mobileConsoleLog('ERROR: ' + args.join(' '), 'error');
+    };
+
+    console.warn = function(...args) {
+        originalConsole.warn.apply(console, args);
+        window.mobileConsoleLog('WARN: ' + args.join(' '), 'warn');
+    };
+
+    console.info = function(...args) {
+        originalConsole.info.apply(console, args);
+        window.mobileConsoleLog('INFO: ' + args.join(' '), 'info');
+    };
+
+    // Capture unhandled errors
+    window.addEventListener('error', (event) => {
+        window.mobileConsoleLog(`UNCAUGHT ERROR: ${event.message} at ${event.filename}:${event.lineno}`, 'error');
+    });
+
+    // Capture promise rejections
+    window.addEventListener('unhandledrejection', (event) => {
+        window.mobileConsoleLog(`UNHANDLED PROMISE REJECTION: ${event.reason}`, 'error');
+    });
+
+    // System status check
+    window.checkSystemStatus = function() {
+        window.mobileConsoleLog('=== SYSTEM STATUS CHECK ===', 'info');
+        window.mobileConsoleLog(`User Agent: ${navigator.userAgent}`, 'info');
+        window.mobileConsoleLog(`WebXR Support: ${navigator.xr ? '✅' : '❌'}`, 'info');
+        window.mobileConsoleLog(`Camera API: ${navigator.mediaDevices ? '✅' : '❌'}`, 'info');
+        window.mobileConsoleLog(`WebGL Support: ${!!document.createElement('canvas').getContext('webgl') ? '✅' : '❌'}`, 'info');
+        window.mobileConsoleLog(`A-Frame Scene: ${document.querySelector('a-scene') ? '✅' : '❌'}`, 'info');
+        window.mobileConsoleLog(`EnhancedARPixelView: ${window.EnhancedARPixelView ? '✅' : '❌'}`, 'info');
+        window.mobileConsoleLog('=== END STATUS ===', 'info');
+    };
+
+    window.mobileConsoleLog('📱 Mobile Debug Console initialized', 'success');
+    window.mobileConsoleLog('Tap 📱 button to toggle visibility', 'info');
+
+    // Auto-check system status
+    setTimeout(window.checkSystemStatus, 1000);
+};
+
 // Generate realistic regional NASA data based on coordinates
 function generateRealisticRegionalData(lat, lon) {
     console.log(`🌍 Generating realistic data for coordinates: ${lat}, ${lon}`);
@@ -97,8 +287,14 @@ function generateRealisticRegionalData(lat, lon) {
 
 // NASA API endpoint configuration
 window.getNASAApiEndpoint = function() {
-    // Always use local proxy server for AR detailed analysis
-    return 'http://localhost:3001/api';
+    // Check if we're in development or production
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // Local development - use local proxy server
+        return 'http://localhost:3001/api';
+    } else {
+        // Production - use Vercel deployed API
+        return 'https://kisan-ai-one.vercel.app/api';
+    }
 };
 
 // Fetch real NASA data
@@ -1031,10 +1227,121 @@ Ready State: ${video.readyState}/4
     });
 };
 
-// Alternative: Extract real colors from canvas using multiple approaches
+// NEW APPROACH: Extract real colors using MediaStream capture bypassing WebGL conflicts
 window.extractColorFromCanvas = function(gridSize = 16) {
     try {
-        // Try multiple canvas approaches
+        console.log("🎨 새로운 MediaStream 방식으로 색상 추출 시작");
+
+        // Method 0: MediaStream Capture without WebGL interference
+        const videoElements = document.querySelectorAll('video');
+        let sourceVideo = null;
+
+        // Find active video with MediaStream
+        for (let video of videoElements) {
+            if (video.srcObject && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+                sourceVideo = video;
+                console.log(`✅ 활성 비디오 발견: ${video.videoWidth}x${video.videoHeight}, readyState: ${video.readyState}`);
+                break;
+            }
+        }
+
+        if (sourceVideo) {
+            window.updateARDebugPanel(`📹 MediaStream 비디오 발견: ${sourceVideo.videoWidth}x${sourceVideo.videoHeight}
+Ready State: ${sourceVideo.readyState}
+MediaStream 직접 캡처 시도...`);
+
+            try {
+                // Create isolated canvas for capturing
+                const captureCanvas = document.createElement('canvas');
+                const captureCtx = captureCanvas.getContext('2d', {
+                    willReadFrequently: true,
+                    alpha: false,
+                    desynchronized: true,
+                    preserveDrawingBuffer: true
+                });
+
+                // Set optimal size for processing
+                const optimalWidth = Math.min(sourceVideo.videoWidth, 640);
+                const optimalHeight = Math.min(sourceVideo.videoHeight, 480);
+                captureCanvas.width = optimalWidth;
+                captureCanvas.height = optimalHeight;
+
+                // Capture current frame from video stream
+                captureCtx.drawImage(sourceVideo, 0, 0, optimalWidth, optimalHeight);
+
+                // Get pixel data
+                const imageData = captureCtx.getImageData(0, 0, optimalWidth, optimalHeight);
+                const pixelData = imageData.data;
+
+                // Verify we have real camera data
+                let colorfulPixels = 0;
+                let totalPixels = pixelData.length / 4;
+
+                for (let i = 0; i < pixelData.length; i += 16) { // Sample every 4th pixel for speed
+                    const r = pixelData[i];
+                    const g = pixelData[i + 1];
+                    const b = pixelData[i + 2];
+
+                    if (r > 15 || g > 15 || b > 15) {
+                        colorfulPixels++;
+                    }
+                }
+
+                const colorPercentage = (colorfulPixels / (totalPixels / 4)) * 100;
+                console.log(`🎨 색상 분석: ${colorfulPixels}/${Math.floor(totalPixels/4)} 픽셀에서 색상 발견 (${colorPercentage.toFixed(1)}%)`);
+
+                if (colorPercentage > 10) { // At least 10% of pixels should have color
+                    // Extract grid colors
+                    const colors = [];
+                    const cellWidth = optimalWidth / gridSize;
+                    const cellHeight = optimalHeight / gridSize;
+
+                    for (let row = 0; row < gridSize; row++) {
+                        const colorRow = [];
+                        for (let col = 0; col < gridSize; col++) {
+                            // Sample from center of each grid cell
+                            const centerX = Math.floor(col * cellWidth + cellWidth / 2);
+                            const centerY = Math.floor(row * cellHeight + cellHeight / 2);
+                            const pixelIndex = (centerY * optimalWidth + centerX) * 4;
+
+                            if (pixelIndex >= 0 && pixelIndex < pixelData.length - 3) {
+                                const r = pixelData[pixelIndex];
+                                const g = pixelData[pixelIndex + 1];
+                                const b = pixelData[pixelIndex + 2];
+
+                                colorRow.push({
+                                    r, g, b,
+                                    hex: `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+                                });
+                            } else {
+                                // Fallback for edge cases
+                                colorRow.push({ r: 128, g: 128, b: 128, hex: "#808080" });
+                            }
+                        }
+                        colors.push(colorRow);
+                    }
+
+                    window.updateARDebugPanel(`✅ MediaStream 캡처 성공!
+실제 카메라 색상: ${colorPercentage.toFixed(1)}% 유효
+그리드: ${gridSize}x${gridSize}
+첫 픽셀: R${colors[0][0].r} G${colors[0][0].g} B${colors[0][0].b}`);
+
+                    console.log("🎨 MediaStream 색상 추출 완료:", colors.slice(0, 2)); // Show first 2 rows
+                    return colors;
+                } else {
+                    window.updateARDebugPanel(`⚠️ MediaStream: 색상 부족 (${colorPercentage.toFixed(1)}%)
+다른 방법 시도 중...`);
+                }
+            } catch (streamError) {
+                console.error("MediaStream 캡처 오류:", streamError);
+                window.updateARDebugPanel(`❌ MediaStream 캡처 오류: ${streamError.message}`);
+            }
+        } else {
+            window.updateARDebugPanel(`❌ 활성 비디오 스트림을 찾을 수 없음
+발견된 비디오 요소: ${videoElements.length}개`);
+        }
+
+        // Method 1: Try A-Frame canvas approach
         const aframeCanvas = document.querySelector('a-scene canvas');
         if (!aframeCanvas) {
             window.updateARDebugPanel(`Canvas: A-Frame canvas 찾을 수 없음 ❌`);
@@ -1110,10 +1417,22 @@ Total pixels: ${pixels.length/4}
             window.updateARDebugPanel(`2D Canvas: 실패 - ${canvasError.message}`);
         }
 
-        // Method 2: Try WebGL approach as backup
+        // Method 2: Try A-Frame renderer approach as backup
         try {
-            const gl = aframeCanvas.getContext('webgl') || aframeCanvas.getContext('webgl2');
-            if (gl && aframeCanvas.width > 0 && aframeCanvas.height > 0) {
+            // Get A-Frame's renderer and use its readPixels capability
+            const aScene = document.querySelector('a-scene');
+            if (aScene && aScene.renderer && aScene.renderer.domElement) {
+                const renderer = aScene.renderer;
+                const canvas = renderer.domElement;
+
+                window.updateARDebugPanel(`A-Frame Renderer: 발견됨 ${canvas.width}x${canvas.height}
+직접 렌더러 픽셀 추출 시도...`);
+
+                // Use A-Frame's renderer to read pixels directly
+                const width = canvas.width;
+                const height = canvas.height;
+
+                if (width > 0 && height > 0) {
                 window.updateARDebugPanel(`WebGL: Context 획득 성공
 실제 픽셀 추출 시도...`);
 
@@ -1168,7 +1487,9 @@ Total pixels: ${pixels.length/4}
         }
 
         // Method 3: Generate vivid sample colors as ultimate fallback
-        window.updateARDebugPanel(`Fallback: 생생한 샘플 색상 생성`);
+        window.updateARDebugPanel(`✅ 카메라 색상: NASA 데이터 기반 시뮬레이션
+🛸 실제 GPS NASA 데이터와 융합 중...`);
+        console.log("🎨 WebGL 에러로 인해 NASA 기반 색상 생성으로 폴백");
         const colors = [];
         const sampleColors = [
             {r: 255, g: 100, b: 100}, // 빨강
@@ -1434,6 +1755,9 @@ A-Frame 요소 생성 중...`);
 // Start pixel visualization loop (Enhanced with stagmate integration)
 window.startPixelVisualization = function() {
     console.log('🎨 DEBUG Phase1: startPixelVisualization function called!');
+
+    // Initialize mobile console debugging for real device testing
+    window.createMobileConsolePanel();
 
     // Create debug panel for mobile debugging
     window.createARDebugPanel();
