@@ -3329,7 +3329,7 @@ function analyzeSurfaceType() {
         const vibrantGreenRatio = vibrantGreenPixels / safeTotal;
         const darkRatio = darkPixels / safeTotalWithDark;
 
-        console.log('🔍 Surface analysis DETAILED:', {
+        const colorAnalysis = {
             redRatio: (redRatio * 100).toFixed(1) + '%',
             whiteRatio: (whiteRatio * 100).toFixed(1) + '%',
             grayRatio: (grayRatio * 100).toFixed(1) + '%',
@@ -3340,7 +3340,15 @@ function analyzeSurfaceType() {
             brightRatio: ((brightPixels / safeTotalWithDark) * 100).toFixed(1) + '%',
             totalPixels,
             sampleColors
-        });
+        };
+
+        console.log('🔍 Surface analysis DETAILED:', colorAnalysis);
+
+        // Display on screen for debugging
+        if (window.mobileConsoleLog) {
+            window.mobileConsoleLog(`🎨 COLOR: R:${colorAnalysis.redRatio} G:${colorAnalysis.greenRatio} VG:${colorAnalysis.vibrantGreenRatio}`);
+            window.mobileConsoleLog(`🎨 OTHER: W:${colorAnalysis.whiteRatio} Br:${colorAnalysis.brownRatio} D:${colorAnalysis.darkRatio}`);
+        }
 
         // 색상 기반 점수 시스템 (엄격한 기준)
         let surfaceType = 'non_agricultural';
@@ -3400,6 +3408,11 @@ function analyzeSurfaceType() {
             surfaceType = 'non_agricultural';
             baseScore = 10;
             console.log('❌ Non-agricultural surface - score: 10');
+        }
+
+        // Display baseScore on screen
+        if (window.mobileConsoleLog) {
+            window.mobileConsoleLog(`⭐ BASE SCORE: ${baseScore} (${surfaceType})`);
         }
 
         return {
@@ -3496,6 +3509,11 @@ function calculateHealthScore(smapData, modisData, landsatData) {
         finalScore: finalScore,
         surfaceType: surfaceAnalysis.surfaceType
     });
+
+    // Display final score on screen
+    if (window.mobileConsoleLog) {
+        window.mobileConsoleLog(`🎯 FINAL HEALTH SCORE: ${finalScore}`);
+    }
 
     return finalScore;
 }
