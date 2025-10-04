@@ -3238,6 +3238,9 @@ function analyzeSurfaceType() {
         let vibrantGreenPixels = 0;
         let darkPixels = 0;
         let brightPixels = 0;
+        let redPixels = 0;
+        let whitePixels = 0;
+        let grayPixels = 0;
         let totalPixels = 0;
         let sampleColors = [];
 
@@ -3267,21 +3270,44 @@ function analyzeSurfaceType() {
 
             totalPixels++;
 
-            // Detect brown/soil colors (확장된 범위)
-            if ((r > b && g > b && r > 45 && g > 35) || // 기본 갈색
-                (r > g && r > b && r > 55) || // 적갈색
-                (Math.abs(r - g) < 35 && r > b && r > 65) || // 베이지/연갈색
-                (r > 90 && g > 70 && b < 80) || // 황토색
-                (r > 80 && g > 60 && r > g && g > b)) { // 일반적인 토양색
+            // 1. 빨간색 감지 (최우선 - 위험/오류 표시)
+            const isRed = (
+                (r > 120 && r > g + 40 && r > b + 40) || // 진한 빨간색
+                (r > 180 && g < 100 && b < 100) || // 밝은 빨간색
+                (r > 100 && r > g + 50 && r > b + 30 && g < 80) // 적색계
+            );
+            if (isRed) {
+                redPixels++;
+            }
+
+            // 2. 흰색 감지
+            if (r > 200 && g > 200 && b > 200) {
+                const colorVariation = Math.max(r, g, b) - Math.min(r, g, b);
+                if (colorVariation < 30) {
+                    whitePixels++;
+                }
+            }
+
+            // 3. 회색 감지
+            if (Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && Math.abs(r - b) < 20 &&
+                r > 50 && r < 200 && g > 50 && g < 200 && b > 50 && b < 200) {
+                grayPixels++;
+            }
+
+            // 4. 갈색/토양 색상 감지
+            if ((r > b && g > b && r > 45 && g > 35) ||
+                (r > g && r > b && r > 55) ||
+                (Math.abs(r - g) < 35 && r > b && r > 65) ||
+                (r > 90 && g > 70 && b < 80) ||
+                (r > 80 && g > 60 && r > g && g > b)) {
                 brownPixels++;
             }
 
-            // Detect vegetation (두 단계로 구분)
-            // 1. 일반 녹색 (잎, 잔디 등)
+            // 5. 녹색/식물 감지 (두 단계)
             if (g > r + 15 && g > b + 10 && g > 80) {
                 greenPixels++;
 
-                // 2. 생생한 녹색 (건강한 식물)
+                // 생생한 녹색 (건강한 식물)
                 if (g > r + 25 && g > b + 20 && g > 120) {
                     vibrantGreenPixels++;
                 }
@@ -3292,70 +3318,93 @@ function analyzeSurfaceType() {
         const safeTotal = Math.max(1, totalPixels);
         const safeTotalWithDark = Math.max(1, totalPixels + darkPixels);
 
+        const redRatio = redPixels / safeTotal;
+        const whiteRatio = whitePixels / safeTotal;
+        const grayRatio = grayPixels / safeTotal;
         const brownRatio = brownPixels / safeTotal;
         const greenRatio = greenPixels / safeTotal;
         const vibrantGreenRatio = vibrantGreenPixels / safeTotal;
         const darkRatio = darkPixels / safeTotalWithDark;
 
         console.log('🔍 Surface analysis DETAILED:', {
-            brownRatio: brownRatio.toFixed(3),
-            greenRatio: greenRatio.toFixed(3),
-            vibrantGreenRatio: vibrantGreenRatio.toFixed(3),
-            darkRatio: darkRatio.toFixed(3),
-            brightRatio: (brightPixels / safeTotalWithDark).toFixed(3),
+            redRatio: (redRatio * 100).toFixed(1) + '%',
+            whiteRatio: (whiteRatio * 100).toFixed(1) + '%',
+            grayRatio: (grayRatio * 100).toFixed(1) + '%',
+            brownRatio: (brownRatio * 100).toFixed(1) + '%',
+            greenRatio: (greenRatio * 100).toFixed(1) + '%',
+            vibrantGreenRatio: (vibrantGreenRatio * 100).toFixed(1) + '%',
+            darkRatio: (darkRatio * 100).toFixed(1) + '%',
+            brightRatio: ((brightPixels / safeTotalWithDark) * 100).toFixed(1) + '%',
             totalPixels,
-            darkPixels,
-            brightPixels,
             sampleColors
         });
 
-        // Surface type determination (매우 관대한 기준)
-        let surfaceType = 'other';
+        // 색상 기반 점수 시스템 (엄격한 기준)
+        let surfaceType = 'non_agricultural';
         let isSoil = false;
         let isVegetation = false;
+        let baseScore = 0;
 
-        // 식물 판단 (더 관대하게)
-        if (vibrantGreenRatio > 0.08 || greenRatio > 0.15) {
-            surfaceType = 'vegetation';
-            isVegetation = true;
-            console.log('✅ Vegetation detected (vibrant green or high green ratio)');
+        // 1순위: 빨간색 (0-5점) - 위험/오류
+        if (redRatio > 0.20) {
+            surfaceType = 'red_danger';
+            baseScore = 1;
+            console.log('🔴 Red danger surface detected - score: 1');
         }
-        // 토양 판단 (더 관대하게)
-        else if (brownRatio > 0.02 && greenRatio < 0.30) {
+        // 2순위: 흰색/회색 (5-15점) - 비농업
+        else if (whiteRatio > 0.60 || grayRatio > 0.60) {
+            surfaceType = 'white_gray_surface';
+            baseScore = 8;
+            console.log('⚪ White/gray surface - score: 8');
+        }
+        // 3순위: 건강한 녹색 (88-100점) - 최고 등급
+        else if (vibrantGreenRatio > 0.15 || greenRatio > 0.30) {
+            surfaceType = 'healthy_vegetation';
+            isVegetation = true;
+            baseScore = vibrantGreenRatio > 0.20 ? 95 : 90;
+            console.log(`🌿 Healthy vegetation detected - score: ${baseScore}`);
+        }
+        // 4순위: 토양+식물 혼합 (70-85점)
+        else if (brownRatio > 0.05 && greenRatio > 0.10) {
+            surfaceType = 'mixed_agricultural';
+            isSoil = true;
+            isVegetation = true;
+            baseScore = 75;
+            console.log('🌾 Mixed agricultural surface - score: 75');
+        }
+        // 5순위: 토양만 (55-70점)
+        else if (brownRatio > 0.10 && greenRatio < 0.25) {
             surfaceType = 'soil';
             isSoil = true;
-            console.log('✅ Soil detected (brown ratio with low green)');
+            baseScore = 60;
+            console.log('🟤 Soil detected - score: 60');
         }
-        // 혼합 표면 (매우 관대하게)
-        else if (brownRatio > 0.01 || greenRatio > 0.05) {
-            surfaceType = 'mixed';
-            isSoil = true; // 농업 용도로 간주
-            console.log('✅ Mixed surface detected (any agricultural hints)');
+        // 6순위: 약한 녹색 (40-55점)
+        else if (greenRatio > 0.05) {
+            surfaceType = 'weak_vegetation';
+            isVegetation = true;
+            baseScore = 45;
+            console.log('🌱 Weak vegetation - score: 45');
         }
-        // 완전 어두운 화면 체크
-        else if (darkRatio > 0.8) {
+        // 7순위: 어두운 화면 (10-20점)
+        else if (darkRatio > 0.70) {
             surfaceType = 'dark_screen';
-            isSoil = true; // 어두운 화면도 토양으로 간주 (관대하게)
-            console.log('⚫ Dark screen detected - treating as soil');
+            baseScore = 12;
+            console.log('⚫ Dark screen - score: 12');
         }
-        // 완전 밝은 화면 체크
-        else if ((brightPixels / safeTotalWithDark) > 0.8) {
-            surfaceType = 'bright_screen';
-            isVegetation = true; // 밝은 화면은 식물로 간주 (관대하게)
-            console.log('⚪ Bright screen detected - treating as vegetation');
-        }
+        // 8순위: 기타 비농업 (5-15점)
         else {
-            // 최후의 수단: 농업 표면으로 간주
-            surfaceType = 'assumed_agricultural';
-            isSoil = true;
-            console.log('🌾 Defaulting to agricultural surface for better user experience');
+            surfaceType = 'non_agricultural';
+            baseScore = 10;
+            console.log('❌ Non-agricultural surface - score: 10');
         }
 
         return {
             isSoil,
             isVegetation,
             surfaceType,
-            ratios: { brownRatio, greenRatio, vibrantGreenRatio, darkRatio }
+            baseScore,
+            ratios: { redRatio, whiteRatio, grayRatio, brownRatio, greenRatio, vibrantGreenRatio, darkRatio }
         };
 
     } catch (error) {
@@ -3376,12 +3425,27 @@ function calculateHealthScore(smapData, modisData, landsatData) {
     const surfaceAnalysis = analyzeSurfaceType();
     console.log('🔍 Surface analysis:', surfaceAnalysis);
 
-    // Base score depends on what we're analyzing
-    let healthScore = 30; // Neutral starting point
+    // Start with color-based base score (0-100)
+    let healthScore = surfaceAnalysis.baseScore || 30;
 
-    console.log('🔍 calculateHealthScore input:', { smapData, modisData, landsatData, surfaceAnalysis });
+    console.log('🔍 calculateHealthScore input:', {
+        smapData,
+        modisData,
+        landsatData,
+        surfaceAnalysis,
+        colorBaseScore: healthScore
+    });
 
-    // SMAP soil moisture factor (0-40 points)
+    // For red danger or non-agricultural surfaces, return base score immediately
+    if (surfaceAnalysis.surfaceType === 'red_danger' ||
+        surfaceAnalysis.surfaceType === 'white_gray_surface' ||
+        surfaceAnalysis.surfaceType === 'dark_screen' ||
+        surfaceAnalysis.surfaceType === 'non_agricultural') {
+        console.log(`⚠️ Non-agricultural surface - returning base score: ${healthScore}`);
+        return healthScore;
+    }
+
+    // For agricultural surfaces, apply NASA data bonuses
     const soilMoisture = smapData.surface_moisture !== undefined ?
                         smapData.surface_moisture :
                         (smapData.soilMoisture || 0.3);
@@ -3392,98 +3456,43 @@ function calculateHealthScore(smapData, modisData, landsatData) {
         finalValue: soilMoisture
     });
 
-    // Soil moisture scoring
+    // Soil moisture bonus (max +10 points for agricultural surfaces)
     if (soilMoisture >= 0.25 && soilMoisture <= 0.45) {
-        healthScore += 35; // Optimal range
+        healthScore += 10; // Optimal range
     } else if (soilMoisture >= 0.15 && soilMoisture <= 0.6) {
-        healthScore += 25; // Good range
-    } else if (soilMoisture >= 0.1) {
-        healthScore += 15; // Acceptable range
-    } else {
-        healthScore += 5; // Poor range
+        healthScore += 5; // Good range
+    } else if (soilMoisture < 0.1) {
+        healthScore -= 5; // Too dry
     }
 
-    // NDVI vegetation factor (0-35 points)
+    // NDVI bonus (max +8 points for healthy vegetation)
     const ndvi = modisData.ndvi || 0.65;
     if (surfaceAnalysis.isVegetation) {
-        // For vegetation, emphasize NDVI more
         if (ndvi >= 0.7) {
-            healthScore += 30; // Excellent vegetation
+            healthScore += 8; // Excellent NDVI
         } else if (ndvi >= 0.5) {
-            healthScore += 25; // Good vegetation
+            healthScore += 5; // Good NDVI
         } else if (ndvi >= 0.3) {
-            healthScore += 15; // Moderate vegetation
+            healthScore += 3; // Moderate NDVI
         } else {
-            healthScore += 8; // Poor vegetation
+            healthScore -= 5; // Low NDVI - unhealthy vegetation
         }
     } else if (surfaceAnalysis.isSoil) {
-        // For soil, NDVI indicates potential for growth
-        if (ndvi >= 0.6) {
-            healthScore += 25; // Good potential
-        } else if (ndvi >= 0.4) {
-            healthScore += 20; // Moderate potential
-        } else {
-            healthScore += 10; // Lower potential
+        if (ndvi >= 0.4) {
+            healthScore += 5; // Some vegetation potential
         }
-    } else {
-        // Non-agricultural surface
-        healthScore = Math.min(healthScore, 25); // Cap at 25 for non-agricultural
     }
 
-    // Quality bonus
-    if (smapData.quality === 'real') {
-        healthScore += 5;
-    }
+    const finalScore = Math.min(100, Math.max(1, healthScore));
 
-    // Surface type penalty/bonus
-    if (surfaceAnalysis.isVegetation || surfaceAnalysis.isSoil) {
-        // No penalty for agricultural surfaces
-    } else {
-        // Penalty for non-agricultural surfaces
-        healthScore = Math.max(5, healthScore - 20);
-    }
-
-    const finalScore = Math.min(100, Math.max(5, healthScore));
-
-    // Detailed calculation breakdown for debugging
-    const soilMoistureContrib = soilMoisture >= 0.25 && soilMoisture <= 0.45 ? 35 :
-                               soilMoisture >= 0.15 && soilMoisture <= 0.6 ? 25 :
-                               soilMoisture >= 0.1 ? 15 : 5;
-
-    let ndviContrib = 0;
-    if (surfaceAnalysis.isVegetation) {
-        if (ndvi >= 0.7) ndviContrib = 30;
-        else if (ndvi >= 0.5) ndviContrib = 25;
-        else if (ndvi >= 0.3) ndviContrib = 15;
-        else ndviContrib = 8;
-    } else if (surfaceAnalysis.isSoil) {
-        if (ndvi >= 0.6) ndviContrib = 25;
-        else if (ndvi >= 0.4) ndviContrib = 20;
-        else ndviContrib = 10;
-    }
-
-    const qualityBonus = smapData.quality === 'real' ? 5 : 0;
-    const surfacePenalty = (!surfaceAnalysis.isVegetation && !surfaceAnalysis.isSoil) ? -20 : 0;
-
-    console.log('🎯 DETAILED Health Score Breakdown:', {
-        step1_baseScore: 30,
-        step2_soilMoisture: soilMoisture,
-        step3_soilMoisturePoints: soilMoistureContrib,
-        step4_ndvi: ndvi,
-        step5_ndviPoints: ndviContrib,
-        step6_qualityBonus: qualityBonus,
-        step7_surfacePenalty: surfacePenalty,
-        step8_beforeMinMax: healthScore,
-        step9_finalScore: finalScore,
-        surfaceAnalysis: surfaceAnalysis
+    console.log('🎯 Final Health Score Calculation:', {
+        colorBaseScore: surfaceAnalysis.baseScore,
+        soilMoisture: soilMoisture,
+        ndvi: ndvi,
+        beforeMinMax: healthScore,
+        finalScore: finalScore,
+        surfaceType: surfaceAnalysis.surfaceType
     });
-
-    // Emergency fallback if something is wrong
-    if (finalScore < 10) {
-        console.error('🚨 ABNORMAL LOW SCORE DETECTED! Using fallback calculation');
-        const fallbackScore = Math.max(30, 30 + soilMoistureContrib + ndviContrib);
-        return Math.min(100, fallbackScore);
-    }
 
     return finalScore;
 }
