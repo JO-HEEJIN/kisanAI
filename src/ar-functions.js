@@ -1230,7 +1230,7 @@ Ready State: ${video.readyState}/4
 // NEW APPROACH: Extract real colors using MediaStream capture bypassing WebGL conflicts
 window.extractColorFromCanvas = function(gridSize = 16) {
     try {
-        console.log("🎨 새로운 MediaStream 방식으로 색상 추출 시작");
+        console.log("🎨 Starting new MediaStream approach for color extraction");
 
         // Method 0: MediaStream Capture without WebGL interference
         const videoElements = document.querySelectorAll('video');
@@ -1240,15 +1240,15 @@ window.extractColorFromCanvas = function(gridSize = 16) {
         for (let video of videoElements) {
             if (video.srcObject && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
                 sourceVideo = video;
-                console.log(`✅ 활성 비디오 발견: ${video.videoWidth}x${video.videoHeight}, readyState: ${video.readyState}`);
+                console.log(`✅ Active video found: ${video.videoWidth}x${video.videoHeight}, readyState: ${video.readyState}`);
                 break;
             }
         }
 
         if (sourceVideo) {
-            window.updateARDebugPanel(`📹 MediaStream 비디오 발견: ${sourceVideo.videoWidth}x${sourceVideo.videoHeight}
+            window.updateARDebugPanel(`📹 MediaStream video found: ${sourceVideo.videoWidth}x${sourceVideo.videoHeight}
 Ready State: ${sourceVideo.readyState}
-MediaStream 직접 캡처 시도...`);
+Attempting direct MediaStream capture...`);
 
             try {
                 // Create isolated canvas for capturing
@@ -1288,7 +1288,7 @@ MediaStream 직접 캡처 시도...`);
                 }
 
                 const colorPercentage = (colorfulPixels / (totalPixels / 4)) * 100;
-                console.log(`🎨 색상 분석: ${colorfulPixels}/${Math.floor(totalPixels/4)} 픽셀에서 색상 발견 (${colorPercentage.toFixed(1)}%)`);
+                console.log(`🎨 Color analysis: Found colors in ${colorfulPixels}/${Math.floor(totalPixels/4)} pixels (${colorPercentage.toFixed(1)}%)`);
 
                 if (colorPercentage > 10) { // At least 10% of pixels should have color
                     // Extract grid colors
@@ -1321,35 +1321,35 @@ MediaStream 직접 캡처 시도...`);
                         colors.push(colorRow);
                     }
 
-                    window.updateARDebugPanel(`✅ MediaStream 캡처 성공!
-실제 카메라 색상: ${colorPercentage.toFixed(1)}% 유효
-그리드: ${gridSize}x${gridSize}
-첫 픽셀: R${colors[0][0].r} G${colors[0][0].g} B${colors[0][0].b}`);
+                    window.updateARDebugPanel(`✅ MediaStream capture successful!
+Real camera colors: ${colorPercentage.toFixed(1)}% valid
+Grid: ${gridSize}x${gridSize}
+First pixel: R${colors[0][0].r} G${colors[0][0].g} B${colors[0][0].b}`);
 
-                    console.log("🎨 MediaStream 색상 추출 완료:", colors.slice(0, 2)); // Show first 2 rows
+                    console.log("🎨 MediaStream color extraction complete:", colors.slice(0, 2)); // Show first 2 rows
                     return colors;
                 } else {
-                    window.updateARDebugPanel(`⚠️ MediaStream: 색상 부족 (${colorPercentage.toFixed(1)}%)
-다른 방법 시도 중...`);
+                    window.updateARDebugPanel(`⚠️ MediaStream: Insufficient colors (${colorPercentage.toFixed(1)}%)
+Trying alternative methods...`);
                 }
             } catch (streamError) {
-                console.error("MediaStream 캡처 오류:", streamError);
-                window.updateARDebugPanel(`❌ MediaStream 캡처 오류: ${streamError.message}`);
+                console.error("MediaStream capture error:", streamError);
+                window.updateARDebugPanel(`❌ MediaStream capture error: ${streamError.message}`);
             }
         } else {
-            window.updateARDebugPanel(`❌ 활성 비디오 스트림을 찾을 수 없음
-발견된 비디오 요소: ${videoElements.length}개`);
+            window.updateARDebugPanel(`❌ Unable to find active video stream
+Found video elements: ${videoElements.length}`);
         }
 
         // Method 1: Try A-Frame canvas approach
         const aframeCanvas = document.querySelector('a-scene canvas');
         if (!aframeCanvas) {
-            window.updateARDebugPanel(`Canvas: A-Frame canvas 찾을 수 없음 ❌`);
+            window.updateARDebugPanel(`Canvas: A-Frame canvas not found ❌`);
             return null;
         }
 
-        window.updateARDebugPanel(`Canvas: 발견됨 ${aframeCanvas.width}x${aframeCanvas.height}
-Context 테스트 중...`);
+        window.updateARDebugPanel(`Canvas: Found ${aframeCanvas.width}x${aframeCanvas.height}
+Testing context...`);
 
         // Method 1: Try 2D canvas approach (capture current frame)
         try {
