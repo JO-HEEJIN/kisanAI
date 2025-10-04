@@ -244,7 +244,7 @@ function generateRealisticRegionalData(lat, lon) {
             ndvi = 0.3 + Math.random() * 0.40; // 0.3-0.7
             break;
         case 'temperate':
-            soilMoisture = 0.20 + Math.random() * 0.35; // 20-55%
+            soilMoisture = 0.10 + Math.random() * 0.20; // 10-30% (건조한 날씨 반영)
             ndvi = 0.4 + Math.random() * 0.40; // 0.4-0.8
             break;
         case 'subtropical':
@@ -265,10 +265,11 @@ function generateRealisticRegionalData(lat, lon) {
     soilMoisture = Math.max(0.05, Math.min(0.95, soilMoisture + seasonalFactor));
     ndvi = Math.max(0.05, Math.min(0.95, ndvi + seasonalFactor));
 
-    // Calculate health score
-    const health = Math.round(
-        (soilMoisture * 100 * 0.4) + (ndvi * 100 * 0.6)
-    );
+    // Calculate health score using color-based system
+    const smapData = { surface_moisture: soilMoisture, quality: 'regional' };
+    const modisData = { ndvi };
+    const landsatData = {};
+    const health = calculateHealthScore(smapData, modisData, landsatData);
 
     console.log(`📊 Generated ${region} (${climateZone}) data:`, {
         soilMoisture: (soilMoisture * 100).toFixed(1) + '%',
@@ -3188,11 +3189,12 @@ function analyzeSurfaceType() {
 
         if (!video || video.readyState < 2) {
             console.log('❌ No camera video found or not ready - using fallback analysis');
-            // Fallback: assume mixed agricultural surface for better score
+            // Fallback: assume mixed agricultural surface
             return {
                 isSoil: true,
                 isVegetation: false,
                 surfaceType: 'soil',
+                baseScore: 60,
                 ratios: { brownRatio: 0.15, greenRatio: 0.10, vibrantGreenRatio: 0.05, darkRatio: 0.2 }
             };
         }
@@ -3219,6 +3221,7 @@ function analyzeSurfaceType() {
                 isSoil: true,
                 isVegetation: false,
                 surfaceType: 'soil',
+                baseScore: 60,
                 ratios: { brownRatio: 0.12, greenRatio: 0.08, vibrantGreenRatio: 0.03, darkRatio: 0.25 }
             };
         }
@@ -3409,7 +3412,7 @@ function analyzeSurfaceType() {
 
     } catch (error) {
         console.error('❌ Surface analysis error:', error);
-        return { isSoil: false, isVegetation: false, surfaceType: 'error' };
+        return { isSoil: false, isVegetation: false, surfaceType: 'error', baseScore: 10 };
     }
 }
 
