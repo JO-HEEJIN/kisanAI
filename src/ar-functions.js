@@ -1431,13 +1431,31 @@ A-Frame 요소 생성 중...`);
 실시간 업데이트 중... (500ms 간격)`);
 };
 
-// Start pixel visualization loop
+// Start pixel visualization loop (Enhanced with stagmate integration)
 window.startPixelVisualization = function() {
     console.log('🎨 DEBUG Phase1: startPixelVisualization function called!');
 
     // Create debug panel for mobile debugging
     window.createARDebugPanel();
     window.updateARDebugPanel('Phase 1: 픽셀 시각화 시작\n함수 호출 성공 ✅');
+
+    // Check if EnhancedARPixelView is available (new integrated version)
+    if (window.EnhancedARPixelView) {
+        console.log('🚀 Using EnhancedARPixelView with camera+NASA fusion!');
+        window.updateARDebugPanel('Enhanced Mode: 카메라+NASA 융합 활성화 ✅');
+
+        const arScene = document.querySelector('a-scene');
+        if (arScene) {
+            // Use the new integrated pixel view
+            window.enhancedPixelView = new window.EnhancedARPixelView(arScene);
+            window.enhancedPixelView.start();
+            return; // Exit here, no need for old system
+        }
+    }
+
+    // Fallback to original system if EnhancedARPixelView not available
+    console.log('📸 Using original pixel visualization system');
+    window.updateARDebugPanel('Fallback Mode: 기존 픽셀 시스템 사용');
 
     // Create initial overlay
     window.createPixelVisualization();
