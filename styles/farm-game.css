@@ -50,8 +50,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex: 1;
-    margin-right: 20px;
+    gap: 15px;
+    margin-bottom: 12px;
 }
 
 .time-section {
@@ -317,18 +317,18 @@
 
 /* NASA Live Data in Header */
 .nasa-live-data {
-    display: flex;
-    gap: 12px;
-    justify-content: space-evenly;
+    display: inline-flex;
+    gap: 10px;
     background: linear-gradient(45deg, var(--electric-blue), var(--deep-blue));
-    padding: 10px 15px;
+    padding: 8px 12px;
     border-radius: 8px;
     border: 2px solid var(--electric-blue);
     box-shadow: 0 4px 15px rgba(4, 66, 166, 0.3);
     color: var(--white);
     font-family: 'Overpass', sans-serif;
     font-weight: 600;
-    flex: 1;
+    width: fit-content;
+    margin-top: 8px;
 }
 
 .nasa-data-item {
@@ -361,9 +361,8 @@
 .nasa-stat {
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex: 1;
-    justify-content: center;
+    gap: 5px;
+    white-space: nowrap;
 }
 
 .nasa-icon {
