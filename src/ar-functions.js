@@ -2439,9 +2439,10 @@ function showBeautifulPermissionDialog() {
                 font-size: 16px;
                 line-height: 1.6;
                 margin: 0 0 30px 0;
-                opacity: 0.95;
+                opacity: 1;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
             ">
-                🚀 <strong>NASA Farm Navigators</strong> needs access to your device sensors to provide an immersive AR experience.
+                🚀 <strong style="color: #FFFFFF;">NASA Farm Navigators</strong> needs access to your device sensors to provide an immersive AR experience.
                 <br><br>
                 📱 This allows us to track your device orientation for real-time satellite data visualization.
             </p>
