@@ -8793,6 +8793,9 @@ class FarmGameUI {
             // Track initial actions
             this.achievementSystem.trackAction('nasa_data_check', 1);
 
+            // Update level progress bar immediately
+            this.updateLevelProgressBar();
+
             // Set up Farm Game specific achievement tracking
             this.setupAchievementTracking();
 
@@ -8815,6 +8818,22 @@ class FarmGameUI {
      */
     setupAchievementTracking() {
         if (!this.achievementSystem) return;
+
+        // Listen to achievement system events to update progress bar
+        this.achievementSystem.on('onAchievementUnlock', () => {
+            console.log('🎉 Achievement unlocked - updating progress bar');
+            this.updateLevelProgressBar();
+        });
+
+        this.achievementSystem.on('onLevelUp', (data) => {
+            console.log('⬆️ Level up - updating progress bar', data);
+            this.updateLevelProgressBar();
+        });
+
+        // Also update on progress changes
+        this.achievementSystem.on('onProgressUpdate', () => {
+            this.updateLevelProgressBar();
+        });
 
         // Track planting actions - this event exists
         this.farmSimulation.on('cropPlanted', (data) => {
