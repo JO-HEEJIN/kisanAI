@@ -61,6 +61,7 @@ const chatInterface = `
                        <button class="ai-quick-btn" data-question="Analyze my current farm conditions">📊 Analyze Farm</button>
                        <button class="ai-quick-btn" data-question="Should I irrigate today?">💧 Irrigation Advice</button>
                        <button class="ai-quick-btn" data-question="What crops are suitable for my area?">🌱 Crop Suggestions</button>
+                       <button class="ai-quick-btn" data-question="What is the forecast?">📈 Predictions</button>
                    </div>
                    <div class="ai-input-area">
                        <div class="ai-input-container">
@@ -498,11 +499,28 @@ content.innerHTML = `<p>${newMessage.replace(/\n/g, '</p><p>')}</p>`;
 }
 
 // --- Unchanged Functions ---
-    getCurrentLocation() { /* ... your existing code ... */ }
-    loadNASAData() { /* ... your existing code ... */ }
-    generateSoilMoistureResponse() { /* ... your existing code ... */ }
-    generatePlantHealthResponse() { /* ... your existing code ... */ }
-    generateIrrigationResponse() { /* ... your existing code ... */ }
+    generateRuleBasedResponse(userMessage) {
+        const message = userMessage.toLowerCase();
+        if (message.includes('predict') || message.includes('forecast')) {
+            return this.generatePredictionResponse();
+        }
+        if (message.includes('soil') || message.includes('moisture')) {
+            return this.generateSoilMoistureResponse();
+        }
+        if (message.includes('plant') || message.includes('health') || message.includes('ndvi')) {
+            return this.generatePlantHealthResponse();
+        }
+        if (message.includes('irrigat')) {
+            return this.generateIrrigationResponse();
+        }
+        if (message.includes('weather') || message.includes('temperature') || message.includes('climate') || message.includes('rain')) {
+            return this.generateWeatherResponse();
+        }
+        if (message.includes('crop') || message.includes('plant') || message.includes('grow') || message.includes('farm')) {
+            return this.generateCropResponse();
+        }
+        return this.generateGeneralResponse();
+    }
      getCurrentLocation() {
         return new Promise((resolve) => {
             if (navigator.geolocation) {
@@ -590,6 +608,40 @@ content.innerHTML = `<p>${newMessage.replace(/\n/g, '</p><p>')}</p>`;
             <p>🛰️ Based on NASA SMAP Data</p>
             <p>💡 Advice: ${advice}</p>
             <p>📍 Location: ${this.currentLocation.lat.toFixed(2)}, ${this.currentLocation.lon.toFixed(2)}</p>
+        `;
+    }
+   // --- NEW: Rule-based response for predictions ---
+    generatePredictionResponse() {
+        if (!this.nasaData) return '<p>Loading NASA data...</p>';
+
+        const moisture = this.nasaData.soilMoisture;
+        const ndvi = this.nasaData.ndvi;
+        let prediction, advice, emoji;
+
+        // Simple predictive logic based on current data
+        if (moisture < 0.2 && ndvi < 0.4) {
+            prediction = 'Yield may decrease';
+            advice = 'Critical conditions detected. Immediate intervention (like irrigation) is required to prevent crop loss.';
+            emoji = '📉';
+        } else if (moisture < 0.25) {
+            prediction = 'Health may decline';
+            advice = 'An upcoming dry period could stress crops. Plan for irrigation within the next 3-5 days.';
+            emoji = '😟';
+        } else if (ndvi > 0.7 && moisture > 0.3) {
+            prediction = 'Stable, positive outlook';
+            advice = 'Conditions are favorable for healthy growth. Maintain current practices and monitor for changes.';
+            emoji = '📈';
+        } else {
+            prediction = 'Stable conditions expected';
+            advice = 'Continue monitoring key metrics. No major changes are predicted in the short term.';
+            emoji = '📊';
+        }
+
+        return `
+            <p>${emoji} <strong>14-Day Agricultural Forecast</strong></p>
+            <p><strong>Outlook:</strong> ${prediction}</p>
+            <p><strong>AI Advice:</strong> ${advice}</p>
+            <p>🛰️ Based on current NASA SMAP/MODIS data and regional weather models.</p>
         `;
     }
      generatePlantHealthResponse() {
