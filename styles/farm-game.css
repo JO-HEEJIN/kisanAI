@@ -14,8 +14,9 @@
 
 .farm-game-container {
     width: 100%;
-    height: 100vh;
-    display: flex;
+    /* height: 100vh; */
+    display: flex
+;
     flex-direction: column;
     background: linear-gradient(45deg, var(--electric-blue), var(--deep-blue));
     font-family: 'Overpass', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;

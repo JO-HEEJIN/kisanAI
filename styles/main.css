@@ -3926,3 +3926,106 @@ body {
     }
 }
 
+/* Permission Notice - Top Left Corner (Next to Chrome Permission Popup) */
+.permission-notice-topleft {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 999999;
+    background: linear-gradient(135deg, #EAFE07 0%, #FFF59D 100%);
+    border: 2px solid #0960E1;
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 20px rgba(234, 254, 7, 0.5);
+    max-width: 320px;
+    animation: permissionSlideIn 0.5s ease-out;
+}
+
+@keyframes permissionSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.permission-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.permission-close {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #07173F;
+    font-weight: bold;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #EAFE07;
+    border-radius: 50%;
+    border: 2px solid #0960E1;
+    transition: all 0.2s ease;
+}
+
+.permission-close:hover {
+    background: #0960E1;
+    color: #EAFE07;
+    transform: scale(1.1);
+}
+
+.permission-icon-small {
+    font-size: 20px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.permission-text-small {
+    color: #07173F;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.highlight-permission-small {
+    background: #0960E1;
+    color: #EAFE07;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Mobile responsive for top-left notice */
+@media (max-width: 768px) {
+    .permission-notice-topleft {
+        top: 5px;
+        left: 5px;
+        max-width: 280px;
+        padding: 10px 12px;
+    }
+
+    .permission-text-small {
+        font-size: 12px;
+    }
+
+    .permission-icon-small {
+        font-size: 18px;
+    }
+
+    .highlight-permission-small {
+        padding: 1px 6px;
+        font-size: 12px;
+    }
+}
+

@@ -35,18 +35,6 @@
         <div class="loading-container">
             <img src="assets/Space_Apps_Logo_Files/(R) Space Apps Default Logo/Colorway=2-Color White.svg" alt="NASA Space Apps Challenge" class="nasa-logo-loading">
             <h1>Farm Navigators</h1>
-
-            <!-- Permission Notice -->
-            <div class="permission-notice">
-                <div class="permission-icon">⚠️</div>
-                <div class="permission-text">
-                    <strong>IMPORTANT:</strong> Please allow <span class="highlight-permission">Camera</span> and <span class="highlight-permission">GPS/Location</span> permissions when prompted by your browser!
-                </div>
-                <div class="permission-subtext">
-                    These are required for AR features and satellite data integration
-                </div>
-            </div>
-
             <div class="loading-spinner"></div>
             <p class="loading-text">Initializing satellite data systems...</p>
         </div>
@@ -54,6 +42,17 @@
 
     <!-- Main Application Container -->
     <div id="mainContainer" class="main-container" style="display: none;">
+        <!-- Permission Notice (Top-left corner) -->
+        <div id="permissionNotice" class="permission-notice-topleft">
+            <div class="permission-content">
+                <span class="permission-close" onclick="document.getElementById('permissionNotice').style.display='none'">×</span>
+                <div class="permission-icon-small">⚠️</div>
+                <div class="permission-text-small">
+                    <strong>IMPORTANT:</strong> Allow <span class="highlight-permission-small">Camera</span> & <span class="highlight-permission-small">GPS</span> permissions!
+                </div>
+            </div>
+        </div>
+
         <!-- Header Trigger Zone -->
         <div class="header-trigger"></div>
 
