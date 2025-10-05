@@ -4131,24 +4131,20 @@
 
         async function testPlantIdentification() {
             try {
-                if (!window.arChatGPTCore || !window.arChatGPTCore.plantIdentificationAI) {
-                    alert('Plant identification not available');
+                console.log('🌱 Test Plant Identification clicked');
+
+                // Use new PlantRecognition system
+                if (!window.plantRecognition) {
+                    console.error('❌ PlantRecognition not initialized');
+                    alert('Plant Recognition system not ready. Please refresh the page.');
                     return;
                 }
 
-                // Simulate plant identification
-                const mockImageData = 'data:image/jpeg;base64,mock-data';
-                const result = await window.arChatGPTCore.identifyPlant(mockImageData);
+                console.log('✅ Opening Plant Recognition modal...');
+                await window.plantRecognition.openPlantModal();
 
-                // Track gamification
-                if (window.arGamification) {
-                    window.arGamification.trackActivity('plant_identified');
-                }
-
-                alert(`Plant identified: ${result.commonName} (${(result.confidence * 100).toFixed(1)}% confidence)`);
-
-                // Add result to chat
-                const message = `🌱 Plant identification test: Found ${result.commonName} with ${(result.confidence * 100).toFixed(1)}% confidence. Health: ${result.health}%`;
+                // Skip old AR ChatGPT code
+                const message = `🌱 Plant Recognition modal opened. Use camera to scan plants!`;
                 addChatMessage({ text: message, type: 'assistant' });
 
             } catch (error) {
