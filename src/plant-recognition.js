@@ -44,11 +44,12 @@ class PlantRecognition {
             'banana': 'generic_plant', 'pomegranate': 'generic_plant', 'pineapple': 'generic_plant'
         };
 
-        this.initializePlantRecognition();
+        // MODIFICATION: Initialization is now triggered by window.onload for safety
+        // this.initializePlantRecognition();
     }
 
     async initializePlantRecognition() {
-        console.log('🌱 Initializing Plant Recognition system v2.0...');
+        console.log('🌱 Initializing Plant Recognition system v2.1...');
         try {
             await this.loadTensorFlowModel();
             this.createPlantInterface();
@@ -57,6 +58,7 @@ class PlantRecognition {
         } catch (error) {
             console.error('❌ Failed to initialize Plant Recognition:', error);
             this.createErrorInterface();
+            this.bindPlantEvents(); // Still bind events for the error modal
         }
     }
 
@@ -142,11 +144,6 @@ class PlantRecognition {
             this.updatePlantStatus('Analysis failed');
         }
     }
-
-    // --- No changes needed for the rest of your well-structured code ---
-    // (createPlantInterface, addPlantStyles, bindPlantEvents, openPlantModal, 
-    // closePlantModal, startCamera, stopCamera, analyzeManualPlant, 
-    // displayPlantResult, analyzePlantHealth, etc. remain the same)
     
     createPlantInterface() { /* ... your existing code ... */ }
     createErrorInterface() { /* ... your existing code ... */ }
@@ -166,13 +163,15 @@ class PlantRecognition {
     updatePlantStatus(status) { /* ... your existing code ... */ }
 }
 
-// Global initialization
-document.addEventListener('DOMContentLoaded', () => {
+// --- MODIFIED: Changed from DOMContentLoaded to window.onload ---
+// This ensures ALL scripts (including app.js) have finished before this runs.
+window.addEventListener('load', () => {
     if (!window.plantRecognition) {
-        console.log('🌱 Initializing Plant Recognition system from DOMContentLoaded...');
+        console.log('🌱 Initializing Plant Recognition system from window.onload...');
         window.plantRecognition = new PlantRecognition();
+        // Manually trigger initialization now that the class is instantiated
+        window.plantRecognition.initializePlantRecognition();
     }
 });
 
 console.log('✅ Plant Recognition module loaded successfully');
-```
