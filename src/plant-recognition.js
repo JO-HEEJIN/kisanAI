@@ -1,6 +1,9 @@
 // 🌱 Plant Recognition with TensorFlow.js
 // 실시간 식물 인식 및 건강 분석 시스템
 
+console.log('🚀 [PLANT-RECOGNITION] Script file is loading...');
+console.log('🚀 [PLANT-RECOGNITION] TensorFlow.js available:', typeof tf !== 'undefined');
+
 class PlantRecognition {
     constructor() {
         this.model = null;
@@ -1273,8 +1276,17 @@ window.plantRecognition = null;
 
 // DOM 로드 완료 후 초기화
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🌱 Initializing Plant Recognition system...');
-    window.plantRecognition = new PlantRecognition();
+    console.log('🚀 [PLANT-RECOGNITION] DOMContentLoaded event fired!');
+    console.log('🚀 [PLANT-RECOGNITION] Current window.plantRecognition:', window.plantRecognition);
+    console.log('🚀 [PLANT-RECOGNITION] Creating new PlantRecognition instance...');
+
+    try {
+        window.plantRecognition = new PlantRecognition();
+        console.log('✅ [PLANT-RECOGNITION] Instance created successfully!');
+    } catch (error) {
+        console.error('❌ [PLANT-RECOGNITION] Failed to create instance:', error);
+        console.error('❌ [PLANT-RECOGNITION] Error stack:', error.stack);
+    }
 });
 
 // 디버깅용 전역 함수
