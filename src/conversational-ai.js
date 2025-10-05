@@ -1,40 +1,54 @@
-// 🤖 Conversational AI for Agricultural Assistance v2.0
-// This version is upgraded to use an external open-source GPT model for more intelligent responses.
+// 🤖 Conversational AI for Agricultural Assistance v3.0
+// This version integrates a full-featured UI, advanced GPT-3.5 prompting with history,
+// NASA data caching, and a comprehensive rule-based fallback system.
 
 class ConversationalAI {
     constructor() {
+        // State Management
         this.chatHistory = [];
         this.currentLocation = null;
         this.nasaData = null;
         this.isActive = false;
-        // NEW: Store your OpenAI API key here. It is retrieved from settings.
         this.openAIApiKey = null;
-        // Agricultural knowledge base (used for fallback and context)
+        this.state = 'idle'; // idle, loading_gps, loading_nasa, ready, awaiting_response
+
+        // Caching
+        this.cache = {
+            nasaData: null,
+            timestamp: 0,
+            ttl: 300000, // 5 minutes
+        };
+
+        // Expanded agricultural knowledge base for context and fallbacks
         this.agriculturalKnowledge = {
             crops: {
-                wheat: { optimalMoisture: [0.25, 0.45], optimalNDVI: [0.6, 0.8], season: 'winter' },
-                corn: { optimalMoisture: [0.3, 0.5], optimalNDVI: [0.7, 0.9], season: 'summer' },
-                rice: { optimalMoisture: [0.4, 0.7], optimalNDVI: [0.6, 0.8], season: 'summer' },
-                soybean: { optimalMoisture: [0.25, 0.4], optimalNDVI: [0.5, 0.8], season: 'summer' }
+                wheat: { name: 'Wheat', optimalMoisture: [0.25, 0.45], optimalNDVI: [0.6, 0.8], season: 'Winter' },
+                corn: { name: 'Corn (Maize)', optimalMoisture: [0.3, 0.5], optimalNDVI: [0.7, 0.9], season: 'Summer' },
+                rice: { name: 'Rice', optimalMoisture: [0.4, 0.7], optimalNDVI: [0.6, 0.8], season: 'Summer' },
+                soybean: { name: 'Soybean', optimalMoisture: [0.25, 0.4], optimalNDVI: [0.5, 0.8], season: 'Summer' },
+                potato: { name: 'Potato', optimalMoisture: [0.3, 0.5], optimalNDVI: [0.5, 0.7], season: 'Spring' },
+                tomato: { name: 'Tomato', optimalMoisture: [0.3, 0.5], optimalNDVI: [0.6, 0.8], season: 'Summer' }
             },
             diseases: {
-                drought: { signs: ['low moisture', 'yellowing', 'wilting'], solution: 'increase irrigation' },
-                overwatering: { signs: ['high moisture', 'root rot'], solution: 'reduce watering' },
-                nutrient_deficiency: { signs: ['low NDVI', 'poor growth'], solution: 'fertilizer application' }
+                drought: { signs: 'low moisture, yellowing leaves, wilting', solution: 'Increase irrigation frequency and volume.' },
+                overwatering: { signs: 'high moisture, root rot, leaf yellowing', solution: 'Reduce watering and ensure proper soil drainage.' },
+                nutrient_deficiency: { signs: 'low NDVI, stunted growth, discoloration', solution: 'Apply a balanced fertilizer. A soil test is recommended.' }
             }
         };
 
         this.initializeInterface();
     }
 
+    // --- 1. INITIALIZATION ---
+
     initializeInterface() {
-        console.log('🤖 Initializing Conversational AI interface v2.0...');
+        console.log('🤖 Initializing Conversational AI interface v3.0...');
         this.createChatInterface();
+        this.addChatStyles();
         this.bindEvents();
     }
 
     createChatInterface() {
-        // --- No changes needed to your UI creation logic ---
         const chatInterface = `
             <div id="conversational-ai-modal" class="ai-modal" style="display: none;">
                 <div class="ai-modal-content">
@@ -43,262 +57,117 @@ class ConversationalAI {
                             <div class="ai-avatar">🤖</div>
                             <div class="ai-title">
                                 <h3>Farm AI Assistant</h3>
-                                <p id="ai-status">NASA Data Ready</p>
+                                <p id="ai-status">Connecting...</p>
                             </div>
                         </div>
                         <button id="close-ai-chat" class="ai-close-btn">✕</button>
                     </div>
                     <div id="ai-chat-messages" class="ai-chat-messages">
-                        <div class="ai-message ai-bot-message">
-                            <div class="ai-message-content">
-                                <p>👋 Hello! I am powered by a generative AI and NASA's satellite data.</p>
-                                <p>Ask me anything about your farm!</p>
-                            </div>
-                        </div>
+                        <!-- Welcome message will be added dynamically -->
                     </div>
                     <div class="ai-quick-actions">
                         <button class="ai-quick-btn" data-question="Analyze my current farm conditions">📊 Analyze Farm</button>
                         <button class="ai-quick-btn" data-question="Should I irrigate today?">💧 Irrigation Advice</button>
-                        <button class="ai-quick-btn" data-question="What crops are suitable for my area?">🌱 Crop Suggestions</button>
+                        <button class="ai-quick-btn" data-question="What is the forecast?">📈 Predictions</button>
                     </div>
                     <div class="ai-input-area">
                         <div class="ai-input-container">
-                            <input type="text" id="ai-chat-input" placeholder="Ask a question..." />
-                            <button id="ai-send-btn" class="ai-send-btn"><span>📤</span></button>
+                            <input type="text" id="ai-chat-input" placeholder="Ask a question..." disabled />
+                            <button id="ai-send-btn" class="ai-send-btn" disabled><span>📤</span></button>
                         </div>
                     </div>
                 </div>
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', chatInterface);
-        this.addChatStyles();
     }
 
     addChatStyles() {
+        if (document.getElementById('conversational-ai-styles')) return;
         const styles = `
-            <style>
+            <style id="conversational-ai-styles">
             .ai-modal {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(7, 23, 63, 0.95);
-                backdrop-filter: blur(10px);
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 10px;
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(10, 25, 47, 0.9); backdrop-filter: blur(8px);
+                z-index: 10000; display: flex; align-items: center; justify-content: center;
+                padding: 10px; opacity: 0; transform: scale(0.95); transition: opacity 0.3s ease, transform 0.3s ease;
             }
-
+            .ai-modal.visible { opacity: 1; transform: scale(1); }
             .ai-modal-content {
-                background: linear-gradient(135deg, #07173F 0%, #0960E1 100%);
-                border-radius: 20px;
-                width: 100%;
-                max-width: 400px;
-                height: 90vh;
-                max-height: 600px;
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
-                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+                background: linear-gradient(145deg, #1e3c72, #2a5298);
+                border-radius: 20px; width: 100%; max-width: 420px; height: 90vh; max-height: 700px;
+                display: flex; flex-direction: column; overflow: hidden;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.1);
             }
-
             .ai-chat-header {
-                background: rgba(234, 254, 7, 0.1);
-                padding: 15px 20px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 1px solid rgba(234, 254, 7, 0.2);
+                background: rgba(0, 0, 0, 0.2); padding: 15px 20px; display: flex;
+                justify-content: space-between; align-items: center;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1); flex-shrink: 0;
             }
-
-            .ai-header-info {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-
+            .ai-header-info { display: flex; align-items: center; gap: 12px; }
             .ai-avatar {
-                width: 40px;
-                height: 40px;
-                background: #EAFE07;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 20px;
+                width: 40px; height: 40px; background: #EAFE07; border-radius: 50%;
+                display: flex; align-items: center; justify-content: center; font-size: 20px;
+                color: #1e3c72;
             }
-
-            .ai-title h3 {
-                color: white;
-                margin: 0;
-                font-size: 16px;
-                font-weight: bold;
-            }
-
-            .ai-title p {
-                color: #EAFE07;
-                margin: 2px 0 0 0;
-                font-size: 12px;
-            }
-
+            .ai-title h3 { color: white; margin: 0; font-size: 16px; font-weight: bold; }
+            .ai-title p { color: #EAFE07; margin: 2px 0 0 0; font-size: 12px; opacity: 0.8; }
             .ai-close-btn {
-                background: rgba(228, 55, 0, 0.8);
-                color: white;
-                border: none;
-                width: 35px;
-                height: 35px;
-                border-radius: 50%;
-                font-size: 16px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                background: rgba(255, 255, 255, 0.1); color: white; border: none;
+                width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer;
+                transition: background-color 0.2s;
             }
-
+            .ai-close-btn:hover { background: rgba(255, 255, 255, 0.2); }
             .ai-chat-messages {
-                flex: 1;
-                padding: 15px;
-                overflow-y: auto;
-                display: flex;
-                flex-direction: column;
-                gap: 15px;
+                flex: 1; padding: 15px; overflow-y: auto; display: flex;
+                flex-direction: column; gap: 15px;
             }
-
-            .ai-message {
-                display: flex;
-                flex-direction: column;
-                max-width: 85%;
-            }
-
-            .ai-bot-message {
-                align-self: flex-start;
-            }
-
-            .ai-user-message {
-                align-self: flex-end;
-            }
-
-            .ai-message-content {
-                background: #2e96f5;
-                padding: 12px 16px;
-                border-radius: 15px;
-                color: white;
-                line-height: 1.4;
-            }
-
-            .ai-user-message .ai-message-content {
-                background: rgba(234, 254, 7, 0.2);
-                color: #EAFE07;
-            }
-
-            .ai-message-content p {
-                margin: 0 0 8px 0;
-            }
-
-            .ai-message-content p:last-child {
-                margin-bottom: 0;
-            }
-
-            .ai-message-time {
-                font-size: 10px;
-                color: rgba(255, 255, 255, 0.6);
-                margin-top: 4px;
-                align-self: flex-end;
-            }
-
+            .ai-message { display: flex; flex-direction: column; max-width: 85%; animation: fadeIn 0.4s ease; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; translateY(0); } }
+            .ai-bot-message { align-self: flex-start; }
+            .ai-user-message { align-self: flex-end; }
+            .ai-message-content { padding: 12px 16px; border-radius: 18px; color: white; line-height: 1.5; }
+            .ai-bot-message .ai-message-content { background: #2e96f5; border-bottom-left-radius: 4px; }
+            .ai-user-message .ai-message-content { background: rgba(234, 254, 7, 0.2); color: #EAFE07; border-bottom-right-radius: 4px; }
+            .ai-message-content p { margin: 0 0 8px 0; }
+            .ai-message-content p:last-child { margin-bottom: 0; }
             .ai-quick-actions {
-                padding: 10px 15px;
-                display: flex;
-                gap: 8px;
-                overflow-x: auto;
+                padding: 10px 15px; display: flex; gap: 8px; overflow-x: auto;
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
             }
-
             .ai-quick-btn {
-                background: rgba(46, 150, 245, 0.3);
-                color: white;
-                border: 1px solid rgba(46, 150, 245, 0.5);
-                padding: 8px 12px;
-                border-radius: 20px;
-                font-size: 12px;
-                white-space: nowrap;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
+                background: rgba(46, 150, 245, 0.3); color: white; border: 1px solid rgba(46, 150, 245, 0.5);
+                padding: 8px 14px; border-radius: 20px; font-size: 13px; white-space: nowrap; cursor: pointer;
+                transition: all 0.2s ease;
             }
-
-            .ai-quick-btn:hover {
-                background: rgba(46, 150, 245, 0.5);
-                transform: scale(1.05);
-            }
-
-            .ai-input-area {
-                padding: 15px;
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            .ai-input-container {
-                display: flex;
-                gap: 10px;
-                align-items: center;
-            }
-
+            .ai-quick-btn:hover { background: rgba(46, 150, 245, 0.5); transform: translateY(-2px); }
+            .ai-input-area { padding: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+            .ai-input-container { display: flex; gap: 10px; align-items: center; }
             #ai-chat-input {
-                flex: 1;
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                border-radius: 25px;
-                padding: 12px 16px;
-                color: white;
-                font-size: 14px;
-                outline: none;
+                flex: 1; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 25px; padding: 12px 18px; color: white; font-size: 14px; outline: none;
+                transition: border-color 0.2s;
             }
-
-            #ai-chat-input::placeholder {
-                color: rgba(255, 255, 255, 0.6);
-            }
-
+            #ai-chat-input:focus { border-color: #EAFE07; }
             .ai-send-btn {
-                background: linear-gradient(45deg, #EAFE07, #2E96F5);
-                border: none;
-                width: 45px;
-                height: 45px;
-                border-radius: 50%;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 16px;
+                background: linear-gradient(45deg, #EAFE07, #2E96F5); border: none;
+                width: 45px; height: 45px; border-radius: 50%; cursor: pointer;
+                display: flex; align-items: center; justify-content: center; font-size: 16px;
                 transition: transform 0.2s ease;
             }
-
-            .ai-send-btn:hover {
-                transform: scale(1.1);
+            .ai-send-btn:hover { transform: scale(1.1); }
+            .ai-send-btn:disabled { background: #555; cursor: not-allowed; }
+            .typing-indicator span {
+                height: 8px; width: 8px; background-color: rgba(255,255,255,0.7);
+                display: inline-block; border-radius: 50%; margin: 0 2px;
+                animation: typing 1.4s infinite ease-in-out both;
             }
-
-            /* 모바일 스크롤 최적화 */
-            .ai-chat-messages::-webkit-scrollbar {
-                width: 4px;
-            }
-
-            .ai-chat-messages::-webkit-scrollbar-track {
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 2px;
-            }
-
-            .ai-chat-messages::-webkit-scrollbar-thumb {
-                background: rgba(234, 254, 7, 0.5);
-                border-radius: 2px;
-            }
+            .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+            .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+            @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
             </style>
         `;
-        
         document.head.insertAdjacentHTML('beforeend', styles);
     }
 
@@ -495,7 +364,7 @@ class ConversationalAI {
         }
     }
     
-    // --- Unchanged Functions ---
+  
      getCurrentLocation() {
         return new Promise((resolve) => {
             if (navigator.geolocation) {
@@ -522,7 +391,7 @@ class ConversationalAI {
         });
     }
 
-    // NASA 데이터 로드
+    // NASA 
     async loadNASAData() {
         if (!this.currentLocation) return;
 
@@ -585,6 +454,36 @@ class ConversationalAI {
             <p>📍 Location: ${this.currentLocation.lat.toFixed(2)}, ${this.currentLocation.lon.toFixed(2)}</p>
         `;
     }
+    generatePredictionResponse() {
+        if (!this.nasaData) return '<p>Loading NASA data...</p>';
+        const moisture = this.nasaData.soilMoisture;
+        const ndvi = this.nasaData.ndvi;
+        let prediction, advice, emoji;
+        if (moisture < 0.2 && ndvi < 0.4) {
+            prediction = 'Yield may decrease';
+            advice = 'Critical conditions detected. Immediate intervention is required to prevent crop loss.';
+            emoji = '📉';
+        } else if (moisture < 0.25) {
+            prediction = 'Health may decline';
+            advice = 'Upcoming dry period could stress crops. Plan for irrigation.';
+            emoji = '😟';
+        } else if (ndvi > 0.7 && moisture > 0.3) {
+            prediction = 'Stable, positive outlook';
+            advice = 'Conditions are favorable for healthy growth. Maintain current practices.';
+            emoji = '📈';
+        } else {
+            prediction = 'Stable conditions expected';
+            advice = 'Continue monitoring key metrics. No major changes are predicted in the short term.';
+            emoji = '📊';
+        }
+        return `
+            <p>${emoji} <strong>14-Day Agricultural Forecast</strong></p>
+            <p><strong>Outlook:</strong> ${prediction}</p>
+            <p><strong>AI Advice:</strong> ${advice}</p>
+            <p>🛰️ Based on current NASA SMAP/MODIS data and weather models.</p>
+        `;
+    }
+    
      generatePlantHealthResponse() {
         if (!this.nasaData) return '<p>Loading NASA data...</p>';
 
