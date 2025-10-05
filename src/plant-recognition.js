@@ -1245,11 +1245,10 @@ class PlantRecognition {
         console.log('🌍 Current NASA data:', this.nasaData);
 
         const resultsContainer = document.getElementById('plant-results');
-        const placeholder = resultsContainer.querySelector('.plant-results-placeholder');
 
-        if (placeholder) {
-            placeholder.remove();
-        }
+        // 기존 결과 모두 제거 (최신 결과만 표시)
+        resultsContainer.innerHTML = '';
+        console.log('🧹 Cleared previous results - showing only latest analysis');
 
         const plantData = this.plantDatabase[prediction.plantType] || this.getGenericPlantData();
         console.log('🌿 Plant database entry:', plantData);
@@ -1319,7 +1318,7 @@ class PlantRecognition {
         `;
 
         resultsContainer.appendChild(resultElement);
-        resultsContainer.scrollTop = resultsContainer.scrollHeight;
+        // 스크롤 불필요 (항상 최신 결과 하나만 표시)
 
         console.log('✅ Plant analysis result displayed');
     }
