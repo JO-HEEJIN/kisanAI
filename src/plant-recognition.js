@@ -881,6 +881,17 @@ class PlantRecognition {
                 color: white;
             }
 
+            .health-indicator.non-plant {
+                background: #9E9E9E;
+                color: white;
+                border: 2px solid #E43700;
+            }
+
+            .health-indicator.unknown {
+                background: #757575;
+                color: white;
+            }
+
             /* 오류 화면 스타일 */
             .plant-error {
                 padding: 40px 20px;
@@ -1243,7 +1254,7 @@ class PlantRecognition {
         const plantData = this.plantDatabase[prediction.plantType] || this.getGenericPlantData();
         console.log('🌿 Plant database entry:', plantData);
 
-        const healthAnalysis = this.analyzePlantHealth(plantData);
+        const healthAnalysis = this.analyzePlantHealth(plantData, prediction);
         console.log('💚 Health analysis:', healthAnalysis);
 
         const resultElement = document.createElement('div');
@@ -1314,7 +1325,38 @@ class PlantRecognition {
     }
 
     // 식물 건강도 분석
-    analyzePlantHealth(plantData) {
+    analyzePlantHealth(plantData, prediction = null) {
+        // 식물이 아닌 것을 감지한 경우 (generic_plant이고 rawClassName이 있는 경우)
+        if (prediction && prediction.plantType === 'generic_plant' && prediction.rawClassName) {
+            const className = prediction.rawClassName.toLowerCase();
+
+            // 확실히 식물이 아닌 것들
+            const nonPlantKeywords = [
+                'laptop', 'computer', 'phone', 'screen', 'keyboard', 'mouse',
+                'bottle', 'cup', 'mug', 'glass', 'container',
+                'book', 'paper', 'pen', 'pencil',
+                'chair', 'table', 'desk', 'furniture',
+                'car', 'vehicle', 'bike', 'motor',
+                'person', 'people', 'face', 'hand', 'finger',
+                'wall', 'floor', 'ceiling', 'door', 'window',
+                'shirt', 'shoe', 'cloth', 'fabric',
+                'camera', 'television', 'monitor',
+                'food', 'pizza', 'burger', 'sandwich', 'cookie'
+            ];
+
+            const isNonPlant = nonPlantKeywords.some(keyword => className.includes(keyword));
+
+            if (isNonPlant) {
+                console.log(`❌ Non-plant detected: "${className}" - Setting health to 0`);
+                return {
+                    level: 'non-plant',
+                    score: 0,
+                    advice: `This is not a plant! AI detected: "${prediction.rawClassName}"`,
+                    recommendations: ['Point camera at actual plants or crops', 'Try scanning leaves, stems, or flowers']
+                };
+            }
+        }
+
         if (!this.nasaData || !plantData.optimalConditions) {
             return {
                 level: 'unknown',
