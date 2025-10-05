@@ -3524,24 +3524,40 @@ function analyzeColorGrid(gridColors) {
             console.log(`⚪ Colorless surface detected (colorful: ${(colorfulRatio * 100).toFixed(1)}%)`);
             console.log('⚪ Colorless non-agricultural surface: base 5 points');
         }
-        // Priority 5: Healthy vegetation (88-100 points) - highest grade
-        else if (vibrantGreenRatio > 0.15 || greenRatio > 0.30) {
+        // Priority 5: Grass - Too much green, not soil (0 points)
+        else if (greenRatio > 0.50 && brownRatio < 0.15) {
+            surfaceType = 'grass_not_soil';
+            isVegetation = true;
+            baseScore = 0;
+            console.log(`🌿 Grass detected - NOT SOIL (green: ${(greenRatio * 100).toFixed(1)}%, brown: ${(brownRatio * 100).toFixed(1)}%)`);
+            console.log('❌ Grass/vegetation excess: 0 points (not agricultural soil)');
+        }
+        // Priority 6: Healthy vegetation (88-100 points) - with soil presence
+        else if ((vibrantGreenRatio > 0.15 || greenRatio > 0.30) && brownRatio > 0.10) {
             surfaceType = 'healthy_vegetation';
             isVegetation = true;
+            isSoil = true;
             baseScore = vibrantGreenRatio > 0.15 ? 98 : 92;
-            console.log(`🌿 Healthy vegetation detected (green: ${(greenRatio * 100).toFixed(1)}%, vibrant: ${(vibrantGreenRatio * 100).toFixed(1)}%)`);
+            console.log(`🌿 Healthy vegetation with soil (green: ${(greenRatio * 100).toFixed(1)}%, brown: ${(brownRatio * 100).toFixed(1)}%)`);
             console.log(`🌿 Healthy vegetation: base ${baseScore} points`);
         }
-        // Priority 6: Soil only (60 points)
-        else if (brownRatio > 0.10 && greenRatio < 0.25) {
+        // Priority 7: Actual soil (60 points) - brown >= 15%, green moderate
+        else if (brownRatio >= 0.15 && greenRatio >= 0.05 && greenRatio < 0.50) {
             surfaceType = 'soil';
             isSoil = true;
             baseScore = 60;
-            console.log(`🟤 Soil detected (brown: ${(brownRatio * 100).toFixed(1)}%, green: ${(greenRatio * 100).toFixed(1)}%)`);
-            console.log('🟤 Soil surface: base 60 points');
+            console.log(`🟤 Actual soil detected (brown: ${(brownRatio * 100).toFixed(1)}%, green: ${(greenRatio * 100).toFixed(1)}%)`);
+            console.log('✅ Soil surface (brown ≥15%): base 60 points');
         }
-        // Priority 7: Mixed agricultural (75 points)
-        else if (brownRatio > 0.05 && greenRatio > 0.10) {
+        // Priority 8: Insufficient brown - not soil (0 points)
+        else if (brownRatio < 0.15 && brownRatio > 0.01) {
+            surfaceType = 'low_brown_not_soil';
+            baseScore = 0;
+            console.log(`❌ Low brown content (brown: ${(brownRatio * 100).toFixed(1)}%) - NOT SOIL`);
+            console.log('❌ Insufficient brown (<15%): 0 points (likely desk/furniture)');
+        }
+        // Priority 9: Mixed agricultural (75 points)
+        else if (brownRatio >= 0.15 && greenRatio >= 0.10) {
             surfaceType = 'mixed_agricultural';
             isSoil = true;
             isVegetation = true;
@@ -3549,12 +3565,13 @@ function analyzeColorGrid(gridColors) {
             console.log(`🌾 Mixed agricultural surface (brown: ${(brownRatio * 100).toFixed(1)}%, green: ${(greenRatio * 100).toFixed(1)}%)`);
             console.log('🌾 Mixed agricultural surface: base 75 points');
         }
-        // Priority 8: Weak vegetation (45 points)
-        else if (greenRatio > 0.05) {
+        // Priority 10: Weak vegetation (45 points)
+        else if (greenRatio > 0.05 && brownRatio >= 0.10) {
             surfaceType = 'weak_vegetation';
             isVegetation = true;
+            isSoil = true;
             baseScore = 45;
-            console.log(`🌱 Weak vegetation detected (green: ${(greenRatio * 100).toFixed(1)}%)`);
+            console.log(`🌱 Weak vegetation with soil (green: ${(greenRatio * 100).toFixed(1)}%, brown: ${(brownRatio * 100).toFixed(1)}%)`);
             console.log('🌱 Weak vegetation: base 45 points');
         }
         // Priority 9: Other non-agricultural (12 points)
