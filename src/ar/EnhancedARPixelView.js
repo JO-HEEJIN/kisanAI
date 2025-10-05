@@ -55,21 +55,19 @@ class EnhancedARPixelView {
         // Show loading indicator for initial pixel grid creation
         this.showPixelLoadingIndicator();
 
-        // Create pixel grid after next frame (ensures loading displays)
-        requestAnimationFrame(() => {
+        // Create pixel grid after a longer delay to ensure loading is visible
+        setTimeout(() => {
+            console.log('🎨 Starting pixel grid creation...');
+            this.createPixelGrid();
+
+            // Hide loading after grid is created (show for at least 1 second)
             setTimeout(() => {
-                console.log('🎨 Starting pixel grid creation...');
-                this.createPixelGrid();
+                this.hidePixelLoadingIndicator();
+            }, 1000);
 
-                // Hide loading after grid is created
-                setTimeout(() => {
-                    this.hidePixelLoadingIndicator();
-                }, 500); // Show for at least 500ms
-
-                // Connect event listeners
-                this._attachEventListeners();
-            }, 50);
-        });
+            // Connect event listeners
+            this._attachEventListeners();
+        }, 100);
 
         // Enhanced Mode success message (always displayed)
         this.updateDebugPanel(`Enhanced Mode: Camera+NASA fusion activated ✅
@@ -504,41 +502,52 @@ Location: ${location.lat.toFixed(3)}, ${location.lon.toFixed(3)}`);
 
         console.log('🆕 Creating new loader element...');
 
-        // Create new loading indicator
+        // Create full-screen overlay background first
+        const overlay = document.createElement('div');
+        overlay.id = 'pixel-loader-overlay';
+        overlay.style.cssText = `
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.7) !important;
+            z-index: 999998 !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+        `;
+
+        // Create loading indicator inside overlay
         loader = document.createElement('div');
         loader.id = 'pixel-grid-loader';
         loader.style.cssText = `
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
             background: linear-gradient(135deg, rgba(9, 96, 225, 0.95) 0%, rgba(7, 23, 63, 0.95) 100%) !important;
             color: #FFFFFF !important;
-            padding: 20px 30px !important;
+            padding: 30px 40px !important;
             border-radius: 16px !important;
-            border: 2px solid #EAFE07 !important;
+            border: 3px solid #EAFE07 !important;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
-            z-index: 999999 !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             gap: 15px !important;
-            font-size: 16px !important;
-            font-weight: 600 !important;
+            font-size: 18px !important;
+            font-weight: 700 !important;
             text-align: center !important;
         `;
 
         loader.innerHTML = `
             <div style="
-                width: 40px;
-                height: 40px;
+                width: 50px;
+                height: 50px;
                 border: 4px solid #EAFE07;
                 border-top-color: transparent;
                 border-radius: 50%;
                 animation: spin 1s linear infinite;
             "></div>
-            <div>🎨 Creating Pixel Panel...</div>
-            <div style="font-size: 12px; opacity: 0.8;">Initializing AR Grid</div>
+            <div style="color: #EAFE07 !important; font-size: 20px !important;">🎨 Creating Pixel Panel...</div>
+            <div style="font-size: 14px; opacity: 0.9; color: #FFFFFF !important;">Initializing 12x12 AR Grid</div>
             <style>
                 @keyframes spin {
                     to { transform: rotate(360deg); }
@@ -546,8 +555,9 @@ Location: ${location.lat.toFixed(3)}, ${location.lon.toFixed(3)}`);
             </style>
         `;
 
-        document.body.appendChild(loader);
-        console.log('✅ Pixel loading indicator added to body:', loader);
+        overlay.appendChild(loader);
+        document.body.appendChild(overlay);
+        console.log('✅ Pixel loading indicator with overlay added to body');
 
         // Mobile console log if available
         if (window.mobileConsoleLog) {
@@ -559,15 +569,14 @@ Location: ${location.lat.toFixed(3)}, ${location.lon.toFixed(3)}`);
      * Hide pixel grid loading indicator
      */
     hidePixelLoadingIndicator() {
-        const loader = document.getElementById('pixel-grid-loader');
-        if (loader) {
-            loader.style.transition = 'opacity 0.3s ease-out';
-            loader.style.opacity = '0';
+        const overlay = document.getElementById('pixel-loader-overlay');
+        if (overlay) {
+            overlay.style.transition = 'opacity 0.3s ease-out';
+            overlay.style.opacity = '0';
             setTimeout(() => {
-                loader.style.display = 'none';
-                loader.style.opacity = '1'; // Reset for next time
+                overlay.remove();
             }, 300);
-            console.log('✅ Pixel loading indicator hidden');
+            console.log('✅ Pixel loading indicator overlay removed');
         }
     }
 }
