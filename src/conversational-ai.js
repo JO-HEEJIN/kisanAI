@@ -226,11 +226,30 @@ class ConversationalAI {
         if (message.includes('irrigat')) {
             return this.generateIrrigationResponse();
         }
+        if (message.includes('weather') || message.includes('temperature') || message.includes('climate') || message.includes('rain')) {
+            return this.generateWeatherResponse();
+        }
+        if (message.includes('crop') || message.includes('plant') || message.includes('grow') || message.includes('farm')) {
+            return this.generateCropResponse();
+        }
         return this.generateGeneralResponse();
     }
 
     // --- UI HELPER FUNCTIONS ---
-    addUserMessage(message) { /* ... your existing code ... */ }
+    addUserMessage(message) {
+        const messagesContainer = document.getElementById('ai-chat-messages');
+        const messageElement = document.createElement('div');
+        messageElement.className = 'ai-message ai-user-message';
+        messageElement.innerHTML = `
+            <div class="ai-message-content">
+                <p>${message}</p>
+            </div>
+            <div class="ai-message-time">${new Date().toLocaleTimeString()}</div>
+        `;
+
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
     
     addBotMessage(message) {
         const messagesContainer = document.getElementById('ai-chat-messages');
@@ -257,8 +276,54 @@ class ConversationalAI {
     generateSoilMoistureResponse() { /* ... your existing code ... */ }
     generatePlantHealthResponse() { /* ... your existing code ... */ }
     generateIrrigationResponse() { /* ... your existing code ... */ }
-    generateWeatherResponse() { /* ... your existing code ... */ }
-    generateCropResponse() { /* ... your existing code ... */ }
+
+    // --- MODIFIED: Translated to English ---
+    generateWeatherResponse() {
+        const temp = 18 + Math.random() * 15; // 18-33 degrees Celsius
+        const humidity = 40 + Math.random() * 40; // 40-80% humidity
+
+        return `
+            <p>🌤️ <strong>Current Weather Information</strong></p>
+            <p>🌡️ Temperature: ${temp.toFixed(1)}°C</p>
+            <p>💨 Humidity: ${humidity.toFixed(0)}%</p>
+            <p>📍 Location: ${this.currentLocation.lat.toFixed(2)}, ${this.currentLocation.lon.toFixed(2)}</p>
+            <p>💡 Farming Advice: Manage your farm considering the current temperature and soil moisture.</p>
+            <p>🛰️ Analyzed comprehensively with satellite data.</p>
+        `;
+    }
+
+    // --- MODIFIED: Translated to English ---
+    generateCropResponse() {
+        if (!this.nasaData) return '<p>Loading NASA data...</p>';
+
+        const moisture = this.nasaData.soilMoisture;
+        const ndvi = this.nasaData.ndvi;
+
+        let suitableCrops = [];
+
+        Object.entries(this.agriculturalKnowledge.crops).forEach(([crop, data]) => {
+            const moistureOk = moisture >= data.optimalMoisture[0] && moisture <= data.optimalMoisture[1];
+            const ndviOk = ndvi >= data.optimalNDVI[0] && ndvi <= data.optimalNDVI[1];
+
+            if (moistureOk && ndviOk) {
+                suitableCrops.push(crop);
+            }
+        });
+
+        const cropList = suitableCrops.length > 0
+            ? suitableCrops.join(', ')
+            : 'Soil improvement is necessary under current conditions.';
+
+        return `
+            <p>🌾 <strong>Crop Cultivation Analysis</strong></p>
+            <p>📊 Current Soil Moisture: ${(moisture * 100).toFixed(1)}%</p>
+            <p>🌱 Vegetation Index: ${ndvi.toFixed(2)}</p>
+            <p>✨ Recommended Crops: ${cropList}</p>
+            <p>🛰️ Analysis based on NASA satellite data.</p>
+            <p>💡 Determine the optimal planting time through continuous monitoring.</p>
+        `;
+    }
+
     generateGeneralResponse() { /* ... your existing code ... */ }
 }
 
