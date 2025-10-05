@@ -492,6 +492,19 @@ Location: ${location.lat.toFixed(3)}, ${location.lon.toFixed(3)}`);
     showPixelLoadingIndicator() {
         console.log('🎨 showPixelLoadingIndicator() called');
 
+        // Close Pixel Hunt Challenge popup if it exists
+        if (window.pixelHuntOverlay && window.pixelHuntOverlay.parentElement) {
+            console.log('🎮 Closing Pixel Hunt Challenge popup...');
+            window.pixelHuntOverlay.style.transition = 'opacity 0.3s ease-out';
+            window.pixelHuntOverlay.style.opacity = '0';
+            setTimeout(() => {
+                if (window.pixelHuntOverlay && window.pixelHuntOverlay.parentElement) {
+                    window.pixelHuntOverlay.remove();
+                    window.pixelHuntOverlay = null;
+                }
+            }, 300);
+        }
+
         // Check if already exists
         let loader = document.getElementById('pixel-grid-loader');
         if (loader) {
