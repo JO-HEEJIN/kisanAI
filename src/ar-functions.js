@@ -915,6 +915,13 @@ window.createARScene = async function() {
         window.verifyARDataSources();
     }, 2000);
 
+    // Show target click guide popup 2 seconds after AR starts
+    setTimeout(() => {
+        if (window.showTargetClickGuidePopup) {
+            window.showTargetClickGuidePopup();
+        }
+    }, 2000);
+
     // Start real-time soil analysis
     setTimeout(() => {
         window.startSoilAnalysis();
@@ -4091,4 +4098,87 @@ function showDetailedAnalysisPopup(data) {
             popup.remove();
         }
     }, 10000);
+};
+
+// Show target click guide popup (called 2 seconds after AR starts)
+window.showTargetClickGuidePopup = function() {
+    console.log('🎯 Showing target click guide popup...');
+
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'target-guide-overlay';
+    overlay.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(7, 23, 63, 0.85) !important;
+        backdrop-filter: blur(8px) !important;
+        z-index: 999999 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    `;
+
+    // Create popup
+    const popup = document.createElement('div');
+    popup.style.cssText = `
+        background: linear-gradient(135deg, #0960E1 0%, #07173F 100%) !important;
+        color: #FFFFFF !important;
+        padding: 30px 40px !important;
+        border-radius: 20px !important;
+        border: 3px solid #EAFE07 !important;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7) !important;
+        text-align: center !important;
+        max-width: 90% !important;
+    `;
+
+    popup.innerHTML = `
+        <div style="font-size: 48px; margin-bottom: 15px;">🎯</div>
+        <h2 style="color: #EAFE07 !important; font-size: 24px !important; font-weight: 700 !important; margin: 0 0 15px 0 !important;">
+            Click the Target!
+        </h2>
+        <p style="color: #FFFFFF !important; font-size: 16px !important; line-height: 1.6 !important; margin: 0 0 20px 0 !important;">
+            Tap the <strong style="color: #EAFE07 !important;">moving target indicator</strong> on screen to analyze that specific area with NASA satellite data
+        </p>
+        <button id="target-guide-ok-btn" style="
+            background: #EAFE07 !important;
+            color: #07173F !important;
+            border: none !important;
+            padding: 12px 30px !important;
+            border-radius: 12px !important;
+            font-size: 16px !important;
+            font-weight: 700 !important;
+            cursor: pointer !important;
+            box-shadow: 0 4px 12px rgba(234, 254, 7, 0.3) !important;
+        ">
+            Got it! 🚀
+        </button>
+    `;
+
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+
+    // Auto-dismiss after 8 seconds
+    const autoDismiss = setTimeout(() => {
+        if (overlay.parentElement) {
+            overlay.style.transition = 'opacity 0.3s ease-out';
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.remove(), 300);
+        }
+    }, 8000);
+
+    // Manual dismiss on button click
+    const okBtn = document.getElementById('target-guide-ok-btn');
+    if (okBtn) {
+        okBtn.addEventListener('click', () => {
+            clearTimeout(autoDismiss);
+            overlay.style.transition = 'opacity 0.3s ease-out';
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.remove(), 300);
+        });
+    }
+
+    console.log('✅ Target click guide popup shown');
 };
