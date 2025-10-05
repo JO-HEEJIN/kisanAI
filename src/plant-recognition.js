@@ -274,14 +274,27 @@ class PlantRecognition {
             }
             console.log(`✅ TensorFlow.js version: ${tf.version.tfjs}`);
 
-            // 실제 MobileNetV2 모델 로드 (TensorFlow Hub)
-            console.log('📦 Loading MobileNetV2 from TensorFlow Hub... (This may take 10-30 seconds)');
-            this.showLoadingIndicator('Downloading AI Model... (10-30s)');
-
-            const modelUrl = 'https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/classification/5';
+            // 실제 MobileNet 모델 로드 (TensorFlow.js Models)
+            console.log('📦 Loading MobileNet from TensorFlow.js Models... (This may take 5-15 seconds)');
+            this.showLoadingIndicator('Downloading AI Model... (5-15s)');
 
             const startTime = Date.now();
-            this.model = await tf.loadGraphModel(modelUrl, { fromTFHub: true });
+
+            // TensorFlow.js의 MobileNet 모델 사용 (더 안정적)
+            if (typeof mobilenet === 'undefined') {
+                // MobileNet 라이브러리가 없으면 간단한 fallback
+                console.log('⚠️ MobileNet library not found, using layersModel...');
+                const modelUrl = 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json';
+                this.model = await tf.loadLayersModel(modelUrl);
+            } else {
+                // MobileNet 라이브러리 사용
+                console.log('✅ Using MobileNet library');
+                this.model = await mobilenet.load({
+                    version: 2,
+                    alpha: 1.0
+                });
+            }
+
             const loadTime = ((Date.now() - startTime) / 1000).toFixed(1);
 
             console.log(`✅ Model loaded in ${loadTime} seconds`);
@@ -347,45 +360,92 @@ class PlantRecognition {
      * @returns {Promise<object>} 예측 결과
      */
     async runModelPrediction(videoElement) {
-        console.log('🧠 Running real TensorFlow prediction...');
+        console.log('🧠 Running real MobileNet prediction...');
 
         if (!this.model || !this.isModelLoaded) {
             throw new Error('Model not loaded yet. Please wait for initialization.');
         }
 
-        console.log('📸 Capturing video frame...');
-        const tensor = tf.browser.fromPixels(videoElement)
-            .resizeBilinear([224, 224])
-            .toFloat()
-            .expandDims(0);
+        console.log('📸 Capturing video frame from camera...');
 
-        console.log('🔮 Running model inference...');
-        const predictions = await this.model.predict(tensor).data();
-        tensor.dispose();
+        try {
+            // MobileNet 라이브러리 사용시 (간단한 API)
+            if (this.model.classify) {
+                console.log('✅ Using MobileNet.classify() API');
+                const predictions = await this.model.classify(videoElement, 3);
 
-        console.log(`✅ Got ${predictions.length} predictions`);
+                console.log('🎯 Top 3 predictions:', predictions);
 
-        // 최고 확률 클래스 찾기
-        let topResult = { confidence: 0, index: -1 };
-        for (let i = 0; i < predictions.length; i++) {
-            if (predictions[i] > topResult.confidence) {
-                topResult = { confidence: predictions[i], index: i };
+                if (predictions && predictions.length > 0) {
+                    const topPrediction = predictions[0];
+                    const className = topPrediction.className.toLowerCase();
+                    const confidence = topPrediction.probability;
+
+                    console.log(`🌱 Top result: "${className}" (${(confidence * 100).toFixed(1)}%)`);
+
+                    // 클래스 이름을 농업 작물로 매핑
+                    let plantType = 'generic_plant';
+
+                    // 식물 관련 키워드 확인
+                    if (className.includes('corn') || className.includes('ear')) {
+                        plantType = 'corn';
+                    } else if (className.includes('wheat') || className.includes('grain')) {
+                        plantType = 'wheat';
+                    } else if (className.includes('rice') || className.includes('paddy')) {
+                        plantType = 'rice';
+                    } else if (className.includes('tomato')) {
+                        plantType = 'tomato';
+                    } else if (className.includes('potato')) {
+                        plantType = 'potato';
+                    } else if (className.includes('soy')) {
+                        plantType = 'soybean';
+                    } else {
+                        // plantMapping 사용
+                        plantType = this.plantMapping[className] || 'generic_plant';
+                    }
+
+                    console.log(`🌿 Mapped to agricultural plant: "${plantType}"`);
+
+                    return {
+                        plantType: plantType,
+                        confidence: confidence,
+                        isManual: false,
+                        rawClassName: className
+                    };
+                }
             }
+
+            // Fallback: 일반 predict 사용
+            console.log('⚠️ Using generic predict() method');
+            const tensor = tf.browser.fromPixels(videoElement)
+                .resizeBilinear([224, 224])
+                .toFloat()
+                .div(255.0)
+                .expandDims(0);
+
+            const predictions = await this.model.predict(tensor).data();
+            tensor.dispose();
+
+            // 최고 확률 클래스 찾기
+            let topResult = { confidence: 0, index: -1 };
+            for (let i = 0; i < predictions.length; i++) {
+                if (predictions[i] > topResult.confidence) {
+                    topResult = { confidence: predictions[i], index: i };
+                }
+            }
+
+            const plantType = this.plantMapping[topResult.index] || 'generic_plant';
+
+            return {
+                plantType: plantType,
+                confidence: topResult.confidence,
+                isManual: false
+            };
+
+        } catch (error) {
+            console.error('❌ Prediction failed:', error);
+            throw error;
         }
-
-        console.log(`🎯 Top prediction: index ${topResult.index}, confidence ${(topResult.confidence * 100).toFixed(2)}%`);
-
-        // ImageNet 클래스 → 농업 작물 매핑
-        const imagenetClass = this.imagenetClasses[topResult.index] || 'generic_plant';
-        const plantType = this.plantMapping[imagenetClass] || 'generic_plant';
-
-        console.log(`🌱 Detected: ImageNet[${topResult.index}] = "${imagenetClass}" → Plant: "${plantType}" (${(topResult.confidence * 100).toFixed(1)}%)`);
-
-        return {
-            plantType: plantType,
-            confidence: topResult.confidence,
-            isManual: false
-        };
     }
 
     // 식물 인식 인터페이스 생성
