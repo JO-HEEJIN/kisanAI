@@ -299,14 +299,27 @@ class PlantRecognition {
 
             console.log(`✅ Model loaded in ${loadTime} seconds`);
 
-            // Warm up the model
+            // Warm up the model (if needed)
             console.log('🔥 Warming up model...');
             this.showLoadingIndicator('Preparing AI Model...');
 
-            tf.tidy(() => {
-                const warmupTensor = tf.zeros([1, 224, 224, 3]);
-                this.model.predict(warmupTensor);
-            });
+            // MobileNet 라이브러리는 warmup이 필요없음 (이미 최적화됨)
+            // 하지만 layersModel인 경우 warmup 필요
+            if (!this.model.classify) {
+                console.log('⚙️ Running warmup prediction for layersModel...');
+                try {
+                    tf.tidy(() => {
+                        const warmupTensor = tf.zeros([1, 224, 224, 3]);
+                        if (typeof this.model.predict === 'function') {
+                            this.model.predict(warmupTensor);
+                        }
+                    });
+                } catch (warmupError) {
+                    console.warn('⚠️ Warmup failed, but continuing:', warmupError.message);
+                }
+            } else {
+                console.log('✅ MobileNet model ready (no warmup needed)');
+            }
 
             this.isModelLoaded = true;
             console.log('✅ Real Plant Recognition model loaded successfully');
