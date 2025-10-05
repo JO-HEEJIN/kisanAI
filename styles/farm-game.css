@@ -26,11 +26,11 @@
 .game-header {
     background: linear-gradient(45deg, #07173F, #2E96F5);
     color: #FFFFFF;
-    padding: 20px 30px;
+    padding: 12px 20px;
     display: flex;
     flex-direction: row !important;
     align-items: center !important;
-    gap: 30px !important;
+    gap: 20px !important;
     box-shadow: 0 4px 20px rgba(4, 66, 166, 0.4);
     flex-shrink: 0;
     border-bottom: 4px solid #0042A6;
