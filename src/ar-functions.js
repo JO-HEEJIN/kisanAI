@@ -401,9 +401,10 @@ window.launchRealAR = async function() {
         stream.getTracks().forEach(track => track.stop());
         console.log('✅ Camera permission granted');
 
-        // Skip iOS device motion permissions - not needed for camera-only AR
-        // DeviceMotion/Orientation only needed for gyroscope-based AR features
-        console.log('📱 Skipping iOS motion permissions (camera-only mode)');
+        // Request iOS device orientation permissions with beautiful dialog
+        if (isIOS) {
+            await window.requestIOSPermissions();
+        }
 
         // Create AR.js scene
         await window.createARScene();
@@ -2353,8 +2354,17 @@ window.requestIOSPermissions = async function() {
         const needsPermission = typeof DeviceOrientationEvent.requestPermission === 'function' ||
                                typeof DeviceMotionEvent.requestPermission === 'function';
 
-        if (needsPermission) {
-            console.log('📱 Requesting device permissions directly (iOS 13+)...');
+        if (!needsPermission) {
+            console.log('✅ No permission needed (not iOS 13+)');
+            return { orientation: 'granted', motion: 'granted' };
+        }
+
+        // Show beautiful custom dialog first
+        const userAccepted = await showBeautifulPermissionDialog();
+
+        if (!userAccepted) {
+            console.log('❌ User declined AR permissions');
+            return { orientation: 'denied', motion: 'denied' };
         }
 
         let orientationPermission = 'granted';
@@ -2379,6 +2389,194 @@ window.requestIOSPermissions = async function() {
         return { orientation: 'denied', motion: 'denied' };
     }
 };
+
+// Beautiful custom permission dialog (NASA Space Apps themed)
+function showBeautifulPermissionDialog() {
+    return new Promise((resolve) => {
+        // Create overlay with NASA theme
+        const overlay = document.createElement('div');
+        overlay.id = 'nasa-permission-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(7, 23, 63, 0.97);
+            backdrop-filter: blur(12px);
+            z-index: 999999;
+            animation: fadeIn 0.3s ease-out;
+        `;
+
+        // Create beautiful dialog
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: linear-gradient(135deg, #0960E1 0%, #07173F 100%);
+            border: 3px solid #EAFE07;
+            border-radius: 24px;
+            padding: 40px 30px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(234, 254, 7, 0.3);
+            animation: slideUp 0.4s ease-out;
+        `;
+
+        dialog.innerHTML = `
+            <div style="font-size: 64px; margin-bottom: 20px; animation: float 3s ease-in-out infinite;">🛰️</div>
+
+            <h2 style="
+                color: #EAFE07;
+                font-size: 26px;
+                font-weight: 800;
+                margin: 0 0 15px 0;
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+                letter-spacing: 0.5px;
+            ">Enable AR Experience</h2>
+
+            <p style="
+                color: #FFFFFF;
+                font-size: 16px;
+                line-height: 1.6;
+                margin: 0 0 30px 0;
+                opacity: 0.95;
+            ">
+                🚀 <strong>NASA Farm Navigators</strong> needs access to your device sensors to provide an immersive AR experience.
+                <br><br>
+                📱 This allows us to track your device orientation for real-time satellite data visualization.
+            </p>
+
+            <div style="display: flex; gap: 12px; margin-top: 30px;">
+                <button id="nasa-deny-btn" style="
+                    flex: 1;
+                    background: rgba(228, 55, 0, 0.9);
+                    color: white;
+                    border: 2px solid rgba(228, 55, 0, 0.7);
+                    border-radius: 14px;
+                    padding: 16px 24px;
+                    font-size: 17px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 15px rgba(228, 55, 0, 0.4);
+                ">
+                    Not Now
+                </button>
+
+                <button id="nasa-allow-btn" style="
+                    flex: 1;
+                    background: linear-gradient(135deg, #EAFE07 0%, #B8C500 100%);
+                    color: #07173F;
+                    border: 2px solid #EAFE07;
+                    border-radius: 14px;
+                    padding: 16px 24px;
+                    font-size: 17px;
+                    font-weight: 800;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 20px rgba(234, 254, 7, 0.5);
+                ">
+                    ✨ Enable AR
+                </button>
+            </div>
+
+            <p style="
+                color: rgba(255, 255, 255, 0.6);
+                font-size: 12px;
+                margin: 20px 0 0 0;
+                line-height: 1.4;
+            ">
+                🔒 Your data is safe. We only use sensors for AR features.
+            </p>
+        `;
+
+        // Add animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            @keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+
+            @keyframes float {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-10px); }
+            }
+
+            #nasa-allow-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 25px rgba(234, 254, 7, 0.6);
+                background: linear-gradient(135deg, #F5FF3D 0%, #C4D600 100%);
+            }
+
+            #nasa-deny-btn:hover {
+                transform: translateY(-2px);
+                background: rgba(228, 55, 0, 1);
+                box-shadow: 0 6px 20px rgba(228, 55, 0, 0.5);
+            }
+
+            #nasa-allow-btn:active, #nasa-deny-btn:active {
+                transform: translateY(0) scale(0.98);
+            }
+        `;
+
+        document.head.appendChild(style);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        // Event listeners
+        document.getElementById('nasa-allow-btn').addEventListener('click', () => {
+            overlay.style.animation = 'fadeIn 0.2s ease-out reverse';
+            setTimeout(() => {
+                overlay.remove();
+                style.remove();
+                resolve(true);
+            }, 200);
+        });
+
+        document.getElementById('nasa-deny-btn').addEventListener('click', () => {
+            overlay.style.animation = 'fadeIn 0.2s ease-out reverse';
+            setTimeout(() => {
+                overlay.remove();
+                style.remove();
+                resolve(false);
+            }, 200);
+        });
+
+        // Prevent background clicks
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                // Shake animation on backdrop click
+                dialog.style.animation = 'shake 0.5s ease';
+                setTimeout(() => {
+                    dialog.style.animation = 'slideUp 0.4s ease-out';
+                }, 500);
+            }
+        });
+
+        // Add shake animation
+        const shakeStyle = document.createElement('style');
+        shakeStyle.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(shakeStyle);
+    });
+}
 
 // Confirm functions are loaded
 const finalStatus = {
