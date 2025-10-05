@@ -55,16 +55,21 @@ class EnhancedARPixelView {
         // Show loading indicator for initial pixel grid creation
         this.showPixelLoadingIndicator();
 
-        // Create pixel grid (async to show loading)
-        setTimeout(() => {
-            this.createPixelGrid();
+        // Create pixel grid after next frame (ensures loading displays)
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                console.log('🎨 Starting pixel grid creation...');
+                this.createPixelGrid();
 
-            // Hide loading after grid is created
-            this.hidePixelLoadingIndicator();
+                // Hide loading after grid is created
+                setTimeout(() => {
+                    this.hidePixelLoadingIndicator();
+                }, 500); // Show for at least 500ms
 
-            // Connect event listeners
-            this._attachEventListeners();
-        }, 100); // Small delay to ensure loading indicator displays
+                // Connect event listeners
+                this._attachEventListeners();
+            }, 50);
+        });
 
         // Enhanced Mode success message (always displayed)
         this.updateDebugPanel(`Enhanced Mode: Camera+NASA fusion activated ✅
@@ -487,35 +492,40 @@ Location: ${location.lat.toFixed(3)}, ${location.lon.toFixed(3)}`);
      * Show pixel grid loading indicator
      */
     showPixelLoadingIndicator() {
+        console.log('🎨 showPixelLoadingIndicator() called');
+
         // Check if already exists
         let loader = document.getElementById('pixel-grid-loader');
         if (loader) {
+            console.log('✅ Loader exists, showing...');
             loader.style.display = 'flex';
             return;
         }
+
+        console.log('🆕 Creating new loader element...');
 
         // Create new loading indicator
         loader = document.createElement('div');
         loader.id = 'pixel-grid-loader';
         loader.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, rgba(9, 96, 225, 0.95) 0%, rgba(7, 23, 63, 0.95) 100%);
-            color: #FFFFFF;
-            padding: 20px 30px;
-            border-radius: 16px;
-            border: 2px solid #EAFE07;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-            z-index: 999998;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            font-size: 16px;
-            font-weight: 600;
-            text-align: center;
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            background: linear-gradient(135deg, rgba(9, 96, 225, 0.95) 0%, rgba(7, 23, 63, 0.95) 100%) !important;
+            color: #FFFFFF !important;
+            padding: 20px 30px !important;
+            border-radius: 16px !important;
+            border: 2px solid #EAFE07 !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+            z-index: 999999 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 15px !important;
+            font-size: 16px !important;
+            font-weight: 600 !important;
+            text-align: center !important;
         `;
 
         loader.innerHTML = `
@@ -537,7 +547,12 @@ Location: ${location.lat.toFixed(3)}, ${location.lon.toFixed(3)}`);
         `;
 
         document.body.appendChild(loader);
-        console.log('🔄 Pixel loading indicator shown');
+        console.log('✅ Pixel loading indicator added to body:', loader);
+
+        // Mobile console log if available
+        if (window.mobileConsoleLog) {
+            window.mobileConsoleLog('🎨 Creating pixel panel...');
+        }
     }
 
     /**
