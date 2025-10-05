@@ -401,10 +401,9 @@ window.launchRealAR = async function() {
         stream.getTracks().forEach(track => track.stop());
         console.log('✅ Camera permission granted');
 
-        // Request iOS device orientation permissions
-        if (isIOS) {
-            await window.requestIOSPermissions();
-        }
+        // Skip iOS device motion permissions - not needed for camera-only AR
+        // DeviceMotion/Orientation only needed for gyroscope-based AR features
+        console.log('📱 Skipping iOS motion permissions (camera-only mode)');
 
         // Create AR.js scene
         await window.createARScene();
