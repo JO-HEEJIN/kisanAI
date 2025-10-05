@@ -345,6 +345,19 @@ class FarmGameUI {
                         </div>
                     </div>
 
+                    <!-- Level Progress Bar -->
+                    <div class="level-progress-container">
+                        <div class="level-progress-header">
+                            <span class="level-badge">Lv<span id="currentPlayerLevel">1</span></span>
+                            <span class="level-title" id="currentPlayerTitle">Farm Apprentice</span>
+                            <span class="level-points"><span id="currentPoints">0</span> / <span id="nextLevelPoints">1,000</span> pts</span>
+                        </div>
+                        <div class="level-progress-bar">
+                            <div class="level-progress-fill" id="levelProgressFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
                     <!-- NASA data section -->
                     <div class="nasa-live-data">
                         <div class="nasa-stat">
@@ -1026,8 +1039,63 @@ class FarmGameUI {
         document.getElementById('totalMoney').textContent = `$${farmState.resources.money.toLocaleString()}`;
         document.getElementById('efficiency').textContent = `${progress.efficiency}%`;
 
+        // Update level progress bar
+        this.updateLevelProgressBar();
+
         // Update current view
         this.updateCurrentView();
+    }
+
+    /**
+     * Update level progress bar in header
+     */
+    updateLevelProgressBar() {
+        if (!this.achievementSystem) return;
+
+        const playerLevel = this.achievementSystem.getPlayerLevel();
+        const totalPoints = this.achievementSystem.getTotalPoints();
+
+        // Update level badge and title
+        const levelElement = document.getElementById('currentPlayerLevel');
+        const titleElement = document.getElementById('currentPlayerTitle');
+        const currentPointsElement = document.getElementById('currentPoints');
+        const nextLevelPointsElement = document.getElementById('nextLevelPoints');
+        const progressFill = document.getElementById('levelProgressFill');
+
+        if (levelElement) {
+            levelElement.textContent = playerLevel.level;
+        }
+        if (titleElement) {
+            titleElement.textContent = playerLevel.title;
+        }
+        if (currentPointsElement) {
+            currentPointsElement.textContent = totalPoints.toLocaleString();
+        }
+        if (nextLevelPointsElement && playerLevel.next) {
+            nextLevelPointsElement.textContent = playerLevel.next.toLocaleString();
+        } else if (nextLevelPointsElement) {
+            nextLevelPointsElement.textContent = 'MAX';
+        }
+
+        // Calculate and update progress bar
+        if (progressFill && playerLevel.next) {
+            const previousLevelPoints = this.getPreviousLevelPoints(playerLevel.level);
+            const pointsInCurrentLevel = totalPoints - previousLevelPoints;
+            const pointsNeededForNextLevel = playerLevel.next - previousLevelPoints;
+            const progressPercentage = Math.min(100, (pointsInCurrentLevel / pointsNeededForNextLevel) * 100);
+
+            progressFill.style.width = `${progressPercentage}%`;
+        } else if (progressFill) {
+            progressFill.style.width = '100%'; // Max level
+        }
+    }
+
+    /**
+     * Get points required for previous level
+     */
+    getPreviousLevelPoints(currentLevel) {
+        const levels = [0, 1000, 3000, 7000, 15000];
+        return levels[currentLevel - 1] || 0;
     }
 
     updateTimeDisplay(timeData) {

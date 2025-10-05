@@ -6612,3 +6612,58 @@ h4, h5 {
     border-radius: 10px;
     border: 2px dashed #dee2e6;
 }
+
+/* Level Progress Bar */
+.level-progress-container {
+    margin-top: 15px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    border: 2px solid rgba(234, 254, 7, 0.3);
+}
+
+.level-progress-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.level-badge {
+    background: linear-gradient(135deg, #EAFE07 0%, #0960E1 100%);
+    color: #07173F;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.level-title {
+    color: #EAFE07;
+    font-weight: 700;
+    font-size: 16px;
+    flex: 1;
+}
+
+.level-points {
+    color: #FFFFFF;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.level-progress-bar {
+    height: 24px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid rgba(234, 254, 7, 0.5);
+}
+
+.level-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0960E1 0%, #EAFE07 100%);
+    transition: width 0.5s ease-in-out;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(234, 254, 7, 0.5);
+}
