@@ -1,5 +1,5 @@
 /**
- * PlantRecognition.js v2.1
+ * PlantRecognition.js v2.2
  * Implements a real-time plant recognition and health analysis system using TensorFlow.js,
  * fused with NASA satellite data. This version includes robust event handling to prevent race conditions.
  */
@@ -37,7 +37,7 @@ class PlantRecognition {
     }
 
     async initializePlantRecognition() {
-        console.log('🌱 Initializing Plant Recognition system v2.1...');
+        console.log('🌱 Initializing Plant Recognition system v2.2...');
         try {
             await this.loadTensorFlowModel();
             this.createPlantInterface();
@@ -199,34 +199,24 @@ class PlantRecognition {
     }
 
     /**
-     * --- MODIFIED: Uses robust event delegation to avoid race conditions ---
+     * --- MODIFIED: Uses robust global event delegation to prevent all race conditions ---
      */
     bindPlantEvents() {
-        console.log('🔗 Binding plant recognition events...');
+        console.log('🔗 Binding plant recognition events v2.2 (Global Delegation)...');
         
-        // Use event delegation for the main UI button.
-        // This is robust and works even if the button is created after this script runs.
+        // A single listener on the document body handles all clicks.
+        // This is robust and works no matter when the buttons are added to the page.
         document.body.addEventListener('click', (event) => {
-            const testButton = event.target.closest('#test-plant-id-btn');
-            if (testButton) {
-                console.log('🌱 "Test Recognition" button clicked via delegation.');
-                this.openPlantModal();
-            }
-        });
+            const targetButton = event.target.closest('button');
+            if (!targetButton) return; // Ignore clicks that aren't on or inside a button
 
-        // Bind events for elements INSIDE the modal.
-        // It's safe to bind directly to the modal because we create it ourselves.
-        const modal = document.getElementById('plant-recognition-modal');
-        if (!modal) {
-            console.error("Plant recognition modal element not found for event binding.");
-            return;
-        }
+            const targetId = targetButton.id;
 
-        // Use event delegation within the modal as well for simplicity and robustness.
-        modal.addEventListener('click', (event) => {
-            const targetId = event.target.id || event.target.closest('button')?.id;
-            
             switch(targetId) {
+                case 'test-plant-id-btn':
+                    console.log('🌱 "Test Recognition" button clicked via global delegation.');
+                    this.openPlantModal();
+                    break;
                 case 'close-plant-modal':
                     this.closePlantModal();
                     break;
@@ -245,12 +235,13 @@ class PlantRecognition {
             }
         });
 
-        console.log('✅ Plant recognition events bound successfully.');
+        console.log('✅ All plant recognition events are now handled via a single global listener.');
     }
 
     async openPlantModal() {
         console.log('🌱 Opening Plant Recognition modal...');
         await this.loadLocationAndData();
+        // The modal might have been created by the error handler, so we check for both.
         const modal = document.getElementById('plant-recognition-modal');
         if(modal) modal.style.display = 'flex';
         this.updatePlantStatus('Ready for plant analysis');
@@ -262,6 +253,7 @@ class PlantRecognition {
         this.stopCamera();
     }
     
+    // Unchanged functions
     async loadLocationAndData() { /* ... unchanged ... */ }
     getCurrentLocation() { /* ... unchanged ... */ }
     async loadNASAData() { /* ... unchanged ... */ }
@@ -284,3 +276,4 @@ window.addEventListener('load', () => {
 });
 
 console.log('✅ Plant Recognition module loaded successfully');
+
