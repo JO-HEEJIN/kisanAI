@@ -1081,6 +1081,15 @@ class PlantRecognition {
         console.log('📷 Starting camera for plant recognition...');
 
         try {
+            // 기존 스트림이 있으면 먼저 정리
+            if (this.stream) {
+                console.log('🔄 Cleaning up existing stream...');
+                this.stopCamera();
+                // 정리 후 잠깐 대기
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            console.log('🎥 Requesting camera access...');
             this.stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: 'environment',
@@ -1089,22 +1098,35 @@ class PlantRecognition {
                 }
             });
 
+            console.log('✅ Camera stream obtained');
+
             this.video = document.getElementById('plant-video');
+            if (!this.video) {
+                throw new Error('Video element not found');
+            }
+
             this.video.srcObject = this.stream;
             this.video.classList.add('active');
+
+            // 비디오가 재생될 때까지 대기
+            await this.video.play();
+            console.log('✅ Video playing');
 
             this.canvas = document.getElementById('plant-canvas');
             this.ctx = this.canvas.getContext('2d');
 
-            // UI 업데이트
-            document.getElementById('start-camera-btn').style.display = 'none';
-            document.getElementById('capture-plant-btn').style.display = 'block';
-            document.getElementById('stop-camera-btn').style.display = 'block';
+            // UI 업데이트 (null 체크)
+            const startBtn = document.getElementById('start-camera-btn');
+            const captureBtn = document.getElementById('capture-plant-btn');
+            const stopBtn = document.getElementById('stop-camera-btn');
+
+            if (startBtn) startBtn.style.display = 'none';
+            if (captureBtn) captureBtn.style.display = 'block';
+            if (stopBtn) stopBtn.style.display = 'block';
 
             this.isCapturing = true;
+            console.log('✅ Camera started successfully, isCapturing:', this.isCapturing);
             this.updatePlantStatus('Camera active - Point at plant');
-
-            console.log('✅ Camera started successfully');
 
         } catch (error) {
             console.error('❌ Camera access failed:', error);
@@ -1118,21 +1140,31 @@ class PlantRecognition {
         console.log('🛑 Stopping camera...');
 
         if (this.stream) {
-            this.stream.getTracks().forEach(track => track.stop());
+            this.stream.getTracks().forEach(track => {
+                track.stop();
+                console.log('🛑 Stopped track:', track.kind);
+            });
             this.stream = null;
         }
 
         if (this.video) {
             this.video.classList.remove('active');
             this.video.srcObject = null;
+            // 비디오 일시정지
+            this.video.pause();
         }
 
-        // UI 업데이트
-        document.getElementById('start-camera-btn').style.display = 'block';
-        document.getElementById('capture-plant-btn').style.display = 'none';
-        document.getElementById('stop-camera-btn').style.display = 'none';
+        // UI 업데이트 (null 체크)
+        const startBtn = document.getElementById('start-camera-btn');
+        const captureBtn = document.getElementById('capture-plant-btn');
+        const stopBtn = document.getElementById('stop-camera-btn');
+
+        if (startBtn) startBtn.style.display = 'block';
+        if (captureBtn) captureBtn.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = 'none';
 
         this.isCapturing = false;
+        console.log('✅ Camera stopped, isCapturing:', this.isCapturing);
         this.updatePlantStatus('Camera stopped');
     }
 
