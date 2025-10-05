@@ -177,24 +177,40 @@ Pixel click fusion info display ✅
      */
     async updateCameraColors() {
         try {
-            // Always display successful GPS NASA data fusion message
-            this.updateDebugPanel(`✅ Camera colors: NASA data-based simulation
-🛸 Fusing with real GPS NASA data...`);
+            // Show loading indicator
+            this.showPixelLoadingIndicator();
+
+            // Display fusion message
+            this.updateDebugPanel(`🔄 Analyzing camera pixels...
+🛸 Fusing with GPS NASA data...`);
+
+            console.log('🔄 Starting pixel grid analysis...');
 
             // Utilize extractColorFromCanvas function
             if (window.extractColorFromCanvas) {
+                const startTime = Date.now();
                 const colors = window.extractColorFromCanvas(this.GRID_ROWS);
+                const duration = Date.now() - startTime;
+
+                console.log(`⏱️ Pixel extraction took ${duration}ms`);
 
                 if (colors && colors.length > 0) {
                     this.realColorGrid = colors;
+
+                    // Hide loading indicator
+                    this.hidePixelLoadingIndicator();
+
                     this.updateDebugPanel(`📸 Real camera color extraction successful: ${colors.length}x${colors[0].length}
-🛸 GPS NASA data fusion complete ✅`);
+🛸 GPS NASA data fusion complete ✅ (${duration}ms)`);
 
                     // Update grid with fusion data
                     this._updateFusedGrid();
                     return true;
                 }
             }
+
+            // Hide loading on failure
+            this.hidePixelLoadingIndicator();
 
             // NASA data fusion succeeds even with fallback colors
             this.updateDebugPanel(`📸 Using NASA-based simulation colors
@@ -466,6 +482,79 @@ Location: ${location.lat.toFixed(3)}, ${location.lon.toFixed(3)}`);
         if (moisture > 0.25) return '#4CAF50'; // Optimal (Green)
         if (moisture > 0.15) return '#FFC107'; // Moderate (Yellow)
         return '#F44336'; // Dry (Red)
+    }
+
+    /**
+     * Show pixel grid loading indicator
+     */
+    showPixelLoadingIndicator() {
+        // Check if already exists
+        let loader = document.getElementById('pixel-grid-loader');
+        if (loader) {
+            loader.style.display = 'flex';
+            return;
+        }
+
+        // Create new loading indicator
+        loader = document.createElement('div');
+        loader.id = 'pixel-grid-loader';
+        loader.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(9, 96, 225, 0.95) 0%, rgba(7, 23, 63, 0.95) 100%);
+            color: #FFFFFF;
+            padding: 20px 30px;
+            border-radius: 16px;
+            border: 2px solid #EAFE07;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            z-index: 999998;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+        `;
+
+        loader.innerHTML = `
+            <div style="
+                width: 40px;
+                height: 40px;
+                border: 4px solid #EAFE07;
+                border-top-color: transparent;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            "></div>
+            <div>🔄 Analyzing Pixels...</div>
+            <div style="font-size: 12px; opacity: 0.8;">Fusing with NASA Data</div>
+            <style>
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+
+        document.body.appendChild(loader);
+        console.log('🔄 Pixel loading indicator shown');
+    }
+
+    /**
+     * Hide pixel grid loading indicator
+     */
+    hidePixelLoadingIndicator() {
+        const loader = document.getElementById('pixel-grid-loader');
+        if (loader) {
+            loader.style.transition = 'opacity 0.3s ease-out';
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+                loader.style.opacity = '1'; // Reset for next time
+            }, 300);
+            console.log('✅ Pixel loading indicator hidden');
+        }
     }
 }
 
