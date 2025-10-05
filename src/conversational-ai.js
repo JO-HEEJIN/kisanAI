@@ -9,7 +9,6 @@ class ConversationalAI {
         this.isActive = false;
         // NEW: Store your OpenAI API key here. It is retrieved from settings.
         this.openAIApiKey = null;
-
         // Agricultural knowledge base (used for fallback and context)
         this.agriculturalKnowledge = {
             crops: {
