@@ -152,15 +152,111 @@ class PlantRecognition {
     async initializePlantRecognition() {
         console.log('🌱 Initializing Plant Recognition system...');
 
+        // 로딩 인디케이터 표시
+        this.showLoadingIndicator('Loading AI Model...');
+
         try {
             await this.loadTensorFlowModel();
             this.createPlantInterface();
             this.bindPlantEvents();
+
+            // 로딩 완료
+            this.hideLoadingIndicator();
             console.log('✅ Plant Recognition system ready');
+
+            // 성공 알림 (3초 후 사라짐)
+            this.showSuccessMessage('🌱 AI Plant Recognition Ready!');
         } catch (error) {
             console.error('❌ Failed to initialize Plant Recognition:', error);
+            this.hideLoadingIndicator();
             this.createErrorInterface();
+            alert(`Plant Recognition initialization failed: ${error.message}`);
         }
+    }
+
+    // 로딩 인디케이터 표시
+    showLoadingIndicator(message) {
+        const existingLoader = document.getElementById('plant-recognition-loader');
+        if (existingLoader) return;
+
+        const loader = document.createElement('div');
+        loader.id = 'plant-recognition-loader';
+        loader.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #0960E1 0%, #07173F 100%);
+            color: #FFFFFF;
+            padding: 15px 25px;
+            border-radius: 12px;
+            border: 2px solid #EAFE07;
+            box-shadow: 0 4px 20px rgba(9, 96, 225, 0.4);
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        `;
+
+        loader.innerHTML = `
+            <div style="
+                width: 24px;
+                height: 24px;
+                border: 3px solid #EAFE07;
+                border-top-color: transparent;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            "></div>
+            <span>${message}</span>
+            <style>
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+
+        document.body.appendChild(loader);
+    }
+
+    // 로딩 인디케이터 숨기기
+    hideLoadingIndicator() {
+        const loader = document.getElementById('plant-recognition-loader');
+        if (loader) {
+            loader.style.transition = 'opacity 0.3s ease-out';
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 300);
+        }
+    }
+
+    // 성공 메시지 표시
+    showSuccessMessage(message) {
+        const success = document.createElement('div');
+        success.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #00C851 0%, #007E33 100%);
+            color: #FFFFFF;
+            padding: 15px 25px;
+            border-radius: 12px;
+            border: 2px solid #EAFE07;
+            box-shadow: 0 4px 20px rgba(0, 200, 81, 0.4);
+            z-index: 999999;
+            font-size: 14px;
+            font-weight: 600;
+            animation: slideIn 0.3s ease-out;
+        `;
+
+        success.innerHTML = message;
+        document.body.appendChild(success);
+
+        // 3초 후 제거
+        setTimeout(() => {
+            success.style.transition = 'opacity 0.3s ease-out';
+            success.style.opacity = '0';
+            setTimeout(() => success.remove(), 300);
+        }, 3000);
     }
 
     // TensorFlow.js 모델 로드
@@ -169,16 +265,28 @@ class PlantRecognition {
 
         try {
             // TensorFlow.js 라이브러리 확인
+            console.log('🔍 Checking TensorFlow.js availability...');
             if (typeof tf === 'undefined') {
                 throw new Error('TensorFlow.js (tf) is not loaded. Please include the script in your HTML.');
             }
+            console.log(`✅ TensorFlow.js version: ${tf.version.tfjs}`);
 
             // 실제 MobileNetV2 모델 로드 (TensorFlow Hub)
-            console.log('📦 Loading MobileNetV2 from TensorFlow Hub...');
+            console.log('📦 Loading MobileNetV2 from TensorFlow Hub... (This may take 10-30 seconds)');
+            this.showLoadingIndicator('Downloading AI Model... (10-30s)');
+
             const modelUrl = 'https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/classification/5';
+
+            const startTime = Date.now();
             this.model = await tf.loadGraphModel(modelUrl, { fromTFHub: true });
+            const loadTime = ((Date.now() - startTime) / 1000).toFixed(1);
+
+            console.log(`✅ Model loaded in ${loadTime} seconds`);
 
             // Warm up the model
+            console.log('🔥 Warming up model...');
+            this.showLoadingIndicator('Preparing AI Model...');
+
             tf.tidy(() => {
                 const warmupTensor = tf.zeros([1, 224, 224, 3]);
                 this.model.predict(warmupTensor);
@@ -186,9 +294,15 @@ class PlantRecognition {
 
             this.isModelLoaded = true;
             console.log('✅ Real Plant Recognition model loaded successfully');
+            console.log('🎯 Model ready for predictions!');
 
         } catch (error) {
             console.error('❌ Real model loading failed:', error);
+            console.error('❌ Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
             throw error;
         }
     }
@@ -232,13 +346,21 @@ class PlantRecognition {
     async runModelPrediction(videoElement) {
         console.log('🧠 Running real TensorFlow prediction...');
 
+        if (!this.model || !this.isModelLoaded) {
+            throw new Error('Model not loaded yet. Please wait for initialization.');
+        }
+
+        console.log('📸 Capturing video frame...');
         const tensor = tf.browser.fromPixels(videoElement)
             .resizeBilinear([224, 224])
             .toFloat()
             .expandDims(0);
 
+        console.log('🔮 Running model inference...');
         const predictions = await this.model.predict(tensor).data();
         tensor.dispose();
+
+        console.log(`✅ Got ${predictions.length} predictions`);
 
         // 최고 확률 클래스 찾기
         let topResult = { confidence: 0, index: -1 };
@@ -248,11 +370,13 @@ class PlantRecognition {
             }
         }
 
+        console.log(`🎯 Top prediction: index ${topResult.index}, confidence ${(topResult.confidence * 100).toFixed(2)}%`);
+
         // ImageNet 클래스 → 농업 작물 매핑
         const imagenetClass = this.imagenetClasses[topResult.index] || 'generic_plant';
         const plantType = this.plantMapping[imagenetClass] || 'generic_plant';
 
-        console.log(`🌱 Detected: ${imagenetClass} → ${plantType} (${(topResult.confidence * 100).toFixed(1)}%)`);
+        console.log(`🌱 Detected: ImageNet[${topResult.index}] = "${imagenetClass}" → Plant: "${plantType}" (${(topResult.confidence * 100).toFixed(1)}%)`);
 
         return {
             plantType: plantType,
