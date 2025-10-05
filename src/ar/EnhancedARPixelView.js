@@ -52,11 +52,19 @@ class EnhancedARPixelView {
         // Create debug panel
         this.createDebugPanel();
 
-        // Create pixel grid
-        this.createPixelGrid();
+        // Show loading indicator for initial pixel grid creation
+        this.showPixelLoadingIndicator();
 
-        // Connect event listeners
-        this._attachEventListeners();
+        // Create pixel grid (async to show loading)
+        setTimeout(() => {
+            this.createPixelGrid();
+
+            // Hide loading after grid is created
+            this.hidePixelLoadingIndicator();
+
+            // Connect event listeners
+            this._attachEventListeners();
+        }, 100); // Small delay to ensure loading indicator displays
 
         // Enhanced Mode success message (always displayed)
         this.updateDebugPanel(`Enhanced Mode: Camera+NASA fusion activated ✅
@@ -177,10 +185,7 @@ Pixel click fusion info display ✅
      */
     async updateCameraColors() {
         try {
-            // Show loading indicator
-            this.showPixelLoadingIndicator();
-
-            // Display fusion message
+            // Display fusion message (no loading indicator for updates)
             this.updateDebugPanel(`🔄 Analyzing camera pixels...
 🛸 Fusing with GPS NASA data...`);
 
@@ -197,9 +202,6 @@ Pixel click fusion info display ✅
                 if (colors && colors.length > 0) {
                     this.realColorGrid = colors;
 
-                    // Hide loading indicator
-                    this.hidePixelLoadingIndicator();
-
                     this.updateDebugPanel(`📸 Real camera color extraction successful: ${colors.length}x${colors[0].length}
 🛸 GPS NASA data fusion complete ✅ (${duration}ms)`);
 
@@ -208,9 +210,6 @@ Pixel click fusion info display ✅
                     return true;
                 }
             }
-
-            // Hide loading on failure
-            this.hidePixelLoadingIndicator();
 
             // NASA data fusion succeeds even with fallback colors
             this.updateDebugPanel(`📸 Using NASA-based simulation colors
@@ -528,8 +527,8 @@ Location: ${location.lat.toFixed(3)}, ${location.lon.toFixed(3)}`);
                 border-radius: 50%;
                 animation: spin 1s linear infinite;
             "></div>
-            <div>🔄 Analyzing Pixels...</div>
-            <div style="font-size: 12px; opacity: 0.8;">Fusing with NASA Data</div>
+            <div>🎨 Creating Pixel Panel...</div>
+            <div style="font-size: 12px; opacity: 0.8;">Initializing AR Grid</div>
             <style>
                 @keyframes spin {
                     to { transform: rotate(360deg); }
