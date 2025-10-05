@@ -1051,28 +1051,40 @@ class PlantRecognition {
 
     // NASA 데이터 로드
     async loadNASAData() {
-        if (!this.currentLocation) return;
+        if (!this.currentLocation) {
+            console.warn('⚠️ No location available for NASA data');
+            return;
+        }
+
+        console.log(`🛰️ Loading NASA data for location: ${this.currentLocation.lat}, ${this.currentLocation.lon}`);
 
         try {
+            // Vercel API routes 사용 (배포 환경에서 작동)
             const [smapData, modisData] = await Promise.all([
-                fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`).then(r => r.json()),
-                fetch(`http://localhost:3001/api/modis/ndvi?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`).then(r => r.json())
+                fetch(`/api/smap/soil-moisture?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`).then(r => r.json()),
+                fetch(`/api/modis/ndvi?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`).then(r => r.json())
             ]);
 
+            console.log('📡 SMAP data received:', smapData);
+            console.log('📡 MODIS data received:', modisData);
+
             this.nasaData = {
-                soilMoisture: smapData.soilMoisture || 0.3,
+                soilMoisture: smapData.soilMoisture || smapData.surface_moisture || 0.3,
                 ndvi: modisData.ndvi || 0.65,
+                temperature: smapData.temperature || 25,
                 quality: smapData.quality || 'real'
             };
 
-            console.log('🛰️ NASA data loaded for plant recognition:', this.nasaData);
+            console.log('✅ NASA data loaded for plant recognition:', this.nasaData);
         } catch (error) {
-            console.warn('⚠️ NASA data load failed for plant recognition:', error);
+            console.error('❌ NASA data load failed for plant recognition:', error);
             this.nasaData = {
                 soilMoisture: 0.3,
                 ndvi: 0.65,
+                temperature: 25,
                 quality: 'fallback'
             };
+            console.warn('⚠️ Using fallback NASA data:', this.nasaData);
         }
     }
 
@@ -1218,6 +1230,9 @@ class PlantRecognition {
 
     // 식물 분석 결과 표시
     displayPlantResult(prediction) {
+        console.log('🎨 Displaying plant result:', prediction);
+        console.log('🌍 Current NASA data:', this.nasaData);
+
         const resultsContainer = document.getElementById('plant-results');
         const placeholder = resultsContainer.querySelector('.plant-results-placeholder');
 
@@ -1226,10 +1241,21 @@ class PlantRecognition {
         }
 
         const plantData = this.plantDatabase[prediction.plantType] || this.getGenericPlantData();
+        console.log('🌿 Plant database entry:', plantData);
+
         const healthAnalysis = this.analyzePlantHealth(plantData);
+        console.log('💚 Health analysis:', healthAnalysis);
 
         const resultElement = document.createElement('div');
         resultElement.className = 'plant-result-item';
+
+        // MobileNet의 원본 클래스 이름 표시 (디버깅용)
+        const rawClassInfo = prediction.rawClassName
+            ? `<div class="detail-item">
+                <span class="detail-label">🤖 AI Detected:</span>
+                ${prediction.rawClassName}
+               </div>`
+            : '';
 
         resultElement.innerHTML = `
             <div class="plant-result-header">
@@ -1238,6 +1264,7 @@ class PlantRecognition {
             </div>
 
             <div class="plant-details">
+                ${rawClassInfo}
                 <div class="detail-item">
                     <span class="detail-label">Category:</span>
                     ${plantData.category}
@@ -1247,12 +1274,16 @@ class PlantRecognition {
                     ${plantData.optimalConditions.season}
                 </div>
                 <div class="detail-item">
-                    <span class="detail-label">Soil Moisture:</span>
-                    ${(this.nasaData.soilMoisture * 100).toFixed(1)}%
+                    <span class="detail-label">🛰️ Soil Moisture:</span>
+                    ${(this.nasaData?.soilMoisture * 100 || 0).toFixed(1)}% (${this.nasaData?.quality || 'unknown'})
                 </div>
                 <div class="detail-item">
-                    <span class="detail-label">NDVI Index:</span>
-                    ${this.nasaData.ndvi.toFixed(2)}
+                    <span class="detail-label">🛰️ NDVI Index:</span>
+                    ${this.nasaData?.ndvi?.toFixed(2) || 'N/A'}
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">🌡️ Temperature:</span>
+                    ${this.nasaData?.temperature?.toFixed(1) || 'N/A'}°C
                 </div>
             </div>
 
@@ -1279,7 +1310,7 @@ class PlantRecognition {
         resultsContainer.appendChild(resultElement);
         resultsContainer.scrollTop = resultsContainer.scrollHeight;
 
-        console.log('✅ Plant analysis result displayed:', prediction);
+        console.log('✅ Plant analysis result displayed');
     }
 
     // 식물 건강도 분석
