@@ -76,7 +76,7 @@ document.body.insertAdjacentHTML('beforeend', chatInterface);
 this.addChatStyles();
 }
 
-    addChatStyles() { /* ... Your existing styles ... */ }
+
     addChatStyles() {
         const styles = `
             <style>
@@ -499,11 +499,7 @@ content.innerHTML = `<p>${newMessage.replace(/\n/g, '</p><p>')}</p>`;
 }
 
 // --- Unchanged Functions ---
-    getCurrentLocation() { /* ... your existing code ... */ }
-    loadNASAData() { /* ... your existing code ... */ }
-    generateSoilMoistureResponse() { /* ... your existing code ... */ }
-    generatePlantHealthResponse() { /* ... your existing code ... */ }
-    generateIrrigationResponse() { /* ... your existing code ... */ }
+    
     generateRuleBasedResponse(userMessage) {
         const message = userMessage.toLowerCase();
         if (message.includes('predict') || message.includes('forecast')) {
