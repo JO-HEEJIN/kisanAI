@@ -123,21 +123,26 @@ class PlantRecognition {
                     good: { ndvi: 0.55, color: 'green', growth: 'normal' },
                     poor: { ndvi: 0.3, color: 'yellow', growth: 'stunted' }
                 }
-            }
-        };
+            },
 
-        // 일반적인 분류 결과를 농업 식물로 매핑
-        this.plantMapping = {
-            // MobileNet 분류 결과 → 농업 데이터베이스 매핑
-            'ear': 'corn',
-            'corn_cob': 'corn',
-            'grain': 'wheat',
-            'seed': 'soybean',
-            'leaf': 'generic_plant',
-            'green_plant': 'generic_plant',
-            'flower': 'generic_plant',
-            'fruit': 'tomato',
-            'vegetable': 'potato'
+            // 일반 식물 (인식 불가시 기본값)
+            'generic_plant': {
+                category: 'general',
+                scientificName: 'Unknown Plant',
+                commonNames: ['unknown plant', 'unidentified'],
+                optimalConditions: {
+                    soilMoisture: [0.2, 0.5],
+                    ndvi: [0.4, 0.8],
+                    temperature: [15, 30],
+                    season: 'all'
+                },
+                diseases: [],
+                healthIndicators: {
+                    excellent: { ndvi: 0.7, color: 'green', growth: 'healthy' },
+                    good: { ndvi: 0.5, color: 'green', growth: 'normal' },
+                    poor: { ndvi: 0.3, color: 'pale', growth: 'weak' }
+                }
+            }
         };
 
         this.initializePlantRecognition();
@@ -160,31 +165,100 @@ class PlantRecognition {
 
     // TensorFlow.js 모델 로드
     async loadTensorFlowModel() {
-        console.log('🧠 Loading TensorFlow.js model...');
+        console.log('🧠 Loading real TensorFlow.js model (MobileNetV2)...');
 
         try {
             // TensorFlow.js 라이브러리 확인
             if (typeof tf === 'undefined') {
-                throw new Error('TensorFlow.js not loaded');
+                throw new Error('TensorFlow.js (tf) is not loaded. Please include the script in your HTML.');
             }
 
-            // MobileNet 모델 로드 (이미지 분류)
-            // 실제 환경에서는 CDN에서 로드하거나 로컬 모델 사용
-            console.log('📦 Loading MobileNet model for plant classification...');
+            // 실제 MobileNetV2 모델 로드 (TensorFlow Hub)
+            console.log('📦 Loading MobileNetV2 from TensorFlow Hub...');
+            const modelUrl = 'https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/classification/5';
+            this.model = await tf.loadGraphModel(modelUrl, { fromTFHub: true });
 
-            // 간단한 시뮬레이션 모델 (실제로는 pre-trained 모델 사용)
-            this.model = {
-                predict: this.simulatePlantPrediction.bind(this),
-                loaded: true
-            };
+            // Warm up the model
+            tf.tidy(() => {
+                const warmupTensor = tf.zeros([1, 224, 224, 3]);
+                this.model.predict(warmupTensor);
+            });
 
             this.isModelLoaded = true;
-            console.log('✅ Plant recognition model loaded successfully');
+            console.log('✅ Real Plant Recognition model loaded successfully');
 
         } catch (error) {
-            console.error('❌ Model loading failed:', error);
+            console.error('❌ Real model loading failed:', error);
             throw error;
         }
+    }
+
+    // ImageNet 클래스 매핑 (일부)
+    get imagenetClasses() {
+        return {
+            985: 'ear',
+            989: 'corn_cob',
+            // 더 많은 클래스는 필요시 추가
+        };
+    }
+
+    // ImageNet → 농업 작물 매핑
+    get plantMapping() {
+        return {
+            'ear': 'corn',
+            'corn_cob': 'corn',
+            'acorn': 'generic_plant',
+            'head cabbage': 'generic_plant',
+            'broccoli': 'generic_plant',
+            'cauliflower': 'generic_plant',
+            'zucchini': 'generic_plant',
+            'cucumber': 'generic_plant',
+            'bell pepper': 'generic_plant',
+            'Granny Smith': 'generic_plant',
+            'strawberry': 'generic_plant',
+            'orange': 'generic_plant',
+            'lemon': 'generic_plant',
+            'banana': 'generic_plant',
+            'pomegranate': 'generic_plant',
+            'pineapple': 'generic_plant'
+        };
+    }
+
+    /**
+     * 실제 TensorFlow 모델로 예측 실행
+     * @param {HTMLVideoElement} videoElement - 비디오 엘리먼트
+     * @returns {Promise<object>} 예측 결과
+     */
+    async runModelPrediction(videoElement) {
+        console.log('🧠 Running real TensorFlow prediction...');
+
+        const tensor = tf.browser.fromPixels(videoElement)
+            .resizeBilinear([224, 224])
+            .toFloat()
+            .expandDims(0);
+
+        const predictions = await this.model.predict(tensor).data();
+        tensor.dispose();
+
+        // 최고 확률 클래스 찾기
+        let topResult = { confidence: 0, index: -1 };
+        for (let i = 0; i < predictions.length; i++) {
+            if (predictions[i] > topResult.confidence) {
+                topResult = { confidence: predictions[i], index: i };
+            }
+        }
+
+        // ImageNet 클래스 → 농업 작물 매핑
+        const imagenetClass = this.imagenetClasses[topResult.index] || 'generic_plant';
+        const plantType = this.plantMapping[imagenetClass] || 'generic_plant';
+
+        console.log(`🌱 Detected: ${imagenetClass} → ${plantType} (${(topResult.confidence * 100).toFixed(1)}%)`);
+
+        return {
+            plantType: plantType,
+            confidence: topResult.confidence,
+            isManual: false
+        };
     }
 
     // 식물 인식 인터페이스 생성
@@ -864,7 +938,7 @@ class PlantRecognition {
 
     // 식물 캡처 및 분석
     async capturePlant() {
-        if (!this.isCapturing || !this.video || !this.canvas) {
+        if (!this.isCapturing || !this.video) {
             console.warn('⚠️ Camera not ready for capture');
             return;
         }
@@ -873,16 +947,8 @@ class PlantRecognition {
         this.updatePlantStatus('Analyzing plant...');
 
         try {
-            // 비디오에서 이미지 캡처
-            this.canvas.width = this.video.videoWidth;
-            this.canvas.height = this.video.videoHeight;
-            this.ctx.drawImage(this.video, 0, 0);
-
-            // 이미지 데이터 추출
-            const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-
-            // AI 모델로 식물 인식
-            const prediction = await this.model.predict(imageData);
+            // 실제 TensorFlow 모델로 예측 실행
+            const prediction = await this.runModelPrediction(this.video);
 
             // 결과 표시
             this.displayPlantResult(prediction);
@@ -917,23 +983,6 @@ class PlantRecognition {
         this.displayPlantResult(prediction);
     }
 
-    // 식물 예측 시뮬레이션 (실제 모델 대신)
-    simulatePlantPrediction(imageData) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // 랜덤 식물 선택 (시뮬레이션)
-                const plants = ['wheat', 'corn', 'rice', 'soybean', 'tomato', 'potato'];
-                const selectedPlant = plants[Math.floor(Math.random() * plants.length)];
-                const confidence = 0.7 + Math.random() * 0.25; // 70-95% 신뢰도
-
-                resolve({
-                    plantType: selectedPlant,
-                    confidence: confidence,
-                    isManual: false
-                });
-            }, 2000); // 2초 분석 시간 시뮬레이션
-        });
-    }
 
     // 식물 분석 결과 표시
     displayPlantResult(prediction) {
