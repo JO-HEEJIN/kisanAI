@@ -2435,16 +2435,15 @@ function showBeautifulPermissionDialog() {
             ">Enable AR Experience</h2>
 
             <p style="
-                color: #FFFFFF;
+                color: #FFFFFF !important;
                 font-size: 16px;
                 line-height: 1.6;
                 margin: 0 0 30px 0;
-                opacity: 1;
                 text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
             ">
-                🚀 <strong style="color: #FFFFFF;">NASA Farm Navigators</strong> needs access to your device sensors to provide an immersive AR experience.
+                🚀 <strong style="color: #FFFFFF !important; font-weight: 800;">NASA Farm Navigators</strong> <span style="color: #FFFFFF !important;">needs access to your device sensors to provide an immersive AR experience.</span>
                 <br><br>
-                📱 This allows us to track your device orientation for real-time satellite data visualization.
+                <span style="color: #FFFFFF !important;">📱 This allows us to track your device orientation for real-time satellite data visualization.</span>
             </p>
 
             <div style="display: flex; gap: 12px; margin-top: 30px;">
