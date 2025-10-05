@@ -75,7 +75,233 @@ class ConversationalAI {
         this.addChatStyles();
     }
 
-    addChatStyles() { /* ... Your existing styles ... */ }
+    addChatStyles() {
+        const styles = `
+            <style>
+            .ai-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(7, 23, 63, 0.95);
+                backdrop-filter: blur(10px);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px;
+            }
+
+            .ai-modal-content {
+                background: linear-gradient(135deg, #07173F 0%, #0960E1 100%);
+                border-radius: 20px;
+                width: 100%;
+                max-width: 400px;
+                height: 90vh;
+                max-height: 600px;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            }
+
+            .ai-chat-header {
+                background: rgba(234, 254, 7, 0.1);
+                padding: 15px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid rgba(234, 254, 7, 0.2);
+            }
+
+            .ai-header-info {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .ai-avatar {
+                width: 40px;
+                height: 40px;
+                background: #EAFE07;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+            }
+
+            .ai-title h3 {
+                color: white;
+                margin: 0;
+                font-size: 16px;
+                font-weight: bold;
+            }
+
+            .ai-title p {
+                color: #EAFE07;
+                margin: 2px 0 0 0;
+                font-size: 12px;
+            }
+
+            .ai-close-btn {
+                background: rgba(228, 55, 0, 0.8);
+                color: white;
+                border: none;
+                width: 35px;
+                height: 35px;
+                border-radius: 50%;
+                font-size: 16px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .ai-chat-messages {
+                flex: 1;
+                padding: 15px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .ai-message {
+                display: flex;
+                flex-direction: column;
+                max-width: 85%;
+            }
+
+            .ai-bot-message {
+                align-self: flex-start;
+            }
+
+            .ai-user-message {
+                align-self: flex-end;
+            }
+
+            .ai-message-content {
+                background: #2e96f5;
+                padding: 12px 16px;
+                border-radius: 15px;
+                color: white;
+                line-height: 1.4;
+            }
+
+            .ai-user-message .ai-message-content {
+                background: rgba(234, 254, 7, 0.2);
+                color: #EAFE07;
+            }
+
+            .ai-message-content p {
+                margin: 0 0 8px 0;
+            }
+
+            .ai-message-content p:last-child {
+                margin-bottom: 0;
+            }
+
+            .ai-message-time {
+                font-size: 10px;
+                color: rgba(255, 255, 255, 0.6);
+                margin-top: 4px;
+                align-self: flex-end;
+            }
+
+            .ai-quick-actions {
+                padding: 10px 15px;
+                display: flex;
+                gap: 8px;
+                overflow-x: auto;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .ai-quick-btn {
+                background: rgba(46, 150, 245, 0.3);
+                color: white;
+                border: 1px solid rgba(46, 150, 245, 0.5);
+                padding: 8px 12px;
+                border-radius: 20px;
+                font-size: 12px;
+                white-space: nowrap;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .ai-quick-btn:hover {
+                background: rgba(46, 150, 245, 0.5);
+                transform: scale(1.05);
+            }
+
+            .ai-input-area {
+                padding: 15px;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .ai-input-container {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+            #ai-chat-input {
+                flex: 1;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 25px;
+                padding: 12px 16px;
+                color: white;
+                font-size: 14px;
+                outline: none;
+            }
+
+            #ai-chat-input::placeholder {
+                color: rgba(255, 255, 255, 0.6);
+            }
+
+            .ai-send-btn {
+                background: linear-gradient(45deg, #EAFE07, #2E96F5);
+                border: none;
+                width: 45px;
+                height: 45px;
+                border-radius: 50%;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                transition: transform 0.2s ease;
+            }
+
+            .ai-send-btn:hover {
+                transform: scale(1.1);
+            }
+
+            /* 모바일 스크롤 최적화 */
+            .ai-chat-messages::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .ai-chat-messages::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 2px;
+            }
+
+            .ai-chat-messages::-webkit-scrollbar-thumb {
+                background: rgba(234, 254, 7, 0.5);
+                border-radius: 2px;
+            }
+            </style>
+        `;
+        
+        document.head.insertAdjacentHTML('beforeend', styles);
+    }
 
     bindEvents() {
         document.body.addEventListener('click', (event) => {
@@ -271,11 +497,163 @@ class ConversationalAI {
     }
     
     // --- Unchanged Functions ---
-    getCurrentLocation() { /* ... your existing code ... */ }
-    loadNASAData() { /* ... your existing code ... */ }
-    generateSoilMoistureResponse() { /* ... your existing code ... */ }
-    generatePlantHealthResponse() { /* ... your existing code ... */ }
-    generateIrrigationResponse() { /* ... your existing code ... */ }
+     getCurrentLocation() {
+        return new Promise((resolve) => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        this.currentLocation = {
+                            lat: position.coords.latitude,
+                            lon: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        };
+                        console.log('📍 Location obtained:', this.currentLocation);
+                        resolve();
+                    },
+                    (error) => {
+                        console.warn('⚠️ GPS Error:', error);
+                        this.currentLocation = { lat: 29.7604, lon: -95.3698 }; // 서울 기본값
+                        resolve();
+                    }
+                );
+            } else {
+                this.currentLocation = { lat: 29.7604, lon: -95.3698 };
+                resolve();
+            }
+        });
+    }
+
+    // NASA 데이터 로드
+    async loadNASAData() {
+        if (!this.currentLocation) return;
+
+        try {
+            const [smapData, modisData] = await Promise.all([
+                fetch(`http://localhost:3001/api/smap/soil-moisture?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`).then(r => r.json()),
+                fetch(`http://localhost:3001/api/modis/ndvi?lat=${this.currentLocation.lat}&lon=${this.currentLocation.lon}`).then(r => r.json())
+            ]);
+
+            this.nasaData = {
+                soilMoisture: smapData.soilMoisture || 0.3,
+                ndvi: modisData.ndvi || 0.65,
+                quality: smapData.quality || 'real',
+                source: smapData.source || 'NASA Data'
+            };
+
+            console.log('🛰️ NASA data loaded:', this.nasaData);
+        } catch (error) {
+            console.warn('⚠️ NASA data load failed:', error);
+            this.nasaData = {
+                soilMoisture: 0.3,
+                ndvi: 0.65,
+                quality: 'fallback',
+                source: 'Fallback Data'
+            };
+        }
+    }
+
+    generateSoilMoistureResponse() {
+        if (!this.nasaData) return '<p>Loading NASA data...</p>';
+
+        const moisture = this.nasaData.soilMoisture;
+        const moisturePercent = (moisture * 100).toFixed(1);
+
+        let condition, advice, emoji;
+
+        if (moisture < 0.2) {
+            condition = 'Very Dry';
+            advice = 'Immediate irrigation required';
+            emoji = '🔥';
+        } else if (moisture < 0.3) {
+            condition = 'Dry';
+            advice = 'Consider irrigation soon';
+            emoji = '⚠️';
+        } else if (moisture < 0.5) {
+            condition = 'Optimal';
+            advice = 'Current conditions are good';
+            emoji = '✅';
+        } else {
+            condition = 'Too Wet';
+            advice = 'Check drainage system';
+            emoji = '💧';
+        }
+
+        return `
+            <p>${emoji} <strong>Current Soil Moisture Status</strong></p>
+            <p>📊 Moisture Level: ${moisturePercent}% (${condition})</p>
+            <p>🛰️ Based on NASA SMAP Data</p>
+            <p>💡 Advice: ${advice}</p>
+            <p>📍 Location: ${this.currentLocation.lat.toFixed(2)}, ${this.currentLocation.lon.toFixed(2)}</p>
+        `;
+    }
+     generatePlantHealthResponse() {
+        if (!this.nasaData) return '<p>Loading NASA data...</p>';
+
+        const ndvi = this.nasaData.ndvi;
+
+        let condition, advice, emoji;
+
+        if (ndvi < 0.3) {
+            condition = 'Poor';
+            advice = 'May need nutrition or pest control';
+            emoji = '❌';
+        } else if (ndvi < 0.5) {
+            condition = 'Fair';
+            advice = 'Continue monitoring plant status';
+            emoji = '⚠️';
+        } else if (ndvi < 0.7) {
+            condition = 'Good';
+            advice = 'Maintain current management';
+            emoji = '✅';
+        } else {
+            condition = 'Excellent';
+            advice = 'Plants are very healthy!';
+            emoji = '🌟';
+        }
+
+        return `
+            <p>${emoji} <strong>Plant Health Analysis</strong></p>
+            <p>🌱 NDVI Index: ${ndvi.toFixed(2)} (${condition})</p>
+            <p>🛰️ Based on MODIS Satellite Data</p>
+            <p>💡 Advice: ${advice}</p>
+            <p>📈 Higher NDVI means healthier vegetation</p>
+        `;
+    }
+      generateIrrigationResponse() {
+        if (!this.nasaData) return '<p>Loading NASA data...</p>';
+
+        const moisture = this.nasaData.soilMoisture;
+        const ndvi = this.nasaData.ndvi;
+
+        let recommendation, timing, emoji;
+
+        if (moisture < 0.25) {
+            recommendation = 'Immediate irrigation needed';
+            timing = 'Right now';
+            emoji = '🚨';
+        } else if (moisture < 0.35) {
+            recommendation = 'Irrigation recommended in 1-2 days';
+            timing = 'Within 1-2 days';
+            emoji = '⏰';
+        } else if (moisture < 0.5) {
+            recommendation = 'No irrigation needed currently';
+            timing = 'Recheck in 3-5 days';
+            emoji = '✅';
+        } else {
+            recommendation = 'Too wet - avoid irrigation';
+            timing = 'Recheck after drainage';
+            emoji = '🛑';
+        }
+
+        return `
+            <p>${emoji} <strong>Irrigation Timing Analysis</strong></p>
+            <p>💧 Current Soil Moisture: ${(moisture * 100).toFixed(1)}%</p>
+            <p>⏱️ Recommended Timing: ${timing}</p>
+            <p>📋 Advice: ${recommendation}</p>
+            <p>🌱 Plant Health Index: ${ndvi.toFixed(2)}</p>
+            <p>🛰️ Based on Real-time NASA SMAP Data</p>
+        `;
+    }
 
     // --- MODIFIED: Translated to English ---
     generateWeatherResponse() {
@@ -324,8 +702,27 @@ class ConversationalAI {
         `;
     }
 
-    generateGeneralResponse() { /* ... your existing code ... */ }
+        generateGeneralResponse() {
+        const responses = [
+            `<p>🤖 Hello! I'm your Farm AI Assistant powered by NASA satellite data.</p>
+             <p>💡 Try asking questions like:</p>
+             <p>• "What is the current soil moisture?"</p>
+             <p>• "How is plant health?"</p>
+             <p>• "When should I irrigate?"</p>`,
+
+            `<p>🛰️ I help farmers using real-time NASA satellite data!</p>
+             <p>📍 Current Location: ${this.currentLocation ? this.currentLocation.lat.toFixed(2) + ', ' + this.currentLocation.lon.toFixed(2) : 'Getting location...'}</p>
+             <p>💬 Ask me specific questions for more accurate answers.</p>`,
+
+            `<p>🌱 Your agricultural AI specialist is here to help!</p>
+             <p>🔍 Ask me anything about soil, crops, weather, or irrigation.</p>
+             <p>📊 All my answers are based on real NASA satellite data.</p>`
+        ];
+
+        return responses[Math.floor(Math.random() * responses.length)];
+    }
 }
+
 
 // --- MODIFIED: Initialization is now safer ---
 window.addEventListener('load', () => {
