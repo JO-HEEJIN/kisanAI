@@ -82,6 +82,12 @@ The mobile AR feature transforms smartphones into portable soil health scanners:
 - **Climate Zone Classification**: Tropical, temperate, arid, cold zone crop recommendations
 
 ### AI & Machine Learning:
+- **TensorFlow.js MobileNet Integration**:
+  - Pre-trained MobileNet v2 model for real-time plant recognition
+  - Identifies crop species and vegetation types through camera input
+  - Runs entirely client-side (no server required, works offline)
+  - Optimized for mobile devices with quantized model weights
+  - Stagmate contribution: Plant identification AI system
 - **Color-Based Surface Classification**:
   - Red detection algorithm (danger/error surfaces)
   - Green vegetation analysis (vibrant vs. regular green)
