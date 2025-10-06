@@ -4,6 +4,8 @@
 
 *NASA Space Apps Challenge 2025*
 
+**Live Demo: [https://kisan-ai-one.vercel.app/](https://kisan-ai-one.vercel.app/)**
+
 ---
 
 ## Overview
