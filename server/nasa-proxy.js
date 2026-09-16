@@ -8,9 +8,14 @@ const axios = require('axios');
 const cors = require('cors');
 const https = require('https');
 const fs = require('fs');
+const { createIdentifyHandler } = require('./vision');
 
 const app = express();
 app.use(cors());
+
+// Registered before the global JSON parser because images need a larger body limit
+app.post('/api/vision/identify', express.json({ limit: '6mb' }), createIdentifyHandler());
+
 app.use(express.json());
 
 // NASA Earthdata credentials (server-side environment only)
@@ -1056,6 +1061,7 @@ app.listen(PORT, () => {
     console.log('  - GET /api/landsat/imagery');
     console.log('  - GET /api/pixel-hunt/data');
     console.log('  - GET /api/health');
+    console.log('  - POST /api/vision/identify');
 });
 
 // Start HTTPS server for WebXR compatibility

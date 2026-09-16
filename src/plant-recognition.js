@@ -372,6 +372,20 @@ class PlantRecognition {
      * @returns {Promise<object>} 예측 결과
      */
     async runModelPrediction(videoElement) {
+        try {
+            const identification = await this.identifyWithServer(videoElement);
+            const cropType = identification.isPlant ? this.findCropByScientificName(identification.scientificName) : null;
+            return {
+                plantType: cropType || 'generic_plant',
+                confidence: identification.confidence,
+                isManual: false,
+                rawClassName: identification.label,
+                identification
+            };
+        } catch (error) {
+            console.warn('Vision API unavailable, using offline MobileNet estimate:', error.message);
+        }
+
         console.log('🧠 Running real MobileNet prediction...');
 
         if (!this.model || !this.isModelLoaded) {
@@ -458,6 +472,55 @@ class PlantRecognition {
             console.error('❌ Prediction failed:', error);
             throw error;
         }
+    }
+
+    // Railway server base URL for general image identification
+    getVisionApiBase() {
+        if (window.KISAN_VISION_API_BASE) {
+            return window.KISAN_VISION_API_BASE;
+        }
+        const host = window.location.hostname;
+        return host === 'localhost' || host === '127.0.0.1' ? 'http://localhost:3001' : null;
+    }
+
+    // Sends the current frame to the server (Gemini). The frame is not stored.
+    async identifyWithServer(videoElement) {
+        const base = this.getVisionApiBase();
+        if (!base || !videoElement.videoWidth) {
+            throw new Error('Vision API base URL or video frame is not available');
+        }
+
+        const scale = Math.min(1, 1024 / Math.max(videoElement.videoWidth, videoElement.videoHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(videoElement.videoWidth * scale);
+        canvas.height = Math.round(videoElement.videoHeight * scale);
+        canvas.getContext('2d').drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        const image = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+
+        const response = await fetch(`${base}/api/vision/identify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image, mimeType: 'image/jpeg' })
+        });
+        if (!response.ok) {
+            throw new Error(`Vision API error: ${response.status}`);
+        }
+        return response.json();
+    }
+
+    // Returns the plantDatabase key whose scientific name matches, or null
+    findCropByScientificName(scientificName) {
+        const [genus, species] = (scientificName || '').toLowerCase().split(/\s+/);
+        const matches = Object.keys(this.plantDatabase).filter(key => {
+            const [dbGenus, dbSpecies] = this.plantDatabase[key].scientificName.toLowerCase().split(' ');
+            return key !== 'generic_plant' && dbGenus === genus && (!species || dbSpecies === species);
+        });
+        return matches.length === 1 ? matches[0] : null;
+    }
+
+    // Model output is inserted into HTML, so escape it
+    escapeHtml(text) {
+        return String(text ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     }
 
     // 식물 인식 인터페이스 생성
@@ -1255,14 +1318,29 @@ class PlantRecognition {
         const healthAnalysis = this.analyzePlantHealth(plantData, prediction);
         console.log('💚 Health analysis:', healthAnalysis);
 
-        // An automatic generic_plant result means MobileNet did not map to a target crop.
-        const isUnidentified = !prediction.isManual && prediction.plantType === 'generic_plant';
-        const plantName = isUnidentified
-            ? 'Could not confidently identify a specific crop'
-            : plantData.scientificName;
-        const confidenceLabel = isUnidentified
-            ? 'Unidentified'
-            : `${(prediction.confidence * 100).toFixed(0)}% ${prediction.isManual ? 'Manual' : 'AI'}`;
+        const identification = prediction.identification;
+        const confidencePercent = `${(prediction.confidence * 100).toFixed(0)}%`;
+        const isDatabaseCrop = prediction.plantType !== 'generic_plant' && Boolean(this.plantDatabase[prediction.plantType]);
+        // An automatic generic_plant result from the offline MobileNet fallback means no target crop was matched.
+        const isUnidentified = !identification && !prediction.isManual && prediction.plantType === 'generic_plant';
+
+        let plantName = plantData.scientificName;
+        if (identification && identification.category === 'unknown') {
+            plantName = 'Could not identify the subject';
+        } else if (identification && identification.isPlant && identification.scientificName) {
+            plantName = this.escapeHtml(`${identification.commonName} (${identification.scientificName})`);
+        } else if (identification) {
+            plantName = this.escapeHtml(identification.commonName || identification.label);
+        } else if (isUnidentified) {
+            plantName = 'Could not confidently identify a specific crop';
+        }
+
+        let confidenceLabel = `${confidencePercent} ${prediction.isManual ? 'Manual' : 'Offline AI'}`;
+        if (identification) {
+            confidenceLabel = `${confidencePercent} Gemini`;
+        } else if (isUnidentified) {
+            confidenceLabel = 'Unidentified';
+        }
         const rawClassConfidence = isUnidentified
             ? ` (${(prediction.confidence * 100).toFixed(0)}% ImageNet class confidence)`
             : '';
@@ -1274,7 +1352,7 @@ class PlantRecognition {
         const rawClassInfo = prediction.rawClassName
             ? `<div class="detail-item">
                 <span class="detail-label">🤖 AI Detected:</span>
-                ${prediction.rawClassName}${rawClassConfidence}
+                ${this.escapeHtml(prediction.rawClassName)}${rawClassConfidence}
                </div>`
             : '';
 
@@ -1288,12 +1366,12 @@ class PlantRecognition {
                 ${rawClassInfo}
                 <div class="detail-item">
                     <span class="detail-label">Category:</span>
-                    ${plantData.category}
+                    ${identification && !isDatabaseCrop ? this.escapeHtml(identification.category) : plantData.category}
                 </div>
-                <div class="detail-item">
+                ${isDatabaseCrop ? `<div class="detail-item">
                     <span class="detail-label">Season:</span>
                     ${plantData.optimalConditions.season}
-                </div>
+                </div>` : ''}
                 <div class="detail-item">
                     <span class="detail-label">🛰️ Soil Moisture:</span>
                     ${(this.nasaData?.soilMoisture * 100 || 0).toFixed(1)}% (${this.nasaData?.quality || 'unknown'})
@@ -1336,6 +1414,19 @@ class PlantRecognition {
 
     // 식물 건강도 분석
     analyzePlantHealth(plantData, prediction = null) {
+        // Gemini result that is not a crop in plantDatabase: no crop health score
+        const identification = prediction && prediction.identification;
+        if (identification && prediction.plantType === 'generic_plant') {
+            const name = this.escapeHtml(identification.commonName || identification.label);
+            if (identification.category === 'unknown') {
+                return { level: 'unknown', score: null, advice: 'Could not identify the subject', recommendations: ['Move closer to the subject and analyze again'] };
+            }
+            if (!identification.isPlant) {
+                return { level: 'non-plant', score: null, advice: `This is not a plant: ${name}`, recommendations: ['Point the camera at a plant or crop for health analysis'] };
+            }
+            return { level: 'unknown', score: null, advice: `Crop health analysis is not available for ${name}`, recommendations: ['Health analysis covers wheat, corn, rice, soybean, tomato, and potato'] };
+        }
+
         // 자동 인식 결과가 generic_plant인 경우 (특정 작물로 식별하지 못함)
         if (prediction && !prediction.isManual && prediction.plantType === 'generic_plant') {
             const className = (prediction.rawClassName || '').toLowerCase();
