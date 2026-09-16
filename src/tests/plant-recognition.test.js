@@ -149,3 +149,61 @@ describe('plant recognition NASA data quality display', () => {
         expect(result.innerHTML).not.toContain('(real)');
     });
 });
+
+describe('plant recognition identification honesty', () => {
+    async function render(prediction) {
+        const harness = createHarness();
+        const recognition = await harness.start();
+        await harness.elements['test-plant-id-btn'].click();
+        recognition.displayPlantResult(prediction);
+        return harness.elements['plant-results'].children[0].innerHTML;
+    }
+
+    test('plantMapping has no corn_cob key but keeps the ear synonym', async () => {
+        const recognition = await createHarness().start();
+        expect(recognition.plantMapping).not.toHaveProperty('corn_cob');
+        expect(recognition.plantMapping.ear).toBe('corn');
+    });
+
+    test('runModelPrediction still maps direct corn and ear classes to corn', async () => {
+        const harness = createHarness();
+        const recognition = await harness.start();
+        for (const className of ['corn', 'ear, spike, capitulum']) {
+            recognition.model = { classify: async () => [{ className, probability: 0.7 }] };
+            const prediction = await recognition.runModelPrediction({});
+            expect(prediction).toEqual({ plantType: 'corn', confidence: 0.7, isManual: false, rawClassName: className });
+        }
+    });
+
+    test('recognized crop shows the crop and AI confidence', async () => {
+        const html = await render({ plantType: 'corn', confidence: 0.72, isManual: false, rawClassName: 'corn' });
+        expect(html).toContain('Zea mays');
+        expect(html).toContain('72% AI');
+        expect(html).not.toContain('Could not confidently identify a specific crop');
+    });
+
+    test('automatic generic fallback states uncertainty without a health score', async () => {
+        const html = await render({ plantType: 'generic_plant', confidence: 0.41, isManual: false, rawClassName: 'pot, flowerpot' });
+        expect(html).toContain('Could not confidently identify a specific crop');
+        expect(html).toContain('Unidentified');
+        expect(html).toContain('pot, flowerpot (41% ImageNet class confidence)');
+        expect(html).toContain('Plant Health: UNKNOWN');
+        expect(html).not.toContain('41% AI');
+        expect(html).not.toContain('Unknown Plant');
+        expect(html).not.toMatch(/health-indicator unknown">\s*\d+%/);
+    });
+
+    test('automatic generic fallback on a non-plant still reports non-plant', async () => {
+        const html = await render({ plantType: 'generic_plant', confidence: 0.9, isManual: false, rawClassName: 'laptop, laptop computer' });
+        expect(html).toContain('This is not a plant!');
+        expect(html).toContain('Plant Health: NON-PLANT');
+    });
+
+    test('manual selection keeps the selected crop and health analysis', async () => {
+        const html = await render({ plantType: 'wheat', confidence: 0.95, isManual: true });
+        expect(html).toContain('Triticum aestivum');
+        expect(html).toContain('95% Manual');
+        expect(html).not.toContain('Could not confidently identify a specific crop');
+        expect(html).toMatch(/health-indicator (excellent|good|poor)">\s*\d+%/);
+    });
+});

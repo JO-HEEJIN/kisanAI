@@ -341,7 +341,6 @@ class PlantRecognition {
     get imagenetClasses() {
         return {
             985: 'ear',
-            989: 'corn_cob',
             // 더 많은 클래스는 필요시 추가
         };
     }
@@ -350,7 +349,6 @@ class PlantRecognition {
     get plantMapping() {
         return {
             'ear': 'corn',
-            'corn_cob': 'corn',
             'acorn': 'generic_plant',
             'head cabbage': 'generic_plant',
             'broccoli': 'generic_plant',
@@ -1257,6 +1255,18 @@ class PlantRecognition {
         const healthAnalysis = this.analyzePlantHealth(plantData, prediction);
         console.log('💚 Health analysis:', healthAnalysis);
 
+        // An automatic generic_plant result means MobileNet did not map to a target crop.
+        const isUnidentified = !prediction.isManual && prediction.plantType === 'generic_plant';
+        const plantName = isUnidentified
+            ? 'Could not confidently identify a specific crop'
+            : plantData.scientificName;
+        const confidenceLabel = isUnidentified
+            ? 'Unidentified'
+            : `${(prediction.confidence * 100).toFixed(0)}% ${prediction.isManual ? 'Manual' : 'AI'}`;
+        const rawClassConfidence = isUnidentified
+            ? ` (${(prediction.confidence * 100).toFixed(0)}% ImageNet class confidence)`
+            : '';
+
         const resultElement = document.createElement('div');
         resultElement.className = 'plant-result-item';
 
@@ -1264,14 +1274,14 @@ class PlantRecognition {
         const rawClassInfo = prediction.rawClassName
             ? `<div class="detail-item">
                 <span class="detail-label">🤖 AI Detected:</span>
-                ${prediction.rawClassName}
+                ${prediction.rawClassName}${rawClassConfidence}
                </div>`
             : '';
 
         resultElement.innerHTML = `
             <div class="plant-result-header">
-                <div class="plant-name">${plantData.scientificName}</div>
-                <div class="confidence-badge">${(prediction.confidence * 100).toFixed(0)}% ${prediction.isManual ? 'Manual' : 'AI'}</div>
+                <div class="plant-name">${plantName}</div>
+                <div class="confidence-badge">${confidenceLabel}</div>
             </div>
 
             <div class="plant-details">
@@ -1300,7 +1310,7 @@ class PlantRecognition {
 
             <div class="health-score">
                 <div class="health-indicator ${healthAnalysis.level}">
-                    ${healthAnalysis.score}%
+                    ${healthAnalysis.score === null ? '?' : `${healthAnalysis.score}%`}
                 </div>
                 <div>
                     <div style="color: #EAFE07; font-weight: bold; margin-bottom: 4px;">
@@ -1326,9 +1336,9 @@ class PlantRecognition {
 
     // 식물 건강도 분석
     analyzePlantHealth(plantData, prediction = null) {
-        // 식물이 아닌 것을 감지한 경우 (generic_plant이고 rawClassName이 있는 경우)
-        if (prediction && prediction.plantType === 'generic_plant' && prediction.rawClassName) {
-            const className = prediction.rawClassName.toLowerCase();
+        // 자동 인식 결과가 generic_plant인 경우 (특정 작물로 식별하지 못함)
+        if (prediction && !prediction.isManual && prediction.plantType === 'generic_plant') {
+            const className = (prediction.rawClassName || '').toLowerCase();
 
             // 확실히 식물이 아닌 것들
             const nonPlantKeywords = [
@@ -1355,6 +1365,13 @@ class PlantRecognition {
                     recommendations: ['Point camera at actual plants or crops', 'Try scanning leaves, stems, or flowers']
                 };
             }
+
+            return {
+                level: 'unknown',
+                score: null,
+                advice: 'Could not confidently identify a specific crop, so no crop health score is shown',
+                recommendations: ['Move closer to the leaves or crop head and analyze again', 'Crop-specific advice requires a confident identification']
+            };
         }
 
         if (!this.nasaData || !plantData.optimalConditions) {
