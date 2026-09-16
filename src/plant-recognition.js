@@ -173,6 +173,7 @@ class PlantRecognition {
             console.error('❌ Failed to initialize Plant Recognition:', error);
             this.hideLoadingIndicator();
             this.createErrorInterface();
+            this.bindPlantEvents();
             alert(`Plant Recognition initialization failed: ${error.message}`);
         }
     }

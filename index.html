@@ -3977,12 +3977,6 @@
                 }
             });
 
-            // Plant identification test button
-            const testPlantBtn = document.getElementById('test-plant-id-btn');
-            if (testPlantBtn) {
-                testPlantBtn.addEventListener('click', testPlantIdentification);
-            }
-
             // Farmer AR button
             const startFarmerARBtn = document.getElementById('start-farmer-ar-btn');
             if (startFarmerARBtn) {
@@ -4139,29 +4133,6 @@
 
             } catch (error) {
                 alert('Voice recognition test failed: ' + error.message);
-            }
-        }
-
-        async function testPlantIdentification() {
-            try {
-                console.log('🌱 Test Plant Identification clicked');
-
-                // Use new PlantRecognition system
-                if (!window.plantRecognition) {
-                    console.error('❌ PlantRecognition not initialized');
-                    alert('Plant Recognition system not ready. Please refresh the page.');
-                    return;
-                }
-
-                console.log('✅ Opening Plant Recognition modal...');
-                await window.plantRecognition.openPlantModal();
-
-                // Skip old AR ChatGPT code
-                const message = `🌱 Plant Recognition modal opened. Use camera to scan plants!`;
-                addChatMessage({ text: message, type: 'assistant' });
-
-            } catch (error) {
-                alert('Plant identification test failed: ' + error.message);
             }
         }
 
