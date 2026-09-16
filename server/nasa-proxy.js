@@ -13,22 +13,26 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// NASA Earthdata credentials
+// NASA Earthdata credentials (server-side environment only)
 const NASA_CONFIG = {
-    username: process.env.NASA_USERNAME || 'jang_amery',
-    password: process.env.NASA_PASSWORD || 'your_password',
-    token: process.env.NASA_TOKEN || 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImphbmdfYW1lcnkiLCJleHAiOjE3NjMwNzgzOTksImlhdCI6MTc1NzgyNzAwMCwiaXNzIjoiaHR0cHM6Ly91cnMuZWFydGhkYXRhLm5hc2EuZ292IiwiaWRlbnRpdHlfcHJvdmlkZXIiOiJlZGxfb3BzIiwiYWNyIjoiZWRsIiwiYXNzdXJhbmNlX2xldmVsIjozfQ.sExaSzrCShT33AHjikx2nCGWAX9bqkoUgO2s09EToZ9yzZrA7dwK_2J8216VwZbdTesbwVYg2ysOV3eNqtxzlU2ALWbrmjSh06xaLSET_xiOICKnjeSgfn_VR6Ew4Dedg6uyDknW1WExZNgJ1lNO6L2a41W5B9plAJqxXeV5rdle-rRCzR51VAAj0vzA5mtFXCLDNgb2or7dOxvJpRjv12_x57Az1i7Y3SQhVQmqgfiP9Hdan-wVu5eR6JCs2ewqJYtKPlec4WGmn2nQ1IHDbabiKVPZhtZqb8nzeDVBkf-4zLTWRRBzt8ZquBWl3l-0P9p0-6A_msif53I-F4pNIw'
+    username: process.env.NASA_USERNAME,
+    password: process.env.NASA_PASSWORD,
+    token: process.env.NASA_TOKEN
 };
 
 // Helper function to get auth headers
 function getAuthHeaders(userToken = null) {
-    // Use user token if provided, otherwise fallback to default
+    // Use user token if provided, otherwise the server environment token
     const token = userToken || NASA_CONFIG.token;
-    return {
-        'Authorization': `Bearer ${token}`,
+    const headers = {
         'User-Agent': 'TerraData Farm Navigator v1.0',
         'Accept': 'application/json'
     };
+    // Without a token the request is sent unauthenticated; auth failures use the existing fallback path
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
 }
 
 // Helper function to get realistic temperature based on latitude

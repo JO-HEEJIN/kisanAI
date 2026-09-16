@@ -46,14 +46,6 @@ class NASAFarmNavigatorsApp {
             // Show loading screen
             this.showLoadingScreen();
 
-            // Set default OpenAI API key if not already set
-            if (!localStorage.getItem('openai_api_key')) {
-                // Placeholder API key - replace with actual key for production
-                const defaultKey = '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';
-                localStorage.setItem('openai_api_key', defaultKey);
-                console.log('🔑 OpenAI API key initialized with default');
-            }
-
             // Initialize service worker for offline support
             await this.initializeServiceWorker();
 
@@ -530,31 +522,6 @@ class NASAFarmNavigatorsApp {
         const hasNASAToken = localStorage.getItem('nasa_earthdata_token');
         const hasOpenAIKey = localStorage.getItem('openai_api_key');
 
-        // Default NASA token for easy setup
-        const defaultNASAToken = 'eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImphbmdfYW1lcnkiLCJleHAiOjE3NjMwNzgzOTksImlhdCI6MTc1NzgyNzAwMCwiaXNzIjoiaHR0cHM6Ly91cnMuZWFydGhkYXRhLm5hc2EuZ292IiwiaWRlbnRpdHlfcHJvdmlkZXIiOiJlZGxfb3BzIiwiYWNyIjoiZWRsIiwiYXNzdXJhbmNlX2xldmVsIjozfQ.sExaSzrCShT33AHjikx2nCGWAX9bqkoUgO2s09EToZ9yzZrA7dwK_2J8216VwZbdTesbwVYg2ysOV3eNqtxzlU2ALWbrmjSh06xaLSET_xiOICKnjeSgfn_VR6Ew4Dedg6uyDknW1WExZNgJ1lNO6L2a41W5B9plAJqxXeV5rdle-rRCzR51VAAj0vzA5mtFXCLDNgb2or7dOxvJpRjv12_x57Az1i7Y3SQhVQmqgfiP9Hdan-wVu5eR6JCs2ewqJYtKPlec4WGmn2nQ1IHDbabiKVPZhtZqb8nzeDVBkf-4zLTWRRBzt8ZquBWl3l-0P9p0-6A_msif53I-F4pNIw';
-
-        // Auto-save default NASA token if not already stored (for competition reliability)
-        if (!hasNASAToken) {
-            localStorage.setItem('nasa_earthdata_token', defaultNASAToken);
-            console.log('🚀 Default NASA token auto-saved for competition reliability');
-
-            // Update auth status immediately
-            try {
-                if (window.nasaFarmNavigators && window.nasaFarmNavigators.updateAuthenticationStatus) {
-                    window.nasaFarmNavigators.updateAuthenticationStatus();
-                }
-            } catch (error) {
-                console.warn('⚠️ Could not update auth status:', error);
-            }
-        }
-
-        // Auto-save default OpenAI API key if not already stored (for competition reliability)
-        if (!hasOpenAIKey) {
-            const defaultOpenAIKey = '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';
-            localStorage.setItem('openai_api_key', defaultOpenAIKey);
-            console.log('🔑 Default OpenAI API key auto-saved for competition reliability');
-        }
-
         modalContent.innerHTML = `
             <div class="setup-header">
                 <h1 style="color: #EAFE07; font-size: 28px; margin-bottom: 10px; text-align: center;">
@@ -573,23 +540,21 @@ class NASAFarmNavigatorsApp {
                     </h3>
                     <p style="margin-bottom: 15px; line-height: 1.6; color: white !important;">
                         Access real satellite data from SMAP, MODIS, and Landsat missions.
-                        <br><strong style="color: #EAFE07;">A demo token is pre-filled for quick start!</strong>
                     </p>
                     <div class="token-instructions" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; color: white;">
-                        <p style="color: #EAFE07; margin: 0 0 10px 0;"><strong>🚀 Ready to go!</strong> A demo token is already provided below.</p>
                         <details style="color: white;">
-                            <summary style="cursor: pointer; color: white; margin-bottom: 10px;">Want your own token? Click to expand...</summary>
+                            <summary style="cursor: pointer; color: white; margin-bottom: 10px;">How to get your NASA Earthdata token (click to expand)</summary>
                             <ol style="margin: 10px 0 0 20px; line-height: 1.6; color: white !important;">
                                 <li style="color: white !important;">Visit <a href="https://urs.earthdata.nasa.gov/profile" target="_blank" style="color: #EAFE07;">NASA Earthdata URS</a></li>
                                 <li style="color: white !important;">Create a free account or sign in</li>
                                 <li style="color: white !important;">Go to "Applications" → "Authorized Apps"</li>
                                 <li style="color: white !important;">Generate new application token</li>
-                                <li style="color: white !important;">Replace the token below</li>
+                                <li style="color: white !important;">Paste it below</li>
                             </ol>
                         </details>
                     </div>
                     <input type="password" id="setupNasaToken" placeholder="Paste your NASA Earthdata token here..."
-                           value="${hasNASAToken || defaultNASAToken}"
+                           value="${hasNASAToken || ''}"
                            style="width: 100%; padding: 12px; border: none; border-radius: 8px; background: rgba(255,255,255,0.9); color: #333;">
                 </div>
 

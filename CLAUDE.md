@@ -117,13 +117,13 @@ node server/nasa-proxy.js
 - 토큰 없으면 샘플 데이터 표시
 
 #### Cesium Ion 토큰 (2025-09-25 업데이트)
-- **유효한 Cesium Ion 토큰**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyMjc4MTc5ZS01YWZkLTRjNDItOGRlOS03MjZlMzdmZTIxNDkiLCJpZCI6MzQ0MjkwLCJpYXQiOjE3NTg3MzAyNzN9.Mdc10qR7VyMAyLzfrWtP83dnL25fcE-WfGLpRbuYoZ4`
+- **Cesium Ion 토큰**: 저장소에 저장하지 않는다. 각자 Cesium ion 계정에서 발급한 토큰을 localStorage에 설정한다.
 
 #### 토큰 설정 방법:
 브라우저 콘솔에서 실행:
 ```javascript
 // 새 토큰 설정
-localStorage.setItem('cesium_access_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyMjc4MTc5ZS01YWZkLTRjNDItOGRlOS03MjZlMzdmZTIxNDkiLCJpZCI6MzQ0MjkwLCJpYXQiOjE3NTg3MzAyNzN9.Mdc10qR7VyMAyLzfrWtP83dnL25fcE-WfGLpRbuYoZ4');
+localStorage.setItem('cesium_access_token', '<YOUR_CESIUM_ION_TOKEN>');
 
 // 설정 확인
 console.log('Cesium token:', localStorage.getItem('cesium_access_token'));

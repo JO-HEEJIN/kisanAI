@@ -146,12 +146,11 @@ class FarmGlobe3D {
                 await this.loadCesiumJS();
             }
 
-            // Set Cesium Ion access token (try localStorage first, then use new valid token)
+            // Set Cesium Ion access token from localStorage only
             // Note: Set 'cesium_access_token' in localStorage for your own token
-            const accessToken = localStorage.getItem('cesium_access_token') ||
-                               'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyMjc4MTc5ZS01YWZkLTRjNDItOGRlOS03MjZlMzdmZTIxNDkiLCJpZCI6MzQ0MjkwLCJpYXQiOjE3NTg3MzAyNzN9.Mdc10qR7VyMAyLzfrWtP83dnL25fcE-WfGLpRbuYoZ4';
+            const accessToken = localStorage.getItem('cesium_access_token');
 
-            // Try to use the valid Cesium Ion token
+            // Use the Cesium Ion token if one is set
             try {
                 if (accessToken && accessToken !== 'undefined' && !accessToken.includes('undefined')) {
                     Cesium.Ion.defaultAccessToken = accessToken;
