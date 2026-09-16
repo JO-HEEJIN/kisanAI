@@ -68,7 +68,10 @@ export default async function handler(req, res) {
 
         console.log(`🛰️ Fetching MODIS NDVI data for lat=${lat}, lon=${lon}`);
 
-        // Try NASA EarthData Search API for MODIS
+        // TODO: Retrieve and validate actual MODIS NDVI measurements (from the matched
+        // CMR granule or the ORNL DAAC subset response). Only metadata and response
+        // presence are checked below; every ndvi and temperature value returned by
+        // this route is simulated.
         let realData = null;
         try {
             const earthdataUrl = `https://cmr.earthdata.nasa.gov/search/granules.json`;
@@ -113,7 +116,7 @@ export default async function handler(req, res) {
 
                     realData = {
                         ndvi: getRealisticNDVI(parseFloat(lat)),
-                        source: `NASA EarthData MODIS Real Data (Collection: ${collectionId})`,
+                        source: `Simulated values; NASA CMR MODIS granule metadata matched (Collection: ${collectionId}), measurements not retrieved`,
                         granule_id: entry.id,
                         granule_title: entry.title,
                         collection_used: collectionId
@@ -159,9 +162,9 @@ export default async function handler(req, res) {
                 if (ornlData && ornlData.subset) {
                     realData = {
                         ndvi: getRealisticNDVI(parseFloat(lat)),
-                        source: 'NASA ORNL DAAC MODIS Web Service',
+                        source: 'Simulated values; NASA ORNL DAAC MODIS subset responded, NDVI values not read',
                         data_source: 'MODIS Terra',
-                        quality: 'real'
+                        quality: 'simulated'
                     };
                 }
             } catch (ornlError) {
@@ -176,7 +179,7 @@ export default async function handler(req, res) {
                 ndvi: realData.ndvi,
                 temperature: 15 + Math.random() * 20, // 15-35°C
                 source: realData.source,
-                quality: 'real',
+                quality: 'simulated',
                 timestamp: new Date().toISOString(),
                 granule_id: realData.granule_id,
                 collection: realData.collection_used,
@@ -187,8 +190,8 @@ export default async function handler(req, res) {
             data = {
                 ndvi: getRealisticNDVI(parseFloat(lat)),
                 temperature: 15 + Math.random() * 20,
-                source: 'MODIS Terra/Aqua',
-                quality: 'estimated',
+                source: 'Simulated fallback values; no NASA MODIS metadata or subset matched',
+                quality: 'simulated',
                 timestamp: new Date().toISOString(),
                 location: { lat: parseFloat(lat), lon: parseFloat(lon) }
             };
@@ -203,8 +206,8 @@ export default async function handler(req, res) {
         const fallbackData = {
             ndvi: getRealisticNDVI(parseFloat(lat)),
             temperature: 15 + Math.random() * 20,
-            source: 'MODIS Fallback Data (Error)',
-            quality: 'estimated',
+            source: 'Simulated fallback values (error); no NASA MODIS measurements retrieved',
+            quality: 'simulated',
             timestamp: new Date().toISOString(),
             location: { lat: parseFloat(lat), lon: parseFloat(lon) },
             error: 'API temporarily unavailable'

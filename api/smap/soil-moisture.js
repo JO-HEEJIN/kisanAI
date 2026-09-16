@@ -59,9 +59,11 @@ export default async function handler(req, res) {
         // Extract user token from Authorization header
         const userToken = req.headers.authorization?.replace('Bearer ', '');
 
-        console.log(`🛰️ Fetching real SMAP data for lat=${lat}, lon=${lon}`);
+        console.log(`🛰️ Fetching SMAP data for lat=${lat}, lon=${lon}`);
 
-        // Try NASA EarthData Search API
+        // TODO: Retrieve and validate actual SMAP soil moisture measurements from the
+        // matched granule. Only CMR granule metadata is queried below; every
+        // surface_moisture and temperature value returned by this route is simulated.
         let realData = null;
         try {
             const earthdataUrl = `https://cmr.earthdata.nasa.gov/search/granules.json`;
@@ -107,7 +109,7 @@ export default async function handler(req, res) {
 
                     realData = {
                         surface_moisture: 0.15 + Math.random() * 0.25,
-                        source: `NASA EarthData SMAP Real Data (Collection: ${collectionId})`,
+                        source: `Simulated values; NASA CMR SMAP granule metadata matched (Collection: ${collectionId}), measurements not retrieved`,
                         granule_id: entry.id,
                         granule_title: entry.title,
                         collection_used: collectionId
@@ -126,7 +128,7 @@ export default async function handler(req, res) {
                 surface_moisture: realData.surface_moisture,
                 temperature: getRealisticTemperature(parseFloat(lat)),
                 source: realData.source,
-                quality: 'real',
+                quality: 'simulated',
                 timestamp: new Date().toISOString(),
                 granule_id: realData.granule_id,
                 collection: realData.collection_used,
@@ -137,8 +139,8 @@ export default async function handler(req, res) {
             data = {
                 surface_moisture: Math.random() * 0.6 + 0.1,
                 temperature: getRealisticTemperature(parseFloat(lat)),
-                source: 'NASA SMAP Fallback Data',
-                quality: 'estimated',
+                source: 'Simulated fallback values; no NASA SMAP granule metadata matched',
+                quality: 'simulated',
                 timestamp: new Date().toISOString(),
                 location: { lat: parseFloat(lat), lon: parseFloat(lon) }
             };
@@ -153,8 +155,8 @@ export default async function handler(req, res) {
         const fallbackData = {
             surface_moisture: Math.random() * 0.6 + 0.1,
             temperature: getRealisticTemperature(parseFloat(lat)),
-            source: 'NASA SMAP Fallback Data (Error)',
-            quality: 'estimated',
+            source: 'Simulated fallback values (error); no NASA SMAP measurements retrieved',
+            quality: 'simulated',
             timestamp: new Date().toISOString(),
             location: { lat: parseFloat(lat), lon: parseFloat(lon) },
             error: 'API temporarily unavailable'

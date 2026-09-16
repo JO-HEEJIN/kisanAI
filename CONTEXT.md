@@ -15,6 +15,14 @@ Current state of the system. Present tense only. Decisions and their history liv
 - `PlantRecognition.bindPlantEvents()` is the only code that attaches a click listener to `#test-plant-id-btn`. It runs after the model loads and also after the model fails to load, when the error modal with manual plant selection is created.
 - One click on `#test-plant-id-btn` calls `openPlantModal()` once, which requests geolocation once and fetches `/api/smap/soil-moisture` and `/api/modis/ndvi` once each.
 
+## NASA data routes
+
+- `api/smap/soil-moisture.js` and `api/modis/ndvi.js` query NASA CMR for granule metadata only. The MODIS route also checks whether the ORNL DAAC subset service responds, but does not read its NDVI values.
+- Every value these routes return (soil moisture, NDVI, temperature) is generated from latitude, season, and `Math.random()`. Every response has `quality: 'simulated'` and a source string that starts with "Simulated". When a CMR granule matches, `granule_id` and `collection` are included as metadata context only.
+- Real SMAP and MODIS measurement retrieval is not implemented. See `docs/adr/0001-honest-data-quality-labeling.md`.
+- `server/nasa-proxy.js`, `api/landsat/imagery.js`, and several client files (`src/ar-functions.js`, `src/conversational-ai.js`, `src/voice-commands.js`, `src/game/FarmGameUI.js`, `src/plant-recognition.js`) still use `quality: 'real'` labels or `quality || 'real'` defaults.
+- The plant recognition result shows the SMAP route's quality value as-is next to soil moisture.
+
 ## Credentials
 
 - Hardcoded credentials are still embedded in the codebase: an OpenAI API key and a NASA Earthdata token in `src/app.js`, NASA Earthdata fallbacks in `api/smap/soil-moisture.js`, `api/modis/ndvi.js`, `api/landsat/imagery.js`, `server/nasa-proxy.js`, and `src/data/nasaRealTimeService.js`, and a Cesium Ion token fallback in `src/components/FarmGlobe3D.js`.
@@ -22,4 +30,5 @@ Current state of the system. Present tense only. Decisions and their history liv
 ## Tests
 
 - `npx jest src/tests/plant-recognition.test.js` runs the plant-recognition regression checks. It loads the browser script into a Node `vm` context with a fake DOM, mocked geolocation, and mocked fetch.
+- `npx jest src/tests/nasa-quality-labels.test.js` checks the SMAP and MODIS route labels on every response path, with mocked upstream fetch. It loads the ES module routes into a `vm` context as CommonJS.
 - `src/tests/integration.test.js` and `api/test.js` are matched by Jest but do not run: they use ES module syntax and the repository has no Jest transform for it.

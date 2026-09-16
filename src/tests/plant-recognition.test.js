@@ -21,10 +21,13 @@ function createElement(id = null) {
         textContent: '',
         value: '',
         listeners,
+        children: [],
         addEventListener(type, fn) {
             (listeners[type] = listeners[type] || []).push(fn);
         },
-        appendChild() {},
+        appendChild(child) {
+            this.children.push(child);
+        },
         insertAdjacentHTML() {},
         remove() {},
         async click() {
@@ -129,5 +132,20 @@ describe('plant recognition Test Recognition button', () => {
         expect(countCalls(harness.calls, '/api/smap/soil-moisture')).toBe(1);
         expect(countCalls(harness.calls, '/api/modis/ndvi')).toBe(1);
         expect(harness.elements['plant-recognition-modal'].style.display).toBe('flex');
+    });
+});
+
+describe('plant recognition NASA data quality display', () => {
+    test('shows the quality label returned by the API', async () => {
+        const harness = createHarness();
+        const recognition = await harness.start();
+        await harness.elements['test-plant-id-btn'].click();
+
+        recognition.displayPlantResult({ plantType: 'corn', confidence: 0.8, isManual: false, rawClassName: 'ear' });
+
+        const [result] = harness.elements['plant-results'].children;
+        expect(recognition.nasaData.quality).toBe('simulated');
+        expect(result.innerHTML).toContain('(simulated)');
+        expect(result.innerHTML).not.toContain('(real)');
     });
 });
