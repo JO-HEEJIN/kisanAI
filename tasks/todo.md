@@ -40,3 +40,31 @@ All new data comes from the same free Open-Meteo call the app already makes, wit
 - [ ] `public/i18n.js`: English + Hindi text for all of it
 - [ ] Tests for `today.js` and the new fields; run `npm test`
 - [ ] Check at phone size in headless Chromium (light, dark, Hindi, offline)
+
+---
+
+# Plan: Crop Rotation Planner (NASA Space Apps challenge) - in kisanai-v2
+
+Goal: a farmer enters location + soil + last crop + what matters most, and gets 3 two-year rotation plans
+(4 seasons each), scored for soil health, water use, climate resilience and income, with plain-language reasons.
+
+## Data (all free, no keys)
+- **NASA POWER** monthly point data 1991-2024 (verified reachable): `T2M_MAX`, `T2M_MIN`, `PRECTOTCORR` (rain), `GWETROOT` (root-zone soil wetness, NASA GEOS/MERRA-2)
+  - Derived: rain + temps for the warm and cool season, **rain and heat trend** (2015-24 vs 1991-2000), share of dry years
+- **Soil**: farmer picks texture (sandy/loam/clay), organic matter (low/med/high), optional pH.
+  Prefilled from ISRIC SoilGrids when it answers (blocked in this sandbox, so tested with recorded data; the farmer can always change it)
+
+## Todo
+- [ ] Copy `kisanai-v2/` from branch `ccr-08c65661-5iango` onto this branch
+- [ ] `lib/climate.js`: fetch NASA POWER, turn it into a season + trend summary (fails clearly, never invents data)
+- [ ] `lib/soil.js`: SoilGrids lookup -> { texture, ph, organicMatter }, returns null on failure
+- [ ] `lib/crops.js`: table of ~16 crops (cereals, legumes, oilseeds, cotton, potato, cover crop) with family, season, temp range, water need, drought/heat tolerance, pH range, nitrogen effect, root depth, rough value. Values approximate, from FAO crop guides
+- [ ] `lib/rotation.js` (pure function): try every 4-season sequence of suitable crops, drop ones breaking basic rules (same family back to back, crops that don't fit climate/soil/water), score the rest by the farmer's priorities, return the top 3 different plans with reasons
+- [ ] `server.js`: `GET /api/rotation?lat&lon&soil&om&ph&irrigation&lastCrop&priorities`
+- [ ] Front end: new "Plan my rotation" section: priorities as tap buttons, soil + irrigation pickers, results as a 4-season strip + score bars + "why" list + "your climate is changing" card
+- [ ] English + Hindi text
+- [ ] Tests (fixtures, no network) + one live NASA POWER check; headless phone-size check
+
+## Not in this round
+- The "Today" card plan above (can follow after this)
+- Yield/price forecasts: income is a rough relative score, labelled as such
