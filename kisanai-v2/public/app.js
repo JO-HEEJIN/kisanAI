@@ -205,7 +205,7 @@
     function showRotation(saved) {
         const r = t().rot;
         const { climate, soil, plans } = saved;
-        const cropName = key => r.crops[key] || key;
+        const cropName = key => r.crops[key] || key || '';
         const describe = item => {
             const template = item.code === 'water' && item.mm === 0 ? r.text.water_none : r.text[item.code];
             return fill(template, { ...item, crop: cropName(item.crop), prev: cropName(item.prev).toLowerCase(), a: cropName(item.a), b: cropName(item.b), pct: signed(item.pct) });
