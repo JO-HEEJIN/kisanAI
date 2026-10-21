@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1f6b35">
+    <title>KisanAI</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div>
+            <h1>KisanAI</h1>
+            <p id="tagline" data-text="tagline"></p>
+        </div>
+        <button id="lang" class="small" type="button"></button>
+    </header>
+
+    <main>
+        <p id="offline" class="banner" hidden data-text="offline"></p>
+
+        <label class="field">
+            <span data-text="cropLabel"></span>
+            <select id="crop"></select>
+        </label>
+
+        <section>
+            <h2 data-text="waterTitle"></h2>
+            <button id="water" class="big" type="button" data-text="waterButton"></button>
+            <form id="manual" class="manual" hidden>
+                <p data-text="locationError"></p>
+                <div class="row">
+                    <input id="coords" inputmode="decimal" autocomplete="off">
+                    <button class="small" type="submit" data-text="manualButton"></button>
+                </div>
+            </form>
+            <div id="advice" class="card" hidden aria-live="polite"></div>
+        </section>
+
+        <section>
+            <h2 data-text="photoTitle"></h2>
+            <label class="big button">
+                <span data-text="photoButton"></span>
+                <input id="photo" type="file" accept="image/*" capture="environment" hidden>
+            </label>
+            <div id="diagnosis" class="card" hidden aria-live="polite"></div>
+        </section>
+
+        <section>
+            <h2 data-text="rotTitle"></h2>
+            <p class="meta" data-text="rotIntro"></p>
+            <form id="rotation" class="stack">
+                <div class="field">
+                    <label for="rotCoords"><span data-text="rotLocation"></span></label>
+                    <div class="row">
+                        <input id="rotCoords" inputmode="decimal" autocomplete="off" required>
+                        <button id="rotGps" class="small" type="button" data-text="rotGps"></button>
+                    </div>
+                </div>
+                <fieldset class="field">
+                    <legend data-text="rotPriorities"></legend>
+                    <div id="rotPriorities" class="chips"></div>
+                </fieldset>
+                <label class="field"><span data-text="rotIrrigation"></span><select id="rotIrrigation"></select></label>
+                <label class="field"><span data-text="rotLastCrop"></span><select id="rotLastCrop"></select></label>
+                <label class="field"><span data-text="rotKeepCrop"></span><select id="rotKeepCrop"></select></label>
+                <details id="rotSoilBox">
+                    <summary data-text="rotSoil"></summary>
+                    <div class="stack">
+                        <label class="field"><span data-text="rotTexture"></span><select id="rotTexture"></select></label>
+                        <label class="field"><span data-text="rotOm"></span><select id="rotOm"></select></label>
+                        <label class="field"><span data-text="rotPh"></span><input id="rotPh" type="number" inputmode="decimal" min="3" max="10" step="0.1"></label>
+                    </div>
+                </details>
+                <button id="rotSubmit" class="big" type="submit" data-text="rotButton"></button>
+            </form>
+            <div id="rotationResult" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <script src="i18n.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -55,16 +55,33 @@ Goal: a farmer enters location + soil + last crop + what matters most, and gets 
   Prefilled from ISRIC SoilGrids when it answers (blocked in this sandbox, so tested with recorded data; the farmer can always change it)
 
 ## Todo
-- [ ] Copy `kisanai-v2/` from branch `ccr-08c65661-5iango` onto this branch
-- [ ] `lib/climate.js`: fetch NASA POWER, turn it into a season + trend summary (fails clearly, never invents data)
-- [ ] `lib/soil.js`: SoilGrids lookup -> { texture, ph, organicMatter }, returns null on failure
-- [ ] `lib/crops.js`: table of ~16 crops (cereals, legumes, oilseeds, cotton, potato, cover crop) with family, season, temp range, water need, drought/heat tolerance, pH range, nitrogen effect, root depth, rough value. Values approximate, from FAO crop guides
-- [ ] `lib/rotation.js` (pure function): try every 4-season sequence of suitable crops, drop ones breaking basic rules (same family back to back, crops that don't fit climate/soil/water), score the rest by the farmer's priorities, return the top 3 different plans with reasons
-- [ ] `server.js`: `GET /api/rotation?lat&lon&soil&om&ph&irrigation&lastCrop&priorities`
-- [ ] Front end: new "Plan my rotation" section: priorities as tap buttons, soil + irrigation pickers, results as a 4-season strip + score bars + "why" list + "your climate is changing" card
-- [ ] English + Hindi text
-- [ ] Tests (fixtures, no network) + one live NASA POWER check; headless phone-size check
+- [x] Copy `kisanai-v2/` from branch `ccr-08c65661-5iango` onto this branch
+- [x] `lib/climate.js`: fetch NASA POWER, turn it into a season + trend summary (fails clearly, never invents data)
+- [x] `lib/soil.js`: SoilGrids lookup -> { texture, ph, organicMatter }, returns null on failure
+- [x] `lib/crops.js`: table of ~16 crops (cereals, legumes, oilseeds, cotton, potato, cover crop) with family, season, temp range, water need, drought/heat tolerance, pH range, nitrogen effect, root depth, rough value. Values approximate, from FAO crop guides
+- [x] `lib/rotation.js` (pure function): try every 4-season sequence of suitable crops, drop ones breaking basic rules (same family back to back, crops that don't fit climate/soil/water), score the rest by the farmer's priorities, return the top 3 different plans with reasons
+- [x] `server.js`: `GET /api/rotation?lat&lon&soil&om&ph&irrigation&lastCrop&priorities`
+- [x] Front end: new "Plan my rotation" section: priorities as tap buttons, soil + irrigation pickers, results as a 4-season strip + score bars + "why" list + "your climate is changing" card
+- [x] English + Hindi text
+- [x] Tests (fixtures, no network) + one live NASA POWER check; headless phone-size check
 
 ## Not in this round
 - The "Today" card plan above (can follow after this)
 - Yield/price forecasts: income is a rough relative score, labelled as such
+
+## Review (rotation planner)
+- **Built** in `kisanai-v2/`: `lib/climate.js` (NASA POWER), `lib/soil.js` (SoilGrids), `lib/crops.js` (20 crops),
+  `lib/rotation.js` (planner), `GET /api/rotation`, a "Plan my crop rotation" section on the phone page, English + Hindi.
+- **Tests**: 47 pass (29 new), no network needed. Live NASA POWER checked for Delhi, Iowa, Nairobi and Alaska.
+- **Headless phone check** (390 px, light + dark, Hindi, offline reload): plans render, no console errors, no sideways scroll.
+- **Fixed while testing on live data** (root causes, not patches):
+  - Frost at season edges wrongly ruled out summer crops (Iowa) → heat/frost judged on the middle 4 growing months
+  - Tropics have no real warm/cool season → split by rain there
+  - Resilience punished every thirsty crop whenever rain trended down → now checks the water actually missing in a dry year
+  - Cover crops between cash crops hid same-family repeats → family rule compares cash crops
+  - "Save water" picked leaving fields bare → fallow only when nothing fits
+  - "Rain only" farms were told to irrigate → suggested irrigation capped at what the farmer has
+- **Not verified live**: SoilGrids is blocked from this sandbox (tested with its documented response shape;
+  the app falls back to loam and asks the farmer). Crop numbers are approximate FAO values; income is a rough score.
+- **Heads-up**: in very hot places (Delhi: hottest days ~47°C in May-June) most summer crops get a heat warning.
+  That's real risk data, but it's repeated on each plan.
