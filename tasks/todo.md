@@ -22,3 +22,21 @@
 
 ## Review
 (to be filled in after the work)
+
+---
+
+# Plan: More farmer info on the v2 "Today" screen (kisanai-v2)
+
+All new data comes from the same free Open-Meteo call the app already makes, with no new keys and no made-up values.
+
+- [ ] Copy `kisanai-v2/` from branch `ccr-08c65661-5iango` onto this branch
+- [ ] `lib/conditions.js`: request a few more fields: humidity + wind now, rain chance per hour (next 6 h), min temp, max wind, sunrise/sunset per day
+- [ ] New `lib/today.js` (one small pure function, `todayInfo(conditions)`):
+  - **Spray window**: OK / not OK + reason (wind > 15 km/h, rain chance >= 40% in next 6 h, temp > 30°C)
+  - **Alerts**: heat (max >= 40°C), frost (min <= 2°C), heavy rain (>= 50 mm/day), strong wind (>= 40 km/h) for each of the 3 days
+  - **Field work tips**: good/bad day to harvest or dry grain (rain chance + humidity), sowing (soil moisture + no heavy rain)
+- [ ] `server.js`: add `today` to the existing `/api/advice` response (no new route)
+- [ ] `public/app.js` + `style.css`: new "Today" card under the water advice: alerts, spray window, field tips, 3-day forecast strip, sunrise/sunset + humidity
+- [ ] `public/i18n.js`: English + Hindi text for all of it
+- [ ] Tests for `today.js` and the new fields; run `npm test`
+- [ ] Check at phone size in headless Chromium (light, dark, Hindi, offline)
