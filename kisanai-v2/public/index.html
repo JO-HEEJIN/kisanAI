@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1f6b35">
+    <title>KisanAI</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div>
+            <h1>KisanAI</h1>
+            <p id="tagline" data-text="tagline"></p>
+        </div>
+        <button id="lang" class="small" type="button"></button>
+    </header>
+
+    <main>
+        <p id="offline" class="banner" hidden data-text="offline"></p>
+
+        <label class="field">
+            <span data-text="cropLabel"></span>
+            <select id="crop"></select>
+        </label>
+
+        <section>
+            <h2 data-text="waterTitle"></h2>
+            <button id="water" class="big" type="button" data-text="waterButton"></button>
+            <form id="manual" class="manual" hidden>
+                <p data-text="locationError"></p>
+                <div class="row">
+                    <input id="coords" inputmode="decimal" autocomplete="off">
+                    <button class="small" type="submit" data-text="manualButton"></button>
+                </div>
+            </form>
+            <div id="advice" class="card" hidden aria-live="polite"></div>
+        </section>
+
+        <section>
+            <h2 data-text="photoTitle"></h2>
+            <label class="big button">
+                <span data-text="photoButton"></span>
+                <input id="photo" type="file" accept="image/*" capture="environment" hidden>
+            </label>
+            <div id="diagnosis" class="card" hidden aria-live="polite"></div>
+        </section>
+    </main>
+
+    <script src="i18n.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

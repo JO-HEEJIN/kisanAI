@@ -1,0 +1,10 @@
+{
+  "name": "KisanAI",
+  "short_name": "KisanAI",
+  "description": "Field advice from real soil and weather data",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f4ec",
+  "theme_color": "#1f6b35",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
